@@ -142,6 +142,17 @@ validate_payload() {  # <data.json>
           and (keys | sort) == ["artifact", "version"]
           and (.artifact | slug(128))
           and (.version | version));
+    def optional_report_path:
+      (has("report_path") | not)
+      or (.report_path
+        | type == "string"
+          and (length == 0 or (
+            . == (gsub("^\\s+|\\s+$"; ""))
+            and (test("[[:cntrl:]]") | not)
+            and (index("\\") == null)
+            and (test("^//") | not)
+            and (test("^[A-Za-z][A-Za-z0-9+.-]*:") | not)
+      )));
     def provider_item:
       type == "object"
       and (.provider | nonempty_string)
@@ -214,7 +225,7 @@ validate_payload() {  # <data.json>
       and optional_string("harness") and optional_string("model")
       and optional_string("effort") and optional_string("worktree_tail")
       and ((has("latest") | not) or (.latest | bounded_string(240)))
-      and optional_string("report_path")
+      and optional_report_path
       and ((has("blockers") | not) or (.blockers | type == "array"
         and all(.[]; bounded_string(240))))
       and optional_https_url("pr_url");
