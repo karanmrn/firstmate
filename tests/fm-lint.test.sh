@@ -265,6 +265,24 @@ SH
   chmod +x "$fakebin/shellcheck"
 }
 
+# fm_lint_stub_actionlint <fakebin-dir>: install an actionlint stub that
+# answers -version with the pin fm-lint-workflows.sh requires and accepts every
+# workflow. The no-args default path always runs workflow lint, so changed-file
+# mode tests use it to stay independent of an ambient actionlint install. Real
+# actionlint findings are covered by tests/fm-lint-workflows.test.sh.
+fm_lint_stub_actionlint() {
+  local fakebin=$1 version
+  version=$("$ROOT/bin/fm-lint-workflows.sh" --required-version)
+  cat > "$fakebin/actionlint" <<SH
+#!/usr/bin/env bash
+if [ "\${1:-}" = -version ]; then
+  printf '%s\n' '$version'
+fi
+exit 0
+SH
+  chmod +x "$fakebin/actionlint"
+}
+
 test_fast_mode_disables_extended_analysis() {
   local tmp fakebin log mode_log telemetry fixture out
   tmp=$(fm_test_tmproot fm-lint-fast-mode)
@@ -367,6 +385,7 @@ test_changed_mode_lints_only_the_changed_file() {
   fm_lint_stub_git "$fakebin"
   log="$tmp/shellcheck.log"
   fm_lint_stub_shellcheck "$fakebin" "$log"
+  fm_lint_stub_actionlint "$fakebin"
   diff_file="$tmp/diff.nul"
   target="bin/fm-install-shellcheck.sh"
   fm_lint_write_diff_file "$diff_file" "$target" "README.md"
@@ -435,6 +454,8 @@ test_zero_changed_files_exits_clean() {
   tmp=$(fm_test_tmproot fm-lint-zero-changed)
   fakebin=$(fm_fakebin "$tmp")
   fm_lint_stub_git "$fakebin"
+  fm_lint_stub_shellcheck "$fakebin" "$tmp/shellcheck.log"
+  fm_lint_stub_actionlint "$fakebin"
   diff_file="$tmp/diff.nul"
   : > "$diff_file"
 
