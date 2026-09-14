@@ -1,0 +1,25 @@
+lab session: fm-lab-role-live-57716-7172
+pane: w1:p1
+tokens before any session start: {}
+== foreign: session start exit=0
+   injected env: HERDR_BIN_PATH=/opt/homebrew/bin/herdr HERDR_ENV=1 HERDR_PANE_ID=w1:p1 HERDR_SESSION=fm-lab-role-live-57716-7172 HERDR_SOCKET_PATH=/Users/karanmanoharan/.config/herdr/sessions/fm-lab-role-live-57716-7172/herdr.sock HERDR_TAB_ID=w1:t1 HERDR_WORKSPACE_ID=w1 
+   role warnings in session start output:
+     warning: herdr role token 'firstmate' not reported: pane 'w1:p1' could not be proved to belong to herdr session 'fm-lab-notthisone'
+   pane tokens after: {}
+== primary: session start exit=0
+   injected env: HERDR_BIN_PATH=/opt/homebrew/bin/herdr HERDR_ENV=1 HERDR_PANE_ID=w1:p1 HERDR_SESSION=fm-lab-role-live-57716-7172 HERDR_SOCKET_PATH=/Users/karanmanoharan/.config/herdr/sessions/fm-lab-role-live-57716-7172/herdr.sock HERDR_TAB_ID=w1:t1 HERDR_WORKSPACE_ID=w1 
+   role warnings in session start output:
+   pane tokens after: {"role":"firstmate"}
+== second: session start exit=0
+   injected env: HERDR_BIN_PATH=/opt/homebrew/bin/herdr HERDR_ENV=1 HERDR_PANE_ID=w1:p1 HERDR_SESSION=fm-lab-role-live-57716-7172 HERDR_SOCKET_PATH=/Users/karanmanoharan/.config/herdr/sessions/fm-lab-role-live-57716-7172/herdr.sock HERDR_TAB_ID=w1:t1 HERDR_WORKSPACE_ID=w1 
+   role warnings in session start output:
+   pane tokens after: {"role":"secondmate"}
+== herdr pane get w1:p1 (final):
+{
+  "pane_id": "w1:p1",
+  "workspace_id": "w1",
+  "tokens": {
+    "role": "secondmate"
+  }
+}
+driver exit=0
