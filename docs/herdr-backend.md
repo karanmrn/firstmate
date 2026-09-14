@@ -172,7 +172,7 @@ Operational compromises:
 `tests/fm-herdr-session-cleanup-e2e.test.sh` covers the restored-shell cleanup in a guarded non-default named lab.
 `tests/fm-backend-herdr-focus-flash-e2e.test.sh` reproduces the raw explicit-close focus steal on the installed release and proves the focus-safe emptying-close plan removes a doomed workspace with no wrong-focus interval; [`verification/runtime-backends.md`](verification/runtime-backends.md#workspace-removal-focus-safety) owns the active versioned evidence.
 
-### Fleet role token
+## Fleet role token
 
 Firstmate reports a display-only `role` pane metadata token, so Herdr sidebar rules can tell fleet roles apart with `$role`.
 The values are `firstmate` for the primary, `secondmate` for a secondmate agent, `crewmate` for a ship worker, and `scout` for a scout.
