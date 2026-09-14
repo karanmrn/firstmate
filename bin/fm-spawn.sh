@@ -1391,12 +1391,10 @@ if [ "$KIND" = secondmate ] && { [ "$HARNESS" = muse ] || [ "$HARNESS" = prime ]
   exit 1
 fi
 
-# prime is verified on herdr only. Herdr detects a Prime pane natively, while the
-# other backends have no verified Prime liveness name, so their control plane
-# reads a running Prime pane as ambiguous and refuses interrupt and exit.
-# Refusing before endpoint creation keeps an uncontrollable worker from starting.
-if [ "$HARNESS" = prime ] && [ "$BACKEND" != herdr ]; then
-  echo "error: prime is verified on the herdr backend only; backend '$BACKEND' is unverified for Prime. Select --backend herdr or a different verified harness." >&2
+# The adapter/backend boundary (bin/fm-control-lib.sh owns it) refuses before
+# endpoint creation, so an uncontrollable worker never starts.
+if ! backend_reason=$(fm_control_harness_supports_backend "$HARNESS" "$BACKEND"); then
+  echo "error: $backend_reason. Select --backend herdr or a different verified harness." >&2
   exit 1
 fi
 

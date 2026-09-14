@@ -52,6 +52,6 @@ A large global skill set once pushed that prompt past kimi-k2.6's 262k-token win
 ## Primary limit and backend coverage
 
 No Prime primary integration exists, so `../../../bin/fm-spawn.sh` refuses a secondmate on Prime.
-Prime is herdr-only: `../../../bin/fm-spawn.sh` refuses harness `prime` on every other backend before it creates an endpoint.
+Prime is herdr-only: `../../../bin/fm-spawn.sh` refuses harness `prime` on every other backend before it creates an endpoint, and `../../../bin/fm-control.sh` refuses a relaunch onto `prime` there before it stops the running agent.
 tmux was not installed on the verification host, so tmux liveness naming and tmux submit confirmation for Prime remain unverified.
 Without them, the tmux control plane reads a Prime pane as ambiguous and refuses interrupt and exit.

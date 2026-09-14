@@ -107,6 +107,24 @@ fm_control_harness_supports_kind() {  # <harness> <kind>
   return 0
 }
 
+# Which backends an adapter is verified to run on. prime is herdr-only: Herdr
+# detects a Prime pane natively, while the other backends have no verified
+# Prime liveness name, so their control plane reads a running Prime pane as
+# ambiguous and refuses interrupt and exit. On refusal this prints the one-line
+# reason and returns nonzero. bin/fm-spawn.sh asks it before creating an
+# endpoint, and the control plane asks it before it stops anything.
+fm_control_harness_supports_backend() {  # <harness> <backend>
+  local harness=${1-} backend=${2-}
+  case "$harness" in
+    prime)
+      [ "$backend" = herdr ] && return 0
+      printf "prime is verified on the herdr backend only; backend '%s' is unverified for Prime" "$backend"
+      return 1
+      ;;
+  esac
+  return 0
+}
+
 # The key that cancels a running turn. Escape for every adapter except grok,
 # whose Esc only moves focus to the scrollback, and prime, whose Esc only edits
 # the composer; both cancel on Ctrl+C. A second Ctrl+C while prime still shows
