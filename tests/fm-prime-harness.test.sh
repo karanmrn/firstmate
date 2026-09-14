@@ -2,8 +2,8 @@
 # Behavior tests for the verified Prime Agent crewmate adapter.
 set -u
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 
 HARNESS="$ROOT/bin/fm-harness.sh"
 SPAWN="$ROOT/bin/fm-spawn.sh"
@@ -79,35 +79,22 @@ test_detects_only_an_exact_prime_agent_ancestor() {
 
 # --- spawn scaffolding ------------------------------------------------------
 
-make_spawn_fakebin() {
+# Prime spawns run on the herdr backend, the only one verified for Prime. The
+# tmux fake records every call so a refused tmux spawn can prove it created no
+# endpoint.
+make_prime_fakebin() {
   local dir=$1 fakebin
   fakebin=$(fm_fakebin "$dir")
+  fm_test_fake_herdr_spawn "$fakebin"
   cat > "$fakebin/tmux" <<'SH'
 #!/usr/bin/env bash
 set -u
+printf '%s\n' "$*" >> "${FM_FAKE_TMUX_LOG:-/dev/null}"
 case "$*" in
   *"#{pane_current_path}"*) printf '%s\n' "${FM_FAKE_PANE_PATH:-}"; exit 0 ;;
 esac
 case "${1:-}" in
-  display-message) printf 'firstmate\n'; exit 0 ;;
-  list-windows) exit 0 ;;
-  has-session|new-session|new-window|kill-window) exit 0 ;;
-  send-keys)
-    prev=
-    for arg in "$@"; do
-      if [ "$prev" = -l ]; then
-        printf '%s\n' "$arg" >> "$FM_FAKE_LAUNCH_LOG"
-        if [ "${FM_FAKE_EXECUTE_PRIME_LAUNCH:-}" = 1 ]; then
-          case "$arg" in
-            *"$FM_FAKE_PRIME_EXECUTABLE"*) (cd "$FM_FAKE_PANE_PATH" && bash -c "$arg") ;;
-          esac
-        fi
-        break
-      fi
-      prev=$arg
-    done
-    exit 0
-    ;;
+  display-message) printf 'firstmate\n' ;;
 esac
 exit 0
 SH
@@ -132,7 +119,7 @@ make_spawn_case() {  # <name>
   home="$case_dir/home"
   proj="$case_dir/project"
   wt="$case_dir/wt"
-  fakebin=$(make_spawn_fakebin "$case_dir/fake")
+  fakebin=$(make_prime_fakebin "$case_dir/fake")
   id="prime-$name-x1"
   mkdir -p "$home/data/$id" "$home/projects" "$home/state" "$home/config"
   cat > "$home/data/$id/brief.md" <<'EOF'
@@ -151,17 +138,12 @@ EOF
 run_prime_spawn() {  # <home> <proj> <wt> <fakebin> <id> [extra args...]
   local home=$1 proj=$2 wt=$3 fakebin=$4 id=$5
   shift 5
-  FM_ROOT_OVERRIDE='' FM_HOME="$home" \
-    FM_STATE_OVERRIDE="$home/state" FM_DATA_OVERRIDE="$home/data" \
-    FM_PROJECTS_OVERRIDE="$home/projects" FM_CONFIG_OVERRIDE="$home/config" \
-    FM_SPAWN_NO_GUARD=1 FM_FAKE_PANE_PATH="$wt" TMUX="fake,1,0" \
-    FM_FAKE_LAUNCH_LOG="$home/launch.log" \
-    FM_FAKE_PRIME_EXECUTABLE="$fakebin/prime-agent" \
+  FM_FAKE_LAUNCH_LOG="$home/launch.log" \
     FM_FAKE_HARNESS_PROBE="$HARNESS" \
-    FM_FAKE_EXECUTE_PRIME_LAUNCH="${FM_FAKE_EXECUTE_PRIME_LAUNCH:-}" \
+    FM_FAKE_EXECUTE_LAUNCH_MATCH="${FM_FAKE_EXECUTE_LAUNCH_MATCH:-}" \
     FM_FAKE_HARNESS_RESULT="${FM_FAKE_HARNESS_RESULT:-}" \
-    PATH="${FM_TEST_PRIME_PATH:-$fakebin:$PATH}" \
-    "$SPAWN" "$id" "$proj" prime "$@" 2>&1
+    PATH="${FM_TEST_PRIME_PATH:-$PATH}" \
+    fm_test_run_spawn_herdr "$home" "$wt" "$fakebin" "$id" "$proj" prime "$@"
 }
 
 # path_without_prime <fakebin>: the fakebin plus every PATH entry that holds no
@@ -203,9 +185,37 @@ EOF
   assert_contains "$launch" 'encode launch-brief' "prime launch did not deliver the brief positionally"
   assert_not_contains "$launch" '--thinking' "prime launch invented an effort when none was chosen"
   assert_grep 'harness=prime' "$home/state/$id.meta" "prime harness was not recorded in meta"
+  assert_grep 'backend=herdr' "$home/state/$id.meta" "prime spawn was not recorded on the herdr backend"
   assert_present "$home/state/$id.prime-ext.ts" "prime spawn did not write the per-task extension"
   assert_present "$home/state/$id.busy-gen" "prime spawn did not arm the busy-state contract"
-  pass "prime spawn launches without skills or a resident session and loads its extension"
+  pass "prime spawn on herdr launches without skills or a resident session and loads its extension"
+}
+
+# Only Herdr detects a Prime pane natively. On any other backend the control
+# plane reads a running Prime pane as ambiguous and refuses interrupt and exit,
+# so the spawn must refuse before it creates an endpoint.
+test_spawn_refuses_non_herdr_backend() {
+  local rec case_dir home proj wt fakebin id out status
+  rec=$(make_spawn_case tmux-refused)
+  IFS='|' read -r case_dir home proj wt fakebin id <<EOF
+$rec
+EOF
+  out=$(env -u HERDR_ENV -u HERDR_PANE_ID FM_FAKE_TMUX_LOG="$home/tmux.log" \
+    FM_FAKE_LAUNCH_LOG="$home/launch.log" \
+    bash -c '. "$1/tests/fixtures.sh"; shift; fm_test_run_spawn "$@"' _ "$ROOT" \
+    "$home" "$wt" "$fakebin" "$id" "$proj" prime --mode no-mistakes --yolo off)
+  status=$?
+  [ "$status" -ne 0 ] || fail "prime spawn succeeded on the default tmux backend: $out"
+  assert_contains "$out" "prime is verified on the herdr backend only; backend 'tmux' is unverified for Prime" \
+    "prime tmux refusal did not name the unverified backend"
+  if [ -f "$home/tmux.log" ]; then
+    assert_no_grep 'new-window\|new-session\|send-keys' "$home/tmux.log" "a refused prime spawn still touched a tmux endpoint"
+  fi
+  assert_absent "$home/launch.log" "a refused prime spawn still sent a launch"
+  assert_absent "$home/state/$id.meta" "a refused prime spawn still recorded a task"
+  assert_absent "$home/state/$id.prime-ext.ts" "a refused prime spawn still wrote its extension"
+  assert_absent "$home/state/$id.busy-gen" "a refused prime spawn still armed the busy-state contract"
+  pass "prime spawn refuses a non-herdr backend before creating an endpoint"
 }
 
 test_spawn_launch_clears_inherited_foreign_markers() {
@@ -217,7 +227,7 @@ EOF
   result="$case_dir/harness-result"
   out=$(CLAUDECODE=1 GROK_AGENT=1 FM_PI_HARNESS=pi-signed \
     CURSOR_AGENT=1 CURSOR_INVOKED_AS=cursor-agent \
-    FM_FAKE_EXECUTE_PRIME_LAUNCH=1 FM_FAKE_HARNESS_RESULT="$result" \
+    FM_FAKE_EXECUTE_LAUNCH_MATCH="$fakebin/prime-agent" FM_FAKE_HARNESS_RESULT="$result" \
     run_prime_spawn "$home" "$proj" "$wt" "$fakebin" "$id" --mode no-mistakes --yolo off)
   status=$?
   expect_code 0 "$status" "prime spawn from a marked backend should succeed: $out"
@@ -266,7 +276,7 @@ test_spawn_refuses_secondmate() {
   local case_dir home fakebin id out status
   case_dir="$TMP_ROOT/secondmate"
   home="$case_dir/home"
-  fakebin=$(make_spawn_fakebin "$case_dir/fake")
+  fakebin=$(make_prime_fakebin "$case_dir/fake")
   id="prime-secondmate-x1"
   mkdir -p "$home/data/$id" "$home/projects" "$home/state" "$home/config" "$case_dir/prime"
   printf 'charter\n' > "$home/data/$id/brief.md"
@@ -288,6 +298,7 @@ test_pi_detection_is_unchanged
 test_claude_and_cursor_markers_keep_precedence
 test_detects_only_an_exact_prime_agent_ancestor
 test_spawn_launch_shape
+test_spawn_refuses_non_herdr_backend
 test_spawn_launch_clears_inherited_foreign_markers
 test_spawn_maps_effort_and_model
 test_spawn_refuses_without_prime_binary

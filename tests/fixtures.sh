@@ -135,6 +135,49 @@ SH
   chmod +x "$fakebin/tmux"
 }
 
+# fm_test_fake_herdr_spawn <fakebin>
+# Spawn-world herdr for a flat (non-projected) spawn in one "firstmate"
+# workspace. Pair it with fm_test_run_spawn_herdr, which turns the projection
+# off and clears inherited herdr pane identity. pane get reports
+# FM_FAKE_PANE_PATH as the foreground cwd, and agent get reports no registered
+# agent. Launch logging is env-gated: each pane send-text payload is appended
+# to FM_FAKE_LAUNCH_LOG when set. A payload that contains
+# FM_FAKE_EXECUTE_LAUNCH_MATCH, when set, also runs in FM_FAKE_PANE_PATH.
+fm_test_fake_herdr_spawn() {
+  local fakebin=$1
+  cat > "$fakebin/herdr" <<'SH'
+#!/usr/bin/env bash
+set -u
+case "${1:-} ${2:-}" in
+  "status --json")
+    printf '{"client":{"version":"0.9.0","protocol":19},"server":{"running":true}}\n'
+    ;;
+  "workspace list")
+    printf '{"result":{"workspaces":[{"workspace_id":"w1","label":"firstmate"}]}}\n'
+    ;;
+  "tab list") printf '{"result":{"tabs":[]}}\n' ;;
+  "tab create") printf '{"result":{"tab":{"tab_id":"w1:t1"},"root_pane":{"pane_id":"w1:p1"}}}\n' ;;
+  "pane get")
+    printf '{"result":{"pane":{"pane_id":"%s","tab_id":"w1:t1","workspace_id":"w1","foreground_cwd":"%s"}}}\n' \
+      "${3:-}" "${FM_FAKE_PANE_PATH:-}"
+    ;;
+  "agent get")
+    printf '{"error":{"code":"agent_not_found","message":"agent target %s not found"}}\n' "${3:-}"
+    ;;
+  "pane send-text")
+    [ -z "${FM_FAKE_LAUNCH_LOG:-}" ] || printf '%s\n' "${4:-}" >> "$FM_FAKE_LAUNCH_LOG"
+    if [ -n "${FM_FAKE_EXECUTE_LAUNCH_MATCH:-}" ]; then
+      case "${4:-}" in
+        *"$FM_FAKE_EXECUTE_LAUNCH_MATCH"*) (cd "$FM_FAKE_PANE_PATH" && bash -c "$4") ;;
+      esac
+    fi
+    ;;
+esac
+exit 0
+SH
+  chmod +x "$fakebin/herdr"
+}
+
 # fm_test_fake_tmux_send <fakebin>
 # Send-world tmux: logs send-keys -l payloads to FM_SEND_LOG, reports a numeric
 # cursor_y, and renders an empty bordered composer so the submit path reads
@@ -281,6 +324,18 @@ fm_test_run_spawn() {
     FM_SPAWN_NO_GUARD=1 FM_FAKE_PANE_PATH="$pane" TMUX="${TMUX:-fake,1,0}" \
     PATH="$fakebin:$PATH" \
     "$ROOT/bin/fm-spawn.sh" "$@" 2>&1
+}
+
+# fm_test_run_spawn_herdr <home> <pane-path> <fakebin> [fm-spawn args...]
+# fm_test_run_spawn on the herdr backend against fm_test_fake_herdr_spawn: a
+# flat spawn with no projection and no inherited herdr launcher pane.
+fm_test_run_spawn_herdr() {
+  printf 'off\n' > "$1/config/herdr-presentation-spaces"
+  (
+    unset HERDR_ENV HERDR_PANE_ID HERDR_TAB_ID HERDR_WORKSPACE_ID HERDR_SOCKET_PATH
+    export HERDR_SESSION=fm-test
+    fm_test_run_spawn "$@" --backend herdr
+  )
 }
 
 # --- send-world stubs -------------------------------------------------------

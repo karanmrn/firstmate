@@ -100,6 +100,7 @@ Interactive probes ran in isolated Herdr lab panes and read `prime-agent list --
 The event-logging extension recorded, for a one-tool turn, `agent_start` with `ctx.isIdle()` false, two `turn_end` events, and `agent_end` with `ctx.isIdle()` still false.
 A poll started from `agent_end` read `ctx.isIdle()` true after 9 milliseconds in one run and 7 milliseconds in another.
 The package emits no `agent_settled` event: the bundle has no such string.
+The extension's poll after `agent_end` has no cap; `tests/fm-busy-adapter-wiring.test.sh` drives it through one hour of virtual time before `ctx.isIdle()` reads true.
 
 ## Interrupt, composer, and Herdr detection
 
@@ -114,7 +115,8 @@ The package emits no `agent_settled` event: the bundle has no such string.
 
 - tmux was not installed on the verification host, so Prime's tmux liveness naming, tmux composer submit confirmation, and tmux control-plane attribution are unproven; the tmux control fake reads a Prime pane as ambiguous and refuses lifecycle verbs.
 - Zellij, cmux, and Orca were not exercised.
+- Because of these gaps, Prime is herdr-only: `bin/fm-spawn.sh` refuses harness `prime` on every other backend before it creates an endpoint, and `tests/fm-prime-harness.test.sh` covers the refusal.
 - Providers other than `openrouter` and models other than kimi-k2.6 and claude-fable-5.1 were not exercised.
 - Behavior without provider credentials was not exercised.
-- Runs longer than the extension's 30-second idle poll after `agent_end`, such as automatic compaction, were not exercised.
+- A live run that stays non-idle long after `agent_end`, such as automatic compaction, was not exercised.
 - A Prime primary or secondmate integration does not exist.

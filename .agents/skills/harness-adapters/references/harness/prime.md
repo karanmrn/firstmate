@@ -15,7 +15,7 @@ The router owns Prime's task-kind boundary.
 | Trust dialog | None observed in fresh git directories. |
 | Models | `--model <provider>/<id>`, for example `openrouter/moonshotai/kimi-k2.6`; discover with `prime-agent model list [search]`. |
 | Effort | `--thinking <low\|medium\|high\|xhigh\|max>`; Prime clamps each request to the model's supported levels, so kimi-k2.6 reports `high` for every level except `off`. |
-| Busy state | The Firstmate-owned extension: `agent_start` marks busy, idle follows `agent_end` only after `ctx.isIdle()` reads true, and `session_shutdown` closes an open run. |
+| Busy state | The Firstmate-owned extension: `agent_start` marks busy, idle follows `agent_end` only after `ctx.isIdle()` reads true, with no poll cap, and `session_shutdown` closes an open run. |
 | Interrupt | Single Ctrl+C cancels the run and keeps the TUI; a second Ctrl+C while `Press Ctrl+C again to exit` shows quits. |
 | Escape | Edits the composer only: it neither interrupts nor cleared a typed draft. |
 | Exit | `/quit`. |
@@ -40,6 +40,8 @@ Launch environment variables reach the worker and every tool process.
 
 `../../../bin/fm-spawn.sh` writes the extension to `state/`, outside the worktree, and loads it with `-e`.
 Prime 0.9.4 has no `agent_settled` event, and `ctx.isIdle()` still reads false inside `agent_end`, so the extension polls after `agent_end` instead of settling there.
+The poll backs off to one read per second and has no cap, so a long non-idle phase after `agent_end`, such as automatic compaction, still settles idle.
+Only a newer `agent_start` or `session_shutdown` stops the poll.
 `turn_end` touches the turn-ended marker as a wake notification, never as current state.
 
 ## Skills budget
@@ -50,4 +52,6 @@ A large global skill set once pushed that prompt past kimi-k2.6's 262k-token win
 ## Primary limit and backend coverage
 
 No Prime primary integration exists, so `../../../bin/fm-spawn.sh` refuses a secondmate on Prime.
+Prime is herdr-only: `../../../bin/fm-spawn.sh` refuses harness `prime` on every other backend before it creates an endpoint.
 tmux was not installed on the verification host, so tmux liveness naming and tmux submit confirmation for Prime remain unverified.
+Without them, the tmux control plane reads a Prime pane as ambiguous and refuses interrupt and exit.

@@ -1391,6 +1391,15 @@ if [ "$KIND" = secondmate ] && { [ "$HARNESS" = muse ] || [ "$HARNESS" = prime ]
   exit 1
 fi
 
+# prime is verified on herdr only. Herdr detects a Prime pane natively, while the
+# other backends have no verified Prime liveness name, so their control plane
+# reads a running Prime pane as ambiguous and refuses interrupt and exit.
+# Refusing before endpoint creation keeps an uncontrollable worker from starting.
+if [ "$HARNESS" = prime ] && [ "$BACKEND" != herdr ]; then
+  echo "error: prime is verified on the herdr backend only; backend '$BACKEND' is unverified for Prime. Select --backend herdr or a different verified harness." >&2
+  exit 1
+fi
+
 case "$HARNESS" in
   pi|pi-signed)
     PI_BIN=$(resolve_pi_executable "$HARNESS") || {
@@ -2779,13 +2788,16 @@ EOF
       # Written OUTSIDE the worktree and loaded with an explicit -e path, like
       # pi's. Prime Agent 0.9.4 has no agent_settled event, and ctx.isIdle()
       # still reads false inside agent_end (verified live: it read true 7-9 ms
-      # later), so idle is published only after a short poll that follows
-      # agent_end observes ctx.isIdle(). The poll is not returned to Prime, so
-      # the host never waits on it. A newer agent_start supersedes a pending
-      # poll, and a poll that never observes idle leaves the record busy rather
-      # than guessing. Writes are chained so a late idle can never land after
-      # the busy edge that superseded it. session_shutdown closes a run the
-      # worker ends mid-turn. turn_end stays a wake NOTIFICATION touch.
+      # later), so idle is published only after a poll that follows agent_end
+      # observes ctx.isIdle(). The poll is not returned to Prime, so the host
+      # never waits on it. The poll has no cap: it backs off to one read per
+      # second and continues until idle, because a run can stay non-idle after
+      # agent_end for any length of time (automatic compaction, for example) and
+      # a cap would strand the record busy. Only a newer agent_start or
+      # session_shutdown supersedes it. Writes are chained so a late idle can
+      # never land after the busy edge that superseded it. session_shutdown
+      # closes a run the worker ends mid-turn. turn_end stays a wake
+      # NOTIFICATION touch.
       cat > "$STATE/$ID.prime-ext.ts" <<EOF
 // Firstmate semantic busy-state events + turn-end notification for Prime
 // Agent; written by fm-spawn under the contract owned by bin/fm-busy-lib.sh.
@@ -2798,7 +2810,7 @@ const busyEvent = (state: string, event: string) =>
     ], () => resolve());
   });
 const IDLE_POLL_MS = 25;
-const IDLE_POLL_LIMIT_MS = 30000;
+const IDLE_POLL_MAX_MS = 1000;
 export default function (pi: any) {
   let run = 0;
   let writes: Promise<void> = Promise.resolve();
@@ -2809,18 +2821,22 @@ export default function (pi: any) {
   });
   pi.on("agent_end", (_event: any, ctx: any) => {
     const mine = run;
-    const started = Date.now();
+    let delay = IDLE_POLL_MS;
     const poll = () => {
       if (run !== mine) return;
       if (ctx && typeof ctx.isIdle === "function" && ctx.isIdle()) {
         emit("idle", "agent-end-idle");
         return;
       }
-      if (Date.now() - started < IDLE_POLL_LIMIT_MS) setTimeout(poll, IDLE_POLL_MS);
+      setTimeout(poll, delay);
+      delay = Math.min(delay * 2, IDLE_POLL_MAX_MS);
     };
     setTimeout(poll, 0);
   });
-  pi.on("session_shutdown", () => emit("idle", "session-shutdown"));
+  pi.on("session_shutdown", () => {
+    run += 1;
+    return emit("idle", "session-shutdown");
+  });
   pi.on("turn_end", () => execFile("touch", ["$TURNEND"]));
 }
 EOF

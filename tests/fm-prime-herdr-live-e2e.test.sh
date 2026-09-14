@@ -24,8 +24,8 @@ if [ "${FM_PRIME_HERDR_LIVE:-0}" != 1 ]; then
   exit 0
 fi
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 # shellcheck source=/dev/null
 . "$ROOT/bin/fm-busy-lib.sh"
 
@@ -92,40 +92,16 @@ r = subprocess.run(["$ROOT/bin/fm-harness.sh"], capture_output=True, text=True)
 open("$PROBE", "w").write(" ".join([r.stdout.strip(), os.environ.get("PI_CODING_AGENT", "unset"), str(os.getpid()), str(os.getppid())]) + "\n")
 EOF
 
-# Compose the launch with the real fm-spawn against a recording tmux fake. The
-# spawn resolves the real prime-agent and writes the real extension; only the
-# endpoint creation is faked, and the recorded command then runs in the lab pane.
+# Compose the launch with the real fm-spawn against a recording herdr fake, on
+# the herdr backend Prime is verified for. The spawn resolves the real
+# prime-agent and writes the real extension; only the endpoint creation is
+# faked, and the recorded command then runs in the lab pane.
 FAKEBIN=$(fm_fakebin "$TMP_ROOT/fake")
-cat > "$FAKEBIN/tmux" <<'SH'
-#!/usr/bin/env bash
-set -u
-case "$*" in
-  *"#{pane_current_path}"*) printf '%s\n' "${FM_FAKE_PANE_PATH:-}"; exit 0 ;;
-esac
-case "${1:-}" in
-  display-message) printf 'firstmate\n'; exit 0 ;;
-  send-keys)
-    prev=
-    for arg in "$@"; do
-      if [ "$prev" = -l ]; then
-        printf '%s\n' "$arg" >> "$FM_FAKE_LAUNCH_LOG"
-        break
-      fi
-      prev=$arg
-    done
-    ;;
-esac
-exit 0
-SH
-chmod +x "$FAKEBIN/tmux"
+fm_test_fake_herdr_spawn "$FAKEBIN"
 fm_fake_exit0 "$FAKEBIN" treehouse gh-axi gh
-out=$(FM_ROOT_OVERRIDE='' FM_HOME="$HOME_DIR" \
-  FM_STATE_OVERRIDE="$STATE" FM_DATA_OVERRIDE="$HOME_DIR/data" \
-  FM_PROJECTS_OVERRIDE="$HOME_DIR/projects" FM_CONFIG_OVERRIDE="$HOME_DIR/config" \
-  FM_SPAWN_NO_GUARD=1 FM_FAKE_PANE_PATH="$WT" TMUX="fake,1,0" \
-  FM_FAKE_LAUNCH_LOG="$TMP_ROOT/launch.log" PATH="$FAKEBIN:$PATH" \
-  "$ROOT/bin/fm-spawn.sh" "$ID" "$PROJ" prime --model "$MODEL" --effort low \
-  --mode no-mistakes --yolo off 2>&1) || fail "fm-spawn could not compose the prime launch: $out"
+out=$(FM_FAKE_LAUNCH_LOG="$TMP_ROOT/launch.log" \
+  fm_test_run_spawn_herdr "$HOME_DIR" "$WT" "$FAKEBIN" "$ID" "$PROJ" prime --model "$MODEL" --effort low \
+  --mode no-mistakes --yolo off) || fail "fm-spawn could not compose the prime launch: $out"
 LAUNCH=$(grep -F -- "$PRIME_BIN" "$TMP_ROOT/launch.log" | head -1)
 [ -n "$LAUNCH" ] || fail "fm-spawn recorded no launch command naming $PRIME_BIN"
 [ -f "$STATE/$ID.prime-ext.ts" ] || fail "fm-spawn did not write the prime extension"
