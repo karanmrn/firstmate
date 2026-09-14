@@ -108,7 +108,11 @@ resolve_native_binary() {
     fm_cursor_resolve_binary 2>/dev/null
     return
   fi
-  candidate=$(command -v "$harness" 2>/dev/null || true)
+  if [ "$harness" = prime ]; then
+    candidate=$(command -v prime-agent 2>/dev/null || true)
+  else
+    candidate=$(command -v "$harness" 2>/dev/null || true)
+  fi
   if [ -n "$candidate" ] && [ -x "$candidate" ]; then
     printf '%s\n' "$candidate"
     return 0
@@ -120,7 +124,7 @@ resolve_native_binary() {
   return 1
 }
 
-for harness in claude codex opencode pi pi-signed grok kimi cursor muse; do
+for harness in claude codex opencode pi pi-signed grok kimi cursor muse prime; do
   if binary=$(resolve_native_binary "$harness"); then
     version=$("$binary" --version 2>/dev/null | head -1 | tr -d '\r') || version=unknown
     printf '# native loader not claimed: %s %s is installed, but this harness-neutral evaluation does not exercise its provider transport\n' "$harness" "$version"

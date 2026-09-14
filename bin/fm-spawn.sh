@@ -111,7 +111,7 @@
 #   profile consultation. A --secondmate spawn is exempt and resolves the SECONDMATE
 #   harness (config/secondmate-harness -> config/crew-harness -> own), so the
 #   secondmate-vs-crewmate split is DURABLE across every respawn (recovery,
-#   /updatefirstmate, restart). A bare adapter name (claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse)
+#   /updatefirstmate, restart). A bare adapter name (claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse|prime)
 #   overrides it for this spawn (either kind). A non-flag string containing
 #   whitespace is treated as a RAW launch command - the escape hatch for verifying
 #   new adapters. For pi and pi-signed, fm-spawn resolves the selected executable
@@ -178,6 +178,9 @@
 #     __OPINPUT__   absolute path to the canonical operational-input encoder
 #     __WORKTREE__  absolute path to the task worktree
 #     __CURSORBIN__ resolved, cursor-verified executable for a cursor launch
+#     __PRIMEBIN__  quoted absolute prime-agent executable resolved from PATH
+#     __PRIMEEXT__  absolute path to state/<task-id>.prime-ext.ts (prime busy-state and
+#                  turn-end extension, written by this script outside the worktree)
 # Verified per-harness turn-end hooks are installed automatically where enabled; some live outside the worktree.
 # Kimi uses one surgically installed Firstmate region in $HOME/.kimi-code/config.toml,
 # a firstmate-owned global hook and registry, and a gitignored per-task pointer.
@@ -186,6 +189,8 @@
 # muse installs no hook at all - its plugin engine is off in the default build - so
 # it writes state/<id>.muse-session to bind the pane to muse's own session event
 # log; muse is crewmate/scout only and is refused for --secondmate.
+# prime (Prime Agent) writes state/<id>.prime-ext.ts and loads it with -e; prime is
+# also crewmate/scout only and is refused for --secondmate.
 # cursor installs no per-task hook either: it writes state/<id>.cursor-session to
 # bind the pane to cursor's own conversation transcript (projects root, the exact
 # workspace path cursor records in .workspace-trusted, and the conversations that
@@ -1191,7 +1196,7 @@ if [ "$RELAUNCH" -eq 1 ]; then
   }
 elif [ "$KIND" = secondmate ]; then
   case "${POS[1]:-}" in
-    ''|claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse)
+    ''|claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse|prime)
       ARG3=${POS[1]:-}
       ;;
     *' '*)
@@ -1321,6 +1326,19 @@ launch_template() {
     # written below. Nothing to place in the template for it.
     # codex, opencode, and kimi are also markerless and share this inherited-marker hazard; changing their verified launch boundaries belongs in follow-up work.
     muse) printf '%s' 'env -u CLAUDECODE -u PI_CODING_AGENT -u GROK_AGENT -u FM_PI_HARNESS XDG_CONFIG_HOME=__MUSECONFIG__ XDG_DATA_HOME=__MUSEDATA__ MUSE_EXPERIMENTAL_FOREIGN_PERSONAL_CONTEXT_KILL=on __MUSEBIN__ --yolo __MODELFLAG____EFFORTFLAG__"$(__OPINPUT__ encode launch-brief < __BRIEF__)"' ;;
+    # prime (Prime Agent): a positional prompt starts the interactive session,
+    # and it has no approval gate to bypass (verified, prime-agent 0.9.4).
+    # --no-skills keeps the startup prompt bounded: skill discovery reads
+    # ~/.agents/skills and every ancestor .agents/skills, and one earlier host
+    # grew that prompt past a 262k-token context window.
+    # --no-session makes the daemon worker client-owned. A resident session
+    # (the default) survives /quit and a closed pane with its worker and Python
+    # kernel still running; a client-owned worker ends with its TUI, so the pane
+    # is the whole lifecycle. Native resume is therefore unused; recovery
+    # relaunches from the instructions on disk.
+    # CLAUDECODE is cleared because the Claude marker outranks Prime's own in
+    # bin/fm-harness.sh; Prime sets PI_CODING_AGENT itself.
+    prime) printf '%s' 'env -u CLAUDECODE -u GROK_AGENT -u FM_PI_HARNESS __PRIMEBIN__ --no-skills --no-session -e __PRIMEEXT__ __MODELFLAG____EFFORTFLAG__"$(__OPINPUT__ encode launch-brief < __BRIEF__)"' ;;
     *) return 1 ;;
   esac
 }
@@ -1361,14 +1379,15 @@ case "$ARG3" in
     ;;
 esac
 
-# muse is verified as a CREWMATE/SCOUT adapter only. A secondmate is a firstmate
-# instance, so it needs a primary supervision protocol; muse has none, and its
-# Claude-compatible hook dialect explicitly rejects the model-reawakening and
-# asyncRewake handlers that firstmate's primary turn-end supervision is built on
-# (muse 0.1.0-R708.1). Refusing here keeps that gap loud instead of standing up a
-# secondmate whose supervision cycle could never be armed.
-if [ "$KIND" = secondmate ] && [ "$HARNESS" = muse ]; then
-  echo "error: muse is a verified crewmate/scout adapter only and cannot run a secondmate; it has no primary supervision protocol. Select a harness verified for secondmates." >&2
+# muse and prime are verified as CREWMATE/SCOUT adapters only. A secondmate is a
+# firstmate instance, so it needs a primary supervision protocol; neither has
+# one. muse's Claude-compatible hook dialect explicitly rejects the
+# model-reawakening and asyncRewake handlers that firstmate's primary turn-end
+# supervision is built on (muse 0.1.0-R708.1), and no prime primary integration
+# has been built or verified. Refusing here keeps that gap loud instead of
+# standing up a secondmate whose supervision cycle could never be armed.
+if [ "$KIND" = secondmate ] && { [ "$HARNESS" = muse ] || [ "$HARNESS" = prime ]; }; then
+  echo "error: $HARNESS is a verified crewmate/scout adapter only and cannot run a secondmate; it has no primary supervision protocol. Select a harness verified for secondmates." >&2
   exit 1
 fi
 
@@ -1472,6 +1491,25 @@ resolve_muse_binary() {
   return 1
 }
 
+resolve_prime_binary() {
+  local candidate dir
+  candidate=$(command -v prime-agent 2>/dev/null || true)
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    case "$candidate" in
+      /*) printf '%s\n' "$candidate"; return 0 ;;
+      *)
+        dir=$(cd "$(dirname "$candidate")" 2>/dev/null && pwd -P) || dir=
+        if [ -n "$dir" ]; then
+          printf '%s/%s\n' "$dir" "$(basename "$candidate")"
+          return 0
+        fi
+        ;;
+    esac
+  fi
+  echo "error: prime-agent executable not found on PATH; install Prime Agent or select a different verified harness" >&2
+  return 1
+}
+
 # muse_credential_present: 0 when a launched muse pane can reach its provider
 # without an interactive login. muse offers exactly two credential paths
 # (verified, muse 0.1.0-R708.1): the META_API_KEY environment variable, which
@@ -1506,7 +1544,7 @@ model_flag_for_harness() {
   local harness=$1 model=$2
   [ -n "$model" ] && [ "$model" != default ] || return 0
   case "$harness" in
-    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse)
+    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse|prime)
       printf -- '--model %s ' "$(shell_quote "$model")"
       ;;
   esac
@@ -1559,6 +1597,16 @@ effort_flag_for_harness() {
         max) printf -- '--reasoning-effort %s ' "$(shell_quote ultra)" ;;
       esac
       ;;
+    prime)
+      # prime-agent 0.9.4 --thinking accepts off|minimal|low|medium|high|xhigh|max
+      # and clamps each request to the levels the selected model supports
+      # (verified: kimi-k2.6 reports high for every level except off, while
+      # claude-fable-5.1 keeps low). off and minimal sit below the shared
+      # vocabulary and stay unreachable.
+      case "$effort" in
+        low|medium|high|xhigh|max) printf -- '--thinking %s ' "$(shell_quote "$effort")" ;;
+      esac
+      ;;
     # opencode's interactive `opencode --prompt` launch has a verified --model
     # flag but no verified effort flag. Its `opencode run --variant` flag belongs
     # to a different, non-interactive launch mode, so fm-spawn does not pass it.
@@ -1599,6 +1647,13 @@ case "$LAUNCH" in
         exit 1
       }
     fi
+    ;;
+esac
+
+case "$LAUNCH" in
+  *__PRIMEBIN__*)
+    PRIME_BIN=$(resolve_prime_binary) || exit 1
+    LAUNCH=${LAUNCH//__PRIMEBIN__/$(shell_quote "$PRIME_BIN")}
     ;;
 esac
 
@@ -2593,7 +2648,7 @@ if [ "$KIND" != secondmate ]; then
       ;;
   esac
   case "$HARNESS" in
-    claude*|opencode*|pi|pi-signed)
+    claude*|opencode*|pi|pi-signed|prime)
       BUSY_GEN=$("$FM_ROOT/bin/fm-busy-event.sh" arm "$STATE_REAL" "$ID") || {
         echo "error: failed to arm the busy-state contract for $ID" >&2
         exit 1
@@ -2716,6 +2771,56 @@ export default function (pi: any) {
     if (ctx && typeof ctx.isIdle === "function" && !ctx.isIdle()) return;
     return busyEvent("idle", "agent-settled");
   });
+  pi.on("turn_end", () => execFile("touch", ["$TURNEND"]));
+}
+EOF
+      ;;
+    prime)
+      # Written OUTSIDE the worktree and loaded with an explicit -e path, like
+      # pi's. Prime Agent 0.9.4 has no agent_settled event, and ctx.isIdle()
+      # still reads false inside agent_end (verified live: it read true 7-9 ms
+      # later), so idle is published only after a short poll that follows
+      # agent_end observes ctx.isIdle(). The poll is not returned to Prime, so
+      # the host never waits on it. A newer agent_start supersedes a pending
+      # poll, and a poll that never observes idle leaves the record busy rather
+      # than guessing. Writes are chained so a late idle can never land after
+      # the busy edge that superseded it. session_shutdown closes a run the
+      # worker ends mid-turn. turn_end stays a wake NOTIFICATION touch.
+      cat > "$STATE/$ID.prime-ext.ts" <<EOF
+// Firstmate semantic busy-state events + turn-end notification for Prime
+// Agent; written by fm-spawn under the contract owned by bin/fm-busy-lib.sh.
+import { execFile } from "node:child_process";
+const busyEvent = (state: string, event: string) =>
+  new Promise<void>((resolve) => {
+    execFile("$FM_ROOT/bin/fm-busy-event.sh", [
+      "apply", "$STATE_REAL", "$ID", state,
+      "--gen", "$BUSY_GEN", "--source", "prime-ext", "--event", event,
+    ], () => resolve());
+  });
+const IDLE_POLL_MS = 25;
+const IDLE_POLL_LIMIT_MS = 30000;
+export default function (pi: any) {
+  let run = 0;
+  let writes: Promise<void> = Promise.resolve();
+  const emit = (state: string, event: string) => (writes = writes.then(() => busyEvent(state, event)));
+  pi.on("agent_start", () => {
+    run += 1;
+    return emit("busy", "agent-start");
+  });
+  pi.on("agent_end", (_event: any, ctx: any) => {
+    const mine = run;
+    const started = Date.now();
+    const poll = () => {
+      if (run !== mine) return;
+      if (ctx && typeof ctx.isIdle === "function" && ctx.isIdle()) {
+        emit("idle", "agent-end-idle");
+        return;
+      }
+      if (Date.now() - started < IDLE_POLL_LIMIT_MS) setTimeout(poll, IDLE_POLL_MS);
+    };
+    setTimeout(poll, 0);
+  });
+  pi.on("session_shutdown", () => emit("idle", "session-shutdown"));
   pi.on("turn_end", () => execFile("touch", ["$TURNEND"]));
 }
 EOF
@@ -3027,6 +3132,7 @@ LAUNCH=${LAUNCH//__EFFORTFLAG__/$EFFORTFLAG}
 LAUNCH=${LAUNCH//__BRIEF__/$sq_brief}
 LAUNCH=${LAUNCH//__TURNEND__/$sq_turnend}
 LAUNCH=${LAUNCH//__PIEXT__/$sq_piext}
+LAUNCH=${LAUNCH//__PRIMEEXT__/"$(shell_quote "$STATE/$ID.prime-ext.ts")"}
 LAUNCH=${LAUNCH//__PITURNEND__/$sq_piturnend}
 LAUNCH=${LAUNCH//__PIWATCH__/$sq_piwatch}
 LAUNCH=${LAUNCH//__OPINPUT__/$sq_opinput}
@@ -3036,7 +3142,7 @@ case "$HARNESS" in
 esac
 LAUNCH=${LAUNCH//__WORKTREE__/$sq_worktree}
 case "$HARNESS" in
-  claude|codex|opencode|pi|pi-signed|grok|kimi|muse)
+  claude|codex|opencode|pi|pi-signed|grok|kimi|muse|prime)
     LAUNCH="env -u CURSOR_AGENT -u CURSOR_INVOKED_AS $LAUNCH"
     ;;
 esac

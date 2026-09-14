@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Detect the agent harness this process tree runs on.
-# Usage: fm-harness.sh                  print own harness: claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse|unknown
+# Usage: fm-harness.sh                  print own harness: claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse|prime|unknown
 #        fm-harness.sh crew             print the effective CREWMATE harness
 #                                        (config/crew-harness; "default" resolves to own)
 #        fm-harness.sh secondmate       print the harness the PRIMARY uses to launch
@@ -51,6 +51,20 @@ detect_own() {
   [ "${CURSOR_AGENT:-}" = "1" ] && { echo cursor; return; }
   [ "${CURSOR_INVOKED_AS:-}" = "cursor-agent" ] && { echo cursor; return; }
   [ "${CLAUDECODE:-}" = "1" ] && { echo claude; return; }
+  # Prime Agent is a Pi fork that sets PI_CODING_AGENT=true in its own process
+  # (verified, prime-agent 0.9.4), so every tool it runs inherits the Pi marker.
+  # Its Prime-only markers are therefore tested BEFORE the Pi check, or a Prime
+  # worker would be misread as pi. Prime sets PRIME_AGENT_KERNEL_OWNER_PID for
+  # the ipython kernel that runs every tool and PRIME_AGENT_INTERNAL_DAEMON_WORKER
+  # for the daemon worker that owns the session. Neither name is documented, so
+  # either one carries the verdict and no single vendor string is load-bearing.
+  # Claude stays ahead because bin/fm-spawn.sh clears CLAUDECODE at the Prime
+  # launch boundary. Residual: a Pi session started by hand from inside a Prime
+  # tool inherits these markers and reads as prime.
+  if [ -n "${PRIME_AGENT_KERNEL_OWNER_PID:-}" ] || [ -n "${PRIME_AGENT_INTERNAL_DAEMON_WORKER:-}" ]; then
+    echo prime
+    return
+  fi
   if [ "${PI_CODING_AGENT:-}" = "true" ]; then
     if [ "${FM_PI_HARNESS:-}" = pi-signed ]; then echo pi-signed; else echo pi; fi
     return
@@ -93,6 +107,9 @@ detect_own() {
       # prefix rather than any exact name. Deliberately anchored, never *muse*, so
       # unrelated commands (musescore, amuse) cannot be misread as this harness.
       muse|muse-bin-*) echo muse; return ;;
+      # Prime Agent sets its process title to prime-agent in the client, the
+      # daemon supervisor, and the session worker that parents every tool kernel.
+      prime-agent) echo prime; return ;;
       pi-signed) echo pi; return ;;
       pi) echo pi; return ;;
       node*|python*)
