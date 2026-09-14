@@ -35,6 +35,12 @@ FM_TEST_LIB_SOURCED=1
 # strips this to verify real refusal.
 export FM_GATE_REFUSE_BYPASS=1
 
+# A suite run from inside a Herdr pane inherits that pane's identity, and a
+# session start or spawn under test would then report display metadata to the
+# developer's own live pane. Drop it so every suite sees the same environment as
+# CI; a suite that exercises a Herdr pane sets these itself.
+unset HERDR_ENV HERDR_PANE_ID HERDR_TAB_ID HERDR_WORKSPACE_ID HERDR_SOCKET_PATH
+
 # Resolve the repo root from this library's own location. Consumed by sourcing
 # test files, not by this library, so it reads as "unused" here.
 # shellcheck disable=SC2034

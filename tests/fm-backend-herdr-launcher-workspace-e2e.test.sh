@@ -103,6 +103,10 @@ workspace_of_pane() {  # <pane_id>
   lab pane get "$1" 2>/dev/null | jq -r '.result.pane.workspace_id // empty' 2>/dev/null
 }
 
+role_of_pane() {  # <pane_id>
+  lab pane get "$1" 2>/dev/null | jq -r '.result.pane.tokens.role // empty' 2>/dev/null
+}
+
 label_of_workspace() {  # <workspace_id>
   lab workspace list 2>/dev/null \
     | jq -r --arg id "$1" '.result.workspaces[]? | select(.workspace_id == $id) | .label' 2>/dev/null
@@ -231,6 +235,21 @@ WS_PRIMARY=$(workspace_of_pane "$UNIQA_PANE")
 [ "$(label_of_workspace "$WS_PRIMARY")" = firstmate ] || fail "uniqA did not land in a 'firstmate' workspace"
 [ "$(focused_workspace)" = "$WS_OTHER" ] || fail "the spawn stole focus from the captain's workspace"
 pass "real herdr E2E: with one 'firstmate' workspace and no herdr parent, a crewmate still lands in this home's own workspace without stealing focus"
+[ "$(role_of_pane "$UNIQA_PANE")" = crewmate ] || fail "a crewmate spawn did not report role=crewmate for its exact pane"
+pass "real herdr E2E: a crewmate spawn reports the crewmate fleet role token for its exact pane"
+
+# --- 1b. a scout reports the scout fleet role token --------------------------
+
+mkdir -p "$PRIMARY_HOME/data/scoutR"
+write_ship_brief "$PRIMARY_HOME/data/scoutR/brief.md" scoutR
+spawn_from_launcher "" "$PRIMARY_HOME" scoutR "$PROJ" --scout
+[ "$SPAWN_RC" -eq 0 ] || fail "a primary scout spawn failed"$'\n'"$(cat "$SPAWN_ERR")"
+SCOUTR_META="$PRIMARY_HOME/state/scoutR.meta"
+record_worktree "$SCOUTR_META"
+SCOUTR_PANE=$(grep '^herdr_pane_id=' "$SCOUTR_META" | cut -d= -f2-)
+[ -n "$SCOUTR_PANE" ] || fail "scoutR meta is missing herdr_pane_id"
+[ "$(role_of_pane "$SCOUTR_PANE")" = scout ] || fail "a scout spawn did not report role=scout for its exact pane"
+pass "real herdr E2E: a scout spawn reports the scout fleet role token for its exact pane"
 
 # --- 2. unique label, WITH a launcher pane: same workspace, now by identity --
 
@@ -409,6 +428,8 @@ SME_WS=$(workspace_of_pane "$SME_PANE")
 [ "$(tab_labels_of_workspace "$WS_SM_DECOY")" = "$WS_SM_DECOY_TABS_BEFORE" ] \
   || fail "the duplicate secondmate-labeled workspace was mutated"
 pass "real herdr E2E: a secondmate launching its own worker gets the same exact-workspace guarantee, and its same-labeled sibling is untouched"
+[ "$(role_of_pane "$SME_PANE")" = crewmate ] || fail "a secondmate's own crewmate did not report role=crewmate for its exact pane"
+pass "real herdr E2E: a secondmate's own crewmate reports the crewmate fleet role token"
 
 # --- 7. a --secondmate launch is NOT collapsed into the launcher's workspace -
 
@@ -422,6 +443,8 @@ SM2_WS=$(workspace_of_pane "$SM2_PANE")
 [ "$(label_of_workspace "$SM2_WS")" = "2ndmate-$SM2_ID" ] \
   || fail "a --secondmate launch should land in '2ndmate-$SM2_ID', got '$(label_of_workspace "$SM2_WS")'"
 pass "real herdr E2E: a --secondmate launch still stands up that secondmate's own workspace instead of inheriting the launcher's"
+[ "$(role_of_pane "$SM2_PANE")" = secondmate ] || fail "a --secondmate launch did not report role=secondmate for its exact pane"
+pass "real herdr E2E: a --secondmate launch reports the secondmate fleet role token for its exact pane"
 
 # --- 8. teardown closes only the worker's own pane --------------------------
 

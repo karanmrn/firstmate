@@ -117,6 +117,17 @@ FM_BACKEND_HERDR_MIN_WORKSPACE_MOVE_PROTOCOL=16
 # both fixes reaches 19, and the pre-fix builds top out at 17.
 FM_BACKEND_HERDR_MIN_PRESENTATION_PROTOCOL=19
 FM_BACKEND_HERDR_MIN_PRESENTATION_VERSION=0.8.0
+# The version floor for the fleet role metadata token (docs/herdr-backend.md
+# "Fleet role token"). Custom pane metadata tokens and `herdr pane
+# report-metadata --token` first shipped in Herdr 0.7.4. That release shares
+# protocol 16 with 0.7.3, so the release core of the version string decides at
+# protocol 16, and protocol 17 (Herdr 0.7.5) is the first protocol that implies
+# the feature on its own.
+FM_BACKEND_HERDR_MIN_ROLE_TOKEN_PROTOCOL=17
+FM_BACKEND_HERDR_MIN_ROLE_TOKEN_VERSION=0.7.4
+# The metadata source id Firstmate reports under, so its tokens never collide
+# with an integration hook's own display metadata.
+FM_BACKEND_HERDR_METADATA_SOURCE=firstmate
 # One-warning-per-release dedupe marker prefix, under the state dir. The
 # projection decision is remade on every spawn, so an undeduplicated
 # below-floor warning would repeat on every crewmate; the key is the detected
@@ -194,25 +205,28 @@ fm_backend_herdr_version_at_least() {  # <candidate> <floor>
   return 0
 }
 
-# fm_backend_herdr_release_floor_verdict <protocol> <version>: the pure
-# classifier for the presentation version floor. Return codes: 0 at or above the
-# floor, 1 provably below it, 2 indeterminate.
+# fm_backend_herdr_release_floor_verdict <protocol> <version> [<min-protocol>
+# <min-version>]: the pure classifier for a release floor, by default the
+# presentation version floor. Return codes: 0 at or above the floor, 1 provably
+# below it, 2 indeterminate.
 # Two independent signals are read so no single field is load-bearing, and
 # either one can carry a positive verdict: the protocol number, which is the
 # structural signal this adapter already uses for every other capability gate,
 # and the release core of the version string. A signal that is unreadable or
 # unparseable simply cannot carry a verdict; a readable protocol below the floor
 # is decisive on its own, and only losing BOTH signals reports indeterminate.
-fm_backend_herdr_release_floor_verdict() {  # <protocol> <version>
+fm_backend_herdr_release_floor_verdict() {  # <protocol> <version> [<min-protocol> <min-version>]
   local protocol=${1:-} version=${2:-} protocol_known=0 version_status=0
+  local min_protocol=${3:-$FM_BACKEND_HERDR_MIN_PRESENTATION_PROTOCOL}
+  local min_version=${4:-$FM_BACKEND_HERDR_MIN_PRESENTATION_VERSION}
   case "$protocol" in
     ''|*[!0-9]*) ;;
     *)
       protocol_known=1
-      [ "$protocol" -ge "$FM_BACKEND_HERDR_MIN_PRESENTATION_PROTOCOL" ] && return 0
+      [ "$protocol" -ge "$min_protocol" ] && return 0
       ;;
   esac
-  fm_backend_herdr_version_at_least "$version" "$FM_BACKEND_HERDR_MIN_PRESENTATION_VERSION" \
+  fm_backend_herdr_version_at_least "$version" "$min_version" \
     || version_status=$?
   [ "$version_status" -eq 0 ] && return 0
   { [ "$protocol_known" -eq 1 ] || [ "$version_status" -eq 1 ]; } && return 1
@@ -335,6 +349,91 @@ fm_backend_herdr_presentation_enabled() {  # <config-dir> [<state-dir>]
     on) return 0 ;;
   esac
   fm_backend_herdr_presentation_default_supported "$state_dir"
+}
+
+# fm_backend_herdr_role_token_supported [<session>]: whether the selected
+# session can store the fleet role metadata token. The client parses --token
+# and a running server stores it, so both must pass the floor; with no running
+# server only the client applies. Same return codes as
+# fm_backend_herdr_release_floor_verdict.
+fm_backend_herdr_role_token_supported() {  # [<session>]
+  local session=${1:-} status protocol version running client_verdict=0 server_verdict=0
+  command -v herdr >/dev/null 2>&1 || return 2
+  command -v jq >/dev/null 2>&1 || return 2
+  [ -n "$session" ] || session=$(fm_backend_herdr_session)
+  status=$(fm_backend_herdr_cli "$session" status --json 2>/dev/null) || return 2
+  protocol=$(printf '%s' "$status" | jq -r '.client.protocol // empty' 2>/dev/null) || return 2
+  version=$(printf '%s' "$status" | jq -r '.client.version // empty' 2>/dev/null) || return 2
+  fm_backend_herdr_release_floor_verdict "$protocol" "$version" \
+    "$FM_BACKEND_HERDR_MIN_ROLE_TOKEN_PROTOCOL" "$FM_BACKEND_HERDR_MIN_ROLE_TOKEN_VERSION" \
+    || client_verdict=$?
+  running=$(printf '%s' "$status" | jq -r '.server.running // empty' 2>/dev/null) || return 2
+  [ "$running" = true ] || return "$client_verdict"
+  protocol=$(printf '%s' "$status" | jq -r '.server.protocol // empty' 2>/dev/null) || return 2
+  version=$(printf '%s' "$status" | jq -r '.server.version // empty' 2>/dev/null) || return 2
+  fm_backend_herdr_release_floor_verdict "$protocol" "$version" \
+    "$FM_BACKEND_HERDR_MIN_ROLE_TOKEN_PROTOCOL" "$FM_BACKEND_HERDR_MIN_ROLE_TOKEN_VERSION" \
+    || server_verdict=$?
+  { [ "$client_verdict" -eq 1 ] || [ "$server_verdict" -eq 1 ]; } && return 1
+  { [ "$client_verdict" -eq 0 ] && [ "$server_verdict" -eq 0 ]; } && return 0
+  return 2
+}
+
+# fm_backend_herdr_report_role <session> <pane> <role>: report the fleet role
+# token for one exact pane (docs/herdr-backend.md "Fleet role token" owns the
+# contract). The token is display-only: every caller treats a non-zero return
+# as a warning, never as a failed operation. A release below the floor has no
+# metadata token surface, so it is skipped silently and returns 0.
+fm_backend_herdr_report_role() {  # <session> <pane> <role>
+  local session=${1:-} pane=${2:-} role=${3:-} verdict=0
+  case "$role" in
+    firstmate|secondmate|crewmate|scout) ;;
+    *)
+      echo "warning: herdr role token not reported: unknown fleet role '$role'" >&2
+      return 1
+      ;;
+  esac
+  if [ -z "$session" ] || [ -z "$pane" ]; then
+    echo "warning: herdr role token '$role' not reported: no exact herdr session and pane" >&2
+    return 1
+  fi
+  fm_backend_herdr_role_token_supported "$session" || verdict=$?
+  case "$verdict" in
+    0) ;;
+    1) return 0 ;;
+    *)
+      echo "warning: herdr role token '$role' not reported for pane '$pane': the herdr release for session '$session' could not be read" >&2
+      return 1
+      ;;
+  esac
+  if ! fm_backend_herdr_cli "$session" pane report-metadata "$pane" \
+      --source "$FM_BACKEND_HERDR_METADATA_SOURCE" --token "role=$role" >/dev/null 2>&1; then
+    echo "warning: herdr role token '$role' not reported for pane '$pane' in session '$session'; the sidebar cannot show this pane's fleet role" >&2
+    return 1
+  fi
+  return 0
+}
+
+# fm_backend_herdr_report_own_role <home>: report the fleet role token for the
+# herdr pane this process runs in. A home carrying the secondmate marker is a
+# secondmate, and every other home is the primary firstmate. A process outside
+# herdr has no pane and returns 0 with no herdr call. Herdr pane ids restart at
+# the same low numbers in every session, so the pane is reported only after its
+# injected socket identity proves it belongs to the selected session.
+fm_backend_herdr_report_own_role() {  # <home>
+  local home=${1:-} pane=${HERDR_PANE_ID:-} role=firstmate session claimed_socket="" session_socket=""
+  [ "${HERDR_ENV:-}" = 1 ] && [ -n "$pane" ] || return 0
+  if [ -n "$home" ] && { [ -e "$home/$FM_BACKEND_HERDR_SECONDMATE_MARKER" ] || [ -L "$home/$FM_BACKEND_HERDR_SECONDMATE_MARKER" ]; }; then
+    role=secondmate
+  fi
+  session=$(fm_backend_herdr_session)
+  claimed_socket=$(fm_backend_herdr_canonical_socket_path "${HERDR_SOCKET_PATH:-}") || claimed_socket=""
+  session_socket=$(fm_backend_herdr_presentation_session_socket_path "$session") || session_socket=""
+  if [ -z "$claimed_socket" ] || [ "$claimed_socket" != "$session_socket" ]; then
+    echo "warning: herdr role token '$role' not reported: pane '$pane' could not be proved to belong to herdr session '$session'" >&2
+    return 1
+  fi
+  fm_backend_herdr_report_role "$session" "$pane" "$role"
 }
 
 # fm_backend_herdr_workspace_label: the per-firstmate-HOME herdr workspace

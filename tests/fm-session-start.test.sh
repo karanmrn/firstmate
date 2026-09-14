@@ -1347,6 +1347,77 @@ EOF
   pass "herdr endpoint liveness is reported per task: alive for a live pane, dead for a gone one"
 }
 
+# make_fake_herdr_role <fakebin> <log> <socket>: a herdr stub that logs every
+# call and answers the session-socket and release reads the own-pane role token
+# report makes, for a named session "fmtest" served at <socket>.
+make_fake_herdr_role() {
+  local fakebin=$1 log=$2 socket=$3
+  cat > "$fakebin/herdr" <<SH
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >> "$log"
+case "\${1:-} \${2:-}" in
+  "session list") printf '{"sessions":[{"name":"fmtest","running":true,"socket_path":"%s"}]}\n' "$socket" ;;
+  "status --json") printf '{"client":{"version":"0.9.0","protocol":22},"server":{"running":true,"version":"0.9.0","protocol":22}}\n' ;;
+esac
+exit 0
+SH
+  chmod +x "$fakebin/herdr"
+}
+
+# run_session_start_in_herdr_pane <name> [secondmate|locked-out]: a session
+# start run from inside herdr pane w1:p1 of session "fmtest". Echoes the herdr
+# call log path.
+run_session_start_in_herdr_pane() {
+  local name=$1 variant=${2:-} rec root home fakebin log socket holder_pid=""
+  rec=$(new_world "$name")
+  IFS='|' read -r root home fakebin <<EOF
+$rec
+EOF
+  make_fake_toolchain "$fakebin"
+  make_fake_ps_claude "$fakebin"
+  log="${home%/home}/herdr.log"
+  socket="${home%/home}/herdr.sock"
+  : > "$log"
+  make_fake_herdr_role "$fakebin" "$log" "$socket"
+  printf 'tmux\n' > "$home/config/backend"
+  case "$variant" in
+    secondmate) printf 'sm1\n' > "$home/.fm-secondmate-home" ;;
+    locked-out)
+      sleep 300 &
+      holder_pid=$!
+      printf '%s\n' "$holder_pid" > "$home/state/.lock"
+      ;;
+  esac
+  HERDR_ENV=1 HERDR_PANE_ID=w1:p1 HERDR_SESSION=fmtest HERDR_SOCKET_PATH="$socket" \
+    run_session_start "$home" "$root" "$fakebin:$BASE_PATH" >/dev/null 2>&1 || true
+  if [ -n "$holder_pid" ]; then
+    kill "$holder_pid" 2>/dev/null || true
+    wait "$holder_pid" 2>/dev/null || true
+  fi
+  printf '%s\n' "$log"
+}
+
+test_herdr_role_token_reported_for_own_pane() {
+  local log
+  if ! PATH="$BASE_PATH" command -v jq >/dev/null 2>&1; then
+    echo "skip: jq not on the base PATH (required by the herdr adapter)"
+    return 0
+  fi
+  log=$(run_session_start_in_herdr_pane herdr-role-primary)
+  assert_contains "$(cat "$log")" "pane report-metadata w1:p1 --source firstmate --token role=firstmate --session fmtest" \
+    "a primary session start inside herdr did not report role=firstmate for its own pane"
+
+  log=$(run_session_start_in_herdr_pane herdr-role-secondmate secondmate)
+  assert_contains "$(cat "$log")" "pane report-metadata w1:p1 --source firstmate --token role=secondmate --session fmtest" \
+    "a secondmate session start inside herdr did not report role=secondmate for its own pane"
+
+  log=$(run_session_start_in_herdr_pane herdr-role-locked-out locked-out)
+  assert_not_contains "$(cat "$log")" "report-metadata" \
+    "a lock-refused read-only session start must not report a role token"
+
+  pass "session start reports its own herdr pane's fleet role token: firstmate for the primary, secondmate for a secondmate home, nothing when read-only"
+}
+
 # --- composition: real scripts run, not reimplemented ------------------------
 
 test_composition_invokes_real_scripts() {
@@ -2573,6 +2644,7 @@ test_status_tail_line_cap
 test_orphan_status_logs_are_printed
 test_endpoint_liveness_tmux
 test_endpoint_liveness_herdr
+test_herdr_role_token_reported_for_own_pane
 test_composition_invokes_real_scripts
 test_branch_outcome_replay_respects_captain_barrier_and_lease_sweep
 test_non_pi_session_start_leaves_branch_state_untouched

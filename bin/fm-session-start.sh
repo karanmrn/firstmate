@@ -28,8 +28,9 @@
 #
 #   1. lock          - acquire the per-home session lock FIRST, before any
 #                       mutating step runs.
-#   2. bootstrap      - home-local stale Herdr projection cleanup runs only
-#                       when this session actually holds the lock. Detect-only
+#   2. bootstrap      - home-local stale Herdr projection cleanup and the
+#                       report of this session's own Herdr fleet role token
+#                       run only when this session actually holds the lock. Detect-only
 #                       diagnostics always run. Bootstrap's six MUTATING sweeps
 #                       (same-home backlog reconciliation,
 #                       secondmate convergence, secondmate liveness, pending remote
@@ -689,6 +690,12 @@ elif [ "$REEMIT" -eq 1 ]; then
 else
   BOOT_OUT=$(
     "$SCRIPT_DIR/fm-herdr-session-cleanup.sh" 2>&1 || true
+    # Report this session's own fleet role token when it runs in a Herdr pane.
+    # It is display-only, so a failure prints one warning and never blocks
+    # startup (docs/herdr-backend.md "Fleet role token").
+    if [ "${HERDR_ENV:-}" = 1 ] && [ -n "${HERDR_PANE_ID:-}" ] && fm_backend_source herdr 2>/dev/null; then
+      fm_backend_herdr_report_own_role "$FM_HOME" 2>&1 || true
+    fi
     FM_BOOTSTRAP_NETWORK=skip FM_TASKS_AXI_COMPATIBLE="$TASKS_AXI_COMPATIBLE" \
       "$SCRIPT_DIR/fm-bootstrap.sh" 2>&1
   )
