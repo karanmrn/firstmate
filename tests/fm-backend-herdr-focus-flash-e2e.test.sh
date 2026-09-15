@@ -193,12 +193,8 @@ B_AFTER=$(focus_snapshot) || fail 'could not capture the Part B post-close focus
   || fail "the mitigation changed the exact focused workspace or tab ($B_BEFORE -> $B_AFTER)"
 [ "$(ws_order)" = "$B_SURVIVOR_ORDER" ] \
   || fail "the mitigation left a lasting workspace order change ($B_SURVIVOR_ORDER -> $(ws_order))"
-if [ "$STEAL_LIVE" = 1 ]; then
-  grep -q '^pane process-info' "$CALL_LOG" || fail 'the idle-shell proof never ran'
-  pass 'mitigation: every in-operation sample preserved exact focus while the doomed workspace was removed'
-else
-  pass 'mitigation: focus-preserving release removed the doomed workspace without changing exact focus'
-fi
+grep -q '^pane process-info' "$CALL_LOG" || fail 'the idle-shell proof never ran'
+pass 'mitigation: every in-operation sample preserved exact focus while the doomed workspace was removed'
 
 if [ "$STEAL_LIVE" = 1 ]; then
   grep -q '^tab focus' "$CALL_LOG" \
@@ -324,19 +320,15 @@ fi
 [ "$(ws_order)" = "$C_SURVIVOR_ORDER" ] \
   || fail "the fallback close left a lasting workspace order change ($C_SURVIVOR_ORDER -> $(ws_order))"
 
-# On a release whose explicit close still steals focus, prove the FALLBACK is
-# what ran, not the pane-death route Part B covers: the idle-shell proof must
-# have been attempted and exhausted, and the explicit close must have been issued.
-if [ "$STEAL_LIVE" = 1 ]; then
-  C_PROOF_CALLS=$(grep -c '^pane process-info' "$C_CALL_LOG" || true)
-  [ "$C_PROOF_CALLS" -eq "$C_PROOF_POLLS" ] \
-    || fail "Part C did not exhaust the idle-shell proof ($C_PROOF_CALLS of $C_PROOF_POLLS samples); the persistent child did not block it"
-  grep -q '^pane close' "$C_CALL_LOG" \
-    || fail 'Part C never reached the plain explicit close, so the fallback branch was not exercised'
-  pass 'fallback: a doomed pane holding a persistent child exhausts the proof and takes the plain explicit close'
-else
-  pass 'fallback: focus-preserving release kept the persistent-child close outcome safe'
-fi
+# Prove the FALLBACK is what ran, not the pane-death route Part B covers: the
+# idle-shell proof must have been attempted and exhausted, and the explicit
+# close must have been issued.
+C_PROOF_CALLS=$(grep -c '^pane process-info' "$C_CALL_LOG" || true)
+[ "$C_PROOF_CALLS" -eq "$C_PROOF_POLLS" ] \
+  || fail "Part C did not exhaust the idle-shell proof ($C_PROOF_CALLS of $C_PROOF_POLLS samples); the persistent child did not block it"
+grep -q '^pane close' "$C_CALL_LOG" \
+  || fail 'Part C never reached the plain explicit close, so the fallback branch was not exercised'
+pass 'fallback: a doomed pane holding a persistent child exhausts the proof and takes the plain explicit close'
 
 C_AFTER=$(focus_snapshot) || fail 'could not capture the Part C post-close focus'
 [ "$C_AFTER" = "$C_BEFORE" ] \

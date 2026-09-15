@@ -22,6 +22,7 @@ Exit status:
 """
 
 import json
+import os
 import socket
 import sys
 import time
@@ -68,10 +69,12 @@ def main(argv):
     if insert_index < 0 or str(insert_index) != raw_index:
         return 2
 
+    socket_dir, socket_name = os.path.split(socket_path)
     try:
+        os.chdir(socket_dir)
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(CONNECT_TIMEOUT)
-        sock.connect(socket_path)
+        sock.connect(socket_name)
     except OSError:
         return 2
 
