@@ -242,6 +242,25 @@ expect_dir() {
   EXPECTED_PATH="${EXPECTED_PATH:+$EXPECTED_PATH:}$1"
 }
 path_has() { case ":$1:" in *":$2:"*) return 0 ;; esac; return 1; }
+resolved_optional_path() {
+  local candidate=$1 physical
+  case "$candidate" in
+    "$ACCOUNT_HOME/.nix-profile/bin"|"/etc/profiles/per-user/$ACCOUNT_USER/bin"|/run/current-system/sw/bin)
+      [ -d "$candidate" ] || return 1
+      if [ ! -L "$candidate" ]; then
+        printf '%s\n' "$candidate"
+        return 0
+      fi
+      physical=$(CDPATH='' cd -- "$candidate" 2>/dev/null && pwd -P) || return 1
+      [ -d "$physical" ] && [ ! -L "$physical" ] || return 1
+      printf '%s\n' "$physical"
+      ;;
+    *)
+      [ -d "$candidate" ] && [ ! -L "$candidate" ] || return 1
+      printf '%s\n' "$candidate"
+      ;;
+  esac
+}
 CHILD_PATH=$(fm_on ios fm-probe-path.sh)
 NVM_CHILD_DIRS=()
 while IFS= read -r candidate; do
@@ -257,7 +276,8 @@ for candidate in "${MANAGER_DIRS[@]}"; do
   [ -d "$candidate" ] && [ ! -L "$candidate" ] && expect_dir "$candidate"
 done
 for candidate in "${OPTIONAL_DIRS[@]}"; do
-  [ -d "$candidate" ] && [ ! -L "$candidate" ] && expect_dir "$candidate"
+  resolved=$(resolved_optional_path "$candidate" 2>/dev/null || true)
+  [ -n "$resolved" ] && expect_dir "$resolved"
 done
 for fixed in /usr/bin /bin /usr/sbin /sbin; do expect_dir "$fixed"; done
 
@@ -276,9 +296,19 @@ DUPES=$(printf '%s\n' "$CHILD_PATH" | tr ':' '\n' | sort | uniq -d)
 [ -z "$DUPES" ] || fail "the child PATH repeated entries: $DUPES"
 PRESENT_CHECKED=0
 ABSENT_CHECKED=0
-for candidate in "${MANAGER_DIRS[@]}" "${OPTIONAL_DIRS[@]}"; do
+for candidate in "${MANAGER_DIRS[@]}"; do
   if [ -d "$candidate" ] && [ ! -L "$candidate" ]; then
     path_has "$CHILD_PATH" "$candidate" || fail "an existing discovered PATH directory was dropped: $candidate"
+    PRESENT_CHECKED=$((PRESENT_CHECKED + 1))
+  else
+    path_has "$CHILD_PATH" "$candidate" && fail "an absent or symlinked PATH directory was added: $candidate"
+    ABSENT_CHECKED=$((ABSENT_CHECKED + 1))
+  fi
+done
+for candidate in "${OPTIONAL_DIRS[@]}"; do
+  resolved=$(resolved_optional_path "$candidate" 2>/dev/null || true)
+  if [ -n "$resolved" ]; then
+    path_has "$CHILD_PATH" "$resolved" || fail "an existing discovered PATH directory was dropped: $resolved"
     PRESENT_CHECKED=$((PRESENT_CHECKED + 1))
   else
     path_has "$CHILD_PATH" "$candidate" && fail "an absent or symlinked PATH directory was added: $candidate"
