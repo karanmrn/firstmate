@@ -1,0 +1,10 @@
+ok - either Prime marker outranks the Pi marker Prime sets for its own tools
+ok - pi and pi-signed detection is unchanged when no Prime marker is set
+ok - claude and cursor markers keep precedence over Prime markers
+ok - prime is detected through an exact prime-agent ancestor only
+ok - prime spawn on herdr launches without skills or a resident session and loads its extension
+ok - prime spawn refuses a non-herdr backend before creating an endpoint
+ok - prime launch clears foreign markers so a Prime tool detects prime
+ok - prime maps the shared effort vocabulary to --thinking and keeps the provider-qualified model
+ok - prime spawn refuses before creating an endpoint when prime-agent is absent
+ok - prime is refused as a secondmate harness

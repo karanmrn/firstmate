@@ -1,0 +1,6 @@
+$ prime-agent list --all --json | jq (sessions created 2026-09-13)
+01a09ad4-c574-71dc-bbe5-16f9458cd3fd	archived	idle	2026-09-13T12:53:50.580Z	/Users/karanmanoharan	no-worker
+01a09ad3-d76c-774c-be70-54ac472284b4	archived	idle	2026-09-13T12:52:49.644Z	/Users/karanmanoharan	no-worker
+
+$ count of live sessions created 2026-09-13
+0

@@ -1,0 +1,5 @@
+$ prime-agent list --json  (active sessions)
+{"active_sessions":0}
+$ prime-agent list --all --json  (13 Sep probe sessions)
+01a09ad4-c574-71dc-bbe5-16f9458cd3fd lifecycle=archived active=false created=2026-09-13T12:53:50.580Z
+01a09ad3-d76c-774c-be70-54ac472284b4 lifecycle=archived active=false created=2026-09-13T12:52:49.644Z

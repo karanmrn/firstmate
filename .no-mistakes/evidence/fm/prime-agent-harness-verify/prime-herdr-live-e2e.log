@@ -1,0 +1,9 @@
+# prime-agent 0.9.4 at /Users/karanmanoharan/.local/bin/prime-agent
+# herdr 0.9.0
+# model openrouter/moonshotai/kimi-k2.6
+ok - real herdr: detects the Prime pane natively as agent prime-agent
+ok - real prime-agent: a tool beside PI_CODING_AGENT=true detects harness prime
+ok - real prime-agent: the generated extension settles the turn idle and touches the turn-end marker
+ok - real prime-agent: one Ctrl+C cancels the run, keeps the agent, and settles idle
+ok - real prime-agent: /quit ends the client-owned worker and its Python kernel
+exit=0

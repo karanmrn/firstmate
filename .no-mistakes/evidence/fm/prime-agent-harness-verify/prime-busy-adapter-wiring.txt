@@ -1,0 +1,2 @@
+ok - prime extension reports agent_start busy, settles idle only after ctx.isIdle(), and keeps turn_end a notification
+ok - prime extension events from a superseded incarnation are rejected as stale

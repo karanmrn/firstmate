@@ -1,0 +1,5 @@
+# skills in ~/.agents/skills: 480
+$ prime-agent -p --mode json --no-session  --model openrouter/moonshotai/kimi-k2.6 'Reply with the single word OK.'  (cwd: firstmate worktree)
+{"prompt_tokens":60533,"stop":"stop","text":" OK"}
+$ prime-agent -p --mode json --no-session --no-skills --model openrouter/moonshotai/kimi-k2.6 'Reply with the single word OK.'  (cwd: firstmate worktree)
+{"prompt_tokens":18148,"stop":"stop","text":" OK, captain."}

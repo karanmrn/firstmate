@@ -1,0 +1,9 @@
+# host: tmux=absent prime-agent=/Users/karanmanoharan/.local/bin/prime-agent herdr=/opt/homebrew/bin/herdr
+$ bin/fm-spawn.sh prime-refuse-x1 <project> prime --mode no-mistakes --yolo off --backend tmux
+error: prime is verified on the herdr backend only; backend 'tmux' is unverified for Prime. Select --backend herdr or a different verified harness.
+exit=1
+# state dir after refusal: .last-watcher-beat 
+$ bin/fm-spawn.sh prime-refuse-x1 <project> prime --mode no-mistakes --yolo off --backend zellij
+error: prime is verified on the herdr backend only; backend 'zellij' is unverified for Prime. Select --backend herdr or a different verified harness.
+exit=1
+# state dir after refusal: .last-watcher-beat 
