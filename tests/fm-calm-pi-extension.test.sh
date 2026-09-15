@@ -702,7 +702,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const extPath = fileURLToPath(pathToFileURL(process.env.EXT).href);
 
 const packageRoot = process.env.PI_PACKAGE_DIR;
-const [{ AssistantMessageComponent }, { CustomEntryComponent }, { ToolExecutionComponent }, { UserMessageComponent }, { InteractiveMode }, { initTheme, theme }, { Text, getKeybindings, setCapabilities }, { createToolHtmlRenderer }] = await Promise.all([
+const [{ AssistantMessageComponent }, { CustomEntryComponent }, { ToolExecutionComponent }, { UserMessageComponent }, { InteractiveMode }, { initTheme, theme }, { Text, getKeybindings, setCapabilities }, { createBashToolDefinition: stockCreateBashToolDefinition, createEditToolDefinition: stockCreateEditToolDefinition, createFindToolDefinition: stockCreateFindToolDefinition, createGrepToolDefinition: stockCreateGrepToolDefinition, createLsToolDefinition: stockCreateLsToolDefinition, createReadToolDefinition: stockCreateReadToolDefinition, createWriteToolDefinition: stockCreateWriteToolDefinition }, { createToolHtmlRenderer }] = await Promise.all([
   import(pathToFileURL(`${packageRoot}/dist/modes/interactive/components/assistant-message.js`).href),
   import(pathToFileURL(`${packageRoot}/dist/modes/interactive/components/custom-entry.js`).href),
   import(pathToFileURL(`${packageRoot}/dist/modes/interactive/components/tool-execution.js`).href),
@@ -710,6 +710,7 @@ const [{ AssistantMessageComponent }, { CustomEntryComponent }, { ToolExecutionC
   import(pathToFileURL(`${packageRoot}/dist/modes/interactive/interactive-mode.js`).href),
   import(pathToFileURL(`${packageRoot}/dist/modes/interactive/theme/theme.js`).href),
   import(pathToFileURL(`${packageRoot}/node_modules/@earendil-works/pi-tui/dist/index.js`).href),
+  import(pathToFileURL(`${packageRoot}/dist/index.js`).href),
   import(pathToFileURL(`${packageRoot}/dist/core/export-html/tool-renderer.js`).href),
 ]);
 initTheme("dark");
@@ -884,10 +885,24 @@ const cases = [
   ["ls", { path: "." }, { content: [{ type: "text", text: "sample.txt" }], details: {}, isError: false }],
 ];
 const renderUi = { requestRender() {} };
+// Pi 0.85 no longer fills a missing ToolExecutionComponent definition from its built-ins.
+// Pass the stock definitions explicitly so Calm-off parity compares the wrapped tool with
+// the same renderer Pi uses for an ordinary built-in row.
+const stockToolDefinitions = new Map([
+  ["read", stockCreateReadToolDefinition(process.cwd())],
+  ["bash", stockCreateBashToolDefinition(process.cwd())],
+  ["edit", stockCreateEditToolDefinition(process.cwd())],
+  ["write", stockCreateWriteToolDefinition(process.cwd())],
+  ["grep", stockCreateGrepToolDefinition(process.cwd())],
+  ["find", stockCreateFindToolDefinition(process.cwd())],
+  ["ls", stockCreateLsToolDefinition(process.cwd())],
+]);
 const rows = [];
 for (const [name, args, result] of cases) {
   const wrapped = tools.find((tool) => tool.name === name);
-  const baseline = new ToolExecutionComponent(name, `baseline-${name}`, args, { showImages: false }, undefined, renderUi, process.cwd());
+  const stock = stockToolDefinitions.get(name);
+  if (!stock) throw new Error(`missing stock built-in definition for ${name}`);
+  const baseline = new ToolExecutionComponent(name, `baseline-${name}`, args, { showImages: false }, stock, renderUi, process.cwd());
   const actual = new ToolExecutionComponent(name, `wrapped-${name}`, args, { showImages: false }, wrapped, renderUi, process.cwd());
   for (const row of [baseline, actual]) {
     row.markExecutionStarted();
