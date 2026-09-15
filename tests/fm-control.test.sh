@@ -35,7 +35,7 @@ mkdir -p "$TMP_ROOT"
 TMP_ROOT=$(cd "$TMP_ROOT" && pwd)
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
-VERIFIED_HARNESSES="claude codex opencode pi pi-signed grok kimi cursor muse"
+VERIFIED_HARNESSES="claude codex opencode pi pi-signed grok kimi cursor muse prime"
 
 # The expectation table, written out independently of the implementation so a
 # silent change to either side shows up here. The fourth field is the composer
@@ -52,6 +52,7 @@ verified_adapter_contract() {  # <harness> -> exit command, interrupt key, repea
     kimi) printf '/exit\tEscape\t1\t\n' ;;
     cursor) printf '/exit\tEscape\t1\t\n' ;;
     muse) printf '/exit\tEscape\t1\tC-u\n' ;;
+    prime) printf '/quit\tC-c\t1\t\n' ;;
     *) return 1 ;;
   esac
 }
@@ -219,6 +220,9 @@ keys_sent() {  # <case-dir>
 test_exit_types_each_harness_verified_command() {
   local dir out rc harness expected key repeat clear
   for harness in $VERIFIED_HARNESSES; do
+    # Prime's tmux process naming is unverified, so this tmux fake cannot
+    # attribute a Prime pane; test_prime_control_table pins its contract.
+    [ "$harness" != prime ] || continue
     dir=$(new_case "exit-$harness")
     add_task "$dir" t1 "$harness"
     if [ "$harness" = cursor ]; then
@@ -239,6 +243,7 @@ test_exit_types_each_harness_verified_command() {
 test_interrupt_sends_each_harness_verified_key() {
   local dir out rc harness expected key repeat clear got want
   for harness in $VERIFIED_HARNESSES; do
+    [ "$harness" != prime ] || continue
     dir=$(new_case "int-$harness")
     add_task "$dir" t1 "$harness"
     if [ "$harness" = cursor ]; then
@@ -260,6 +265,20 @@ test_interrupt_sends_each_harness_verified_key() {
   pass "fm-control interrupt: every verified harness gets its own verified key and repeat count"
 }
 
+# Prime was verified on Herdr only, so the tmux-fake loops above skip it. Its
+# control table is pinned here directly: a single Ctrl+C, because Escape only
+# edits Prime's composer and a second Ctrl+C inside the exit hint quits.
+test_prime_control_table() {
+  local expected key repeat clear
+  IFS=$'\t' read -r expected key repeat clear <<< "$(verified_adapter_contract prime)"
+  [ "$(fm_control_exit_command prime)" = "$expected" ] || fail "prime exit command should be $expected"
+  [ "$(fm_control_interrupt_key prime)" = "$key" ] || fail "prime interrupt key should be $key"
+  [ "$(fm_control_interrupt_repeat prime)" = "$repeat" ] || fail "prime interrupt should repeat $repeat time"
+  [ -z "$(fm_control_interrupt_clear_key prime)" ] || fail "prime needs no composer clear after an interrupt"
+  [ "$(fm_control_interrupt_ack_source prime)" = none ] || fail "prime has no interrupt acknowledgement source"
+  pass "fm-control-lib: prime exits with /quit and interrupts with one Ctrl+C"
+}
+
 # A recorded harness can carry a raw launch command's basename, so the tables
 # are reached through one prefix rule rather than an exact string match.
 test_harness_family_resolution() {
@@ -267,7 +286,7 @@ test_harness_family_resolution() {
   for pair in claude:claude claude-latest:claude codex:codex codex-cli:codex \
       opencode:opencode grok:grok grok-2:grok kimi:kimi cursor:cursor \
       cursor-agent:cursor muse:muse muse-bin-0.1.0:muse pi:pi \
-      pi-signed:pi-signed; do
+      pi-signed:pi-signed prime:prime prime-agent:prime; do
     recorded=${pair%%:*}
     want=${pair#*:}
     got=$(fm_control_harness_family "$recorded") \
@@ -375,6 +394,8 @@ test_harness_kind_capability() {
   done
   fm_control_harness_supports_kind muse secondmate \
     && fail "muse has no primary supervision protocol and must not claim a secondmate"
+  fm_control_harness_supports_kind prime secondmate \
+    && fail "prime has no primary supervision protocol and must not claim a secondmate"
   for harness in claude codex opencode pi pi-signed grok kimi; do
     fm_control_harness_supports_kind "$harness" secondmate \
       || fail "$harness should be able to run a secondmate"
@@ -875,6 +896,7 @@ test_fm_send_still_marks_the_same_secondmate_task() {
 
 test_exit_types_each_harness_verified_command
 test_interrupt_sends_each_harness_verified_key
+test_prime_control_table
 test_opencode_interrupts_twice_and_others_once
 test_unverified_harness_is_refused
 test_harness_family_resolution

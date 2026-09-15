@@ -23,7 +23,8 @@ make_spawn_case() {  # <name> <harness> <id>
   home="$case_dir/home"
   proj="$case_dir/project"
   wt="$case_dir/wt"
-  fakebin=$(make_spawn_fakebin "$case_dir/fake" pi opencode claude codex)
+  fakebin=$(make_spawn_fakebin "$case_dir/fake" pi opencode claude codex prime-agent)
+  fm_test_fake_herdr_spawn "$fakebin"
   fm_test_spawn_home "$home" "$harness"
   fm_git_worktree "$proj" "$wt" "wt-$name"
   fm_test_spawn_brief "$home" "$id"
@@ -38,6 +39,13 @@ run_spawn() {  # <home> <wt> <fakebin> <spawn-args...>
   shift 3
   GROK_HOME="$home/grok-home" \
     fm_test_run_spawn "$home" "$wt" "$fakebin" "$@" --mode no-mistakes --yolo off
+}
+
+# Prime is verified on herdr only, so its spawns run on the herdr backend.
+run_spawn_herdr() {  # <home> <wt> <fakebin> <spawn-args...>
+  local home=$1 wt=$2 fakebin=$3
+  shift 3
+  fm_test_run_spawn_herdr "$home" "$wt" "$fakebin" "$@" --mode no-mistakes --yolo off
 }
 
 read_case_record() {
@@ -145,6 +153,145 @@ test_pi_extension_stale_incarnation_rejected() {
   out=$(classify pi "$id" "$state")
   [ "$out" = "busy fm-spawn" ] || fail "a stale extension event must not change state, got '$out'"
   pass "pi extension events from a superseded incarnation are rejected as stale"
+}
+
+# drive_prime_ext <ext-path> <mode>: load the generated Prime extension in a
+# plain Node host and fire its lifecycle handlers in order. ctx.isIdle() turns
+# true only at a chosen time, because live Prime still reports busy inside
+# agent_end. The host exits explicitly so a still-polling handler cannot hold
+# the process open. The end-idle-after-long-run mode swaps in a virtual clock so
+# a poll can run for an hour of virtual time in milliseconds of real time.
+drive_prime_ext() {
+  EXT_PATH="$1" MODE="$2" node --input-type=module 2>&1 <<'EOF'
+import { pathToFileURL } from "node:url";
+const mod = await import(pathToFileURL(process.env.EXT_PATH).href);
+const handlers = {};
+mod.default({ on: (name, fn) => { handlers[name] = fn; } });
+const realSetTimeout = globalThis.setTimeout;
+const sleep = (ms) => new Promise((resolve) => realSetTimeout(resolve, ms));
+let idleAt = Infinity;
+let now = () => Date.now();
+const ctx = { isIdle: () => now() >= idleAt };
+switch (process.env.MODE) {
+  case "end-idle-after-long-run": {
+    let virtual = 0;
+    let timers = [];
+    const realDateNow = Date.now;
+    now = () => virtual;
+    Date.now = () => virtual;
+    globalThis.setTimeout = (fn, ms) => { timers.push({ at: virtual + (ms || 0), fn }); return 0; };
+    const advanceTo = (target) => {
+      while (timers.length) {
+        timers.sort((a, b) => a.at - b.at);
+        if (timers[0].at > target) break;
+        const next = timers.shift();
+        virtual = next.at;
+        next.fn();
+      }
+      virtual = target;
+    };
+    const hour = 60 * 60 * 1000;
+    idleAt = hour;
+    handlers["agent_end"]({}, ctx);
+    advanceTo(hour - 1);
+    if (timers.length === 0) throw new Error("the idle poll stopped before ctx.isIdle() read true");
+    advanceTo(hour + 2000);
+    globalThis.setTimeout = realSetTimeout;
+    Date.now = realDateNow;
+    await sleep(1000);
+    break;
+  }
+  case "agent-start":
+    await handlers["agent_start"]({}, ctx);
+    break;
+  case "end-idle-later":
+    idleAt = Date.now() + 150;
+    handlers["agent_end"]({}, ctx);
+    await sleep(1500);
+    break;
+  case "end-never-idle":
+    handlers["agent_end"]({}, ctx);
+    await sleep(800);
+    break;
+  case "end-superseded":
+    idleAt = Date.now() + 300;
+    handlers["agent_end"]({}, ctx);
+    await sleep(100);
+    await handlers["agent_start"]({}, ctx);
+    await sleep(1200);
+    break;
+  case "shutdown":
+    await handlers["session_shutdown"]({}, ctx);
+    break;
+  case "turn-end":
+    await handlers["turn_end"]({}, ctx);
+    await sleep(200);
+    break;
+  default: throw new Error("unknown mode " + process.env.MODE);
+}
+process.exit(0);
+EOF
+}
+
+test_prime_extension_semantic_lifecycle() {
+  local rec id=busy-prime-1 out state ext
+  rec=$(make_spawn_case prime-lifecycle prime "$id")
+  read_case_record "$rec"
+  out=$(run_spawn_herdr "$HOME_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$id" "$PROJ_DIR")
+  expect_code 0 $? "prime spawn should succeed: $out"
+  state="$HOME_DIR/state"
+  ext="$state/$id.prime-ext.ts"
+  assert_present "$ext" "prime spawn did not write the per-task extension"
+
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "busy fm-spawn" ] || fail "seed after prime spawn must be 'busy fm-spawn', got '$out'"
+
+  rm -f "$state/$id.turn-ended"
+  out=$(drive_prime_ext "$ext" turn-end) || fail "turn_end drive failed: $out"
+  [ -f "$state/$id.turn-ended" ] || fail "prime turn_end no longer touches the notification marker"
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "busy fm-spawn" ] || fail "prime turn_end must stay a notification, not a state edge, got '$out'"
+
+  out=$(drive_prime_ext "$ext" end-never-idle) || fail "never-idle agent_end drive failed: $out"
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "busy fm-spawn" ] || fail "agent_end must not publish idle while ctx.isIdle() reads false, got '$out'"
+
+  out=$(drive_prime_ext "$ext" end-idle-after-long-run) || fail "long-run agent_end drive failed: $out"
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "idle prime-ext" ] || fail "agent_end must keep polling until ctx.isIdle() reads true, however long that takes, got '$out'"
+
+  out=$(drive_prime_ext "$ext" agent-start) || fail "agent_start drive failed: $out"
+  out=$(drive_prime_ext "$ext" end-idle-later) || fail "agent_end drive failed: $out"
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "idle prime-ext" ] || fail "agent_end must settle idle once ctx.isIdle() reads true, got '$out'"
+
+  out=$(drive_prime_ext "$ext" agent-start) || fail "agent_start drive failed: $out"
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "busy prime-ext" ] || fail "agent_start must classify 'busy prime-ext', got '$out'"
+
+  out=$(drive_prime_ext "$ext" end-superseded) || fail "superseded agent_end drive failed: $out"
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "busy prime-ext" ] || fail "a newer agent_start must supersede a pending idle poll, got '$out'"
+
+  out=$(drive_prime_ext "$ext" shutdown) || fail "session_shutdown drive failed: $out"
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "idle prime-ext" ] || fail "session_shutdown must close an open run, got '$out'"
+  pass "prime extension reports agent_start busy, settles idle only after ctx.isIdle(), and keeps turn_end a notification"
+}
+
+test_prime_extension_stale_incarnation_rejected() {
+  local rec id=busy-prime-2 out state ext
+  rec=$(make_spawn_case prime-stale prime "$id")
+  read_case_record "$rec"
+  out=$(run_spawn_herdr "$HOME_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$id" "$PROJ_DIR")
+  expect_code 0 $? "prime spawn should succeed: $out"
+  state="$HOME_DIR/state"
+  ext="$state/$id.prime-ext.ts"
+  "$ROOT/bin/fm-busy-event.sh" arm "$state" "$id" >/dev/null
+  out=$(drive_prime_ext "$ext" end-idle-later) || fail "stale agent_end drive failed: $out"
+  out=$(classify prime "$id" "$state")
+  [ "$out" = "busy fm-spawn" ] || fail "a stale prime extension event must not change state, got '$out'"
+  pass "prime extension events from a superseded incarnation are rejected as stale"
 }
 
 # drive_oc_plugin <plugin-path> <events-json-lines...>: load the generated
@@ -315,6 +462,8 @@ test_kimi_and_grok_install_no_unverified_wiring() {
 test_pi_extension_semantic_lifecycle
 test_pi_extension_serializes_settle_before_next_start
 test_pi_extension_stale_incarnation_rejected
+test_prime_extension_semantic_lifecycle
+test_prime_extension_stale_incarnation_rejected
 test_kimi_and_grok_install_no_unverified_wiring
 test_opencode_plugin_semantic_lifecycle
 test_claude_hooks_semantic_lifecycle

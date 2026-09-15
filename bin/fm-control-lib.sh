@@ -63,7 +63,7 @@ fm_control_verb_allowed() {  # <verb>
 # than guessed at, exactly as a spawn on it would be.
 fm_control_harness_supported() {  # <harness>
   case "${1-}" in
-    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse) return 0 ;;
+    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|muse|prime) return 0 ;;
   esac
   return 1
 }
@@ -87,13 +87,14 @@ fm_control_harness_family() {  # <recorded-harness>
     kimi*) printf 'kimi' ;;
     cursor*) printf 'cursor' ;;
     muse*) printf 'muse' ;;
+    prime*) printf 'prime' ;;
     *) return 1 ;;
   esac
 }
 
-# Which task kinds an adapter is verified to run. muse is a crewmate/scout
-# adapter only: it has no primary supervision protocol, and bin/fm-spawn.sh
-# refuses a --secondmate launch on it. The control plane
+# Which task kinds an adapter is verified to run. muse and prime are
+# crewmate/scout adapters only: neither has a primary supervision protocol, and
+# bin/fm-spawn.sh refuses a --secondmate launch on them. The control plane
 # asks this BEFORE it stops anything, so an incompatible relaunch target is
 # refused while the current agent is still running rather than after it has
 # been stopped.
@@ -101,17 +102,37 @@ fm_control_harness_supports_kind() {  # <harness> <kind>
   local harness=${1-} kind=${2-}
   fm_control_harness_supported "$harness" || return 1
   case "$harness" in
-    muse) [ "$kind" != secondmate ] || return 1 ;;
+    muse|prime) [ "$kind" != secondmate ] || return 1 ;;
+  esac
+  return 0
+}
+
+# Which backends an adapter is verified to run on. prime is herdr-only: Herdr
+# detects a Prime pane natively, while the other backends have no verified
+# Prime liveness name, so their control plane reads a running Prime pane as
+# ambiguous and refuses interrupt and exit. On refusal this prints the one-line
+# reason and returns nonzero. bin/fm-spawn.sh asks it before creating an
+# endpoint, and the control plane asks it before it stops anything.
+fm_control_harness_supports_backend() {  # <harness> <backend>
+  local harness=${1-} backend=${2-}
+  case "$harness" in
+    prime)
+      [ "$backend" = herdr ] && return 0
+      printf "prime is verified on the herdr backend only; backend '%s' is unverified for Prime" "$backend"
+      return 1
+      ;;
   esac
   return 0
 }
 
 # The key that cancels a running turn. Escape for every adapter except grok,
-# whose Esc only moves focus to the scrollback; grok cancels on Ctrl+C.
+# whose Esc only moves focus to the scrollback, and prime, whose Esc only edits
+# the composer; both cancel on Ctrl+C. A second Ctrl+C while prime still shows
+# its exit hint quits the TUI, which is why the repeat below stays 1.
 fm_control_interrupt_key() {  # <harness>
   case "${1-}" in
     claude|codex|opencode|pi|pi-signed|kimi|cursor|muse) printf 'Escape' ;;
-    grok) printf 'C-c' ;;
+    grok|prime) printf 'C-c' ;;
     *) return 1 ;;
   esac
 }
@@ -121,7 +142,7 @@ fm_control_interrupt_key() {  # <harness>
 fm_control_interrupt_repeat() {  # <harness>
   case "${1-}" in
     opencode) printf '2' ;;
-    claude|codex|pi|pi-signed|grok|kimi|cursor|muse) printf '1' ;;
+    claude|codex|pi|pi-signed|grok|kimi|cursor|muse|prime) printf '1' ;;
     *) return 1 ;;
   esac
 }
@@ -139,7 +160,7 @@ fm_control_interrupt_repeat() {  # <harness>
 fm_control_interrupt_clear_key() {  # <harness>
   case "${1-}" in
     muse) printf 'C-u' ;;
-    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor) ;;
+    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|prime) ;;
     *) return 1 ;;
   esac
 }
@@ -151,7 +172,7 @@ fm_control_interrupt_ack_source() {  # <harness>
     # after an interrupt was measured as variable - sometimes seconds, sometimes
     # not within 20 - so a cancellation claim built on it would be unreliable.
     # Normal turn completion is prompt, which is what the busy fold depends on.
-    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor) printf 'none' ;;
+    claude|codex|opencode|pi|pi-signed|grok|kimi|cursor|prime) printf 'none' ;;
     *) return 1 ;;
   esac
 }
@@ -160,7 +181,7 @@ fm_control_interrupt_ack_source() {  # <harness>
 fm_control_exit_command() {  # <harness>
   case "${1-}" in
     claude|opencode|grok|kimi|cursor|muse) printf '/exit' ;;
-    codex|pi|pi-signed) printf '/quit' ;;
+    codex|pi|pi-signed|prime) printf '/quit' ;;
     *) return 1 ;;
   esac
 }
@@ -224,6 +245,7 @@ fm_control_harness_wiring_paths() {  # <harness> <worktree> <state-dir> <id>
       printf '%s\n' "$state/$id.muse-session-current"
       ;;
     cursor) printf '%s\n' "$state/$id.cursor-session" ;;
+    prime) printf '%s\n' "$state/$id.prime-ext.ts" ;;
   esac
 }
 

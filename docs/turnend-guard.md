@@ -163,6 +163,7 @@ That warning uses `bin/fm-supervision-instructions.sh --repair-line`, so it alwa
 - Installation refuses before writing unless `python3` with `tomllib` and `jq` are available.
 - If `jq` is removed after installation, the hook remains silent and exits 0, turn-end wakes stop, and Kimi crews fall back to idle detection.
 - Unreadable hook input remains fail-open.
+- Prime Agent has no primary integration and remains outside the primary guard integrations above; its crew turn-end notification rides the per-task extension that `bin/fm-spawn.sh` writes.
 - No harness adapter uses a shell ampersand to manufacture supervision.
 
 ## Regression coverage

@@ -595,6 +595,21 @@ test_relaunch_onto_an_unverified_harness_is_refused() {
   pass "fm-control relaunch: refuses to relaunch onto an adapter with no verified mechanics"
 }
 
+test_relaunch_onto_prime_on_a_non_herdr_backend_refuses_before_stop() {
+  local dir out rc
+  dir=$(new_case primebackend rl8p)
+  add_ship_task "$dir" rl8p claude
+  out=$(run_control "$dir" rl8p relaunch --harness prime --note "x"); rc=$?
+  expect_code 1 "$rc" "a prime relaunch on the tmux backend should refuse"
+  assert_contains "$out" "prime is verified on the herdr backend only; backend 'tmux' is unverified for Prime" \
+    "the refusal should name the unverified backend"
+  [ "$(cat "$dir/fake/command")" = claude ] \
+    || fail "the refusal must land before the running agent is stopped"
+  [ "$(meta_field "$dir" rl8p harness)" = claude ] \
+    || fail "a refused relaunch must leave the durable record on the recorded harness"
+  pass "fm-control relaunch: prime on a non-herdr backend refuses before the agent is stopped"
+}
+
 test_prior_harness_turnend_registry_entry_is_cleared() {
   local dir auth
   dir=$(new_case grokauth rl9)
@@ -1497,6 +1512,7 @@ test_prefixed_recorded_harness_requires_explicit_replacement
 test_same_harness_relaunch_keeps_the_profile_axes
 test_explicit_model_wins_over_the_recorded_one
 test_relaunch_onto_an_unverified_harness_is_refused
+test_relaunch_onto_prime_on_a_non_herdr_backend_refuses_before_stop
 test_prior_harness_turnend_registry_entry_is_cleared
 test_wiring_removal_failure_refuses_before_replacement_arm
 test_turnend_auth_paths_are_owned_by_the_control_adapter
