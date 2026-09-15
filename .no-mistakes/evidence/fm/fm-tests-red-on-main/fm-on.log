@@ -1,0 +1,19 @@
+ok - fm-on --stdin preserves argv, stdin, stdout, stderr, and exit status without shell interpretation
+ok - fm-on defaults the remote command's stdin to /dev/null
+ok - fm-on arms a bounded SSH dead-peer detection window by default (15s x 3 = 45s)
+ok - fm-on's dead-peer detection window is env-overridable
+ok - fm-on rejects invalid dead-peer settings before launching ssh
+ok - the fixed entrypoint runs every command in the worker's explicit environment
+ok - the entrypoint composes a deduplicated discovered child PATH (kept 5 existing, omitted 6 absent)
+ok - read-only doctor inspects worker gaps over plain SSH without repair
+ok - the remote doctor reports the same PATH the entrypoint hands its children
+ok - the remote doctor derives tool readiness from the installed worker
+ok - the remote doctor reports its required runtime tool set and optional tools
+ok - multiple fm-*.sh executables work without a command table
+ok - tracked-command authorization excludes checkout-local git
+ok - doctor bootstrap remains authenticated when git is unavailable
+ok - transport rejects shell escape, traversal, symlink, and option-injection surfaces
+ok - the fixed entrypoint refuses incompatible protocols and unsafe roots
+ok - ambiguous aliases refuse while exact secondmate ids remain routable
+ok - unreachable and ambiguous transport failures are surfaced without retry
+ALL TESTS PASSED

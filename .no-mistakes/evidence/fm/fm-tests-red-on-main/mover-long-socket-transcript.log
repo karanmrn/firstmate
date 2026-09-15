@@ -1,0 +1,23 @@
+lab session: fm-lab-moverlong-73815-29367
+real socket: /Users/karanmanoharan/.config/herdr/sessions/fm-lab-moverlong-73815-29367/herdr.sock (84 bytes)
+workspaces: w1 w2; order before: mv-one,mv-two
+long socket path: 201 bytes
+--- base mover (pre-fix), long path, move w2 to index 0
+exit=2
+order: mv-one,mv-two
+--- fixed mover, long path, move w2 to index 0
+{"type":"workspace_list","ids":["w2","w1"]}
+exit=0
+order: mv-two,mv-one
+--- fixed mover, short real path, move w2 back to index 1
+exit=0
+order: mv-two,mv-one
+--- adversarial: long path whose directory does not exist
+exit=2
+--- adversarial: long path to directory with no socket
+exit=2
+--- adversarial: relative socket path
+exit=2
+--- adversarial: unknown workspace id over long path
+exit=4
+teardown exit=0

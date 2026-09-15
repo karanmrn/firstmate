@@ -1,0 +1,12 @@
+socket path length: 183 bytes (macOS sun_path limit 104)
+--- base 7dcf072 mover, long path
+exit=2
+--- target 049f0ce mover, long path
+{"id":"fm-workspace-move","result":{"type":"workspace_list","workspaces":[{"workspace_id":"w_abc","index":1}]}}
+exit=0
+--- target mover, missing socket dir
+exit=2
+--- target mover, relative path
+exit=2
+--- target mover, bad index
+exit=2

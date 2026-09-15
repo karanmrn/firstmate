@@ -1,0 +1,3 @@
+short socket: 85 bytes; before: mv-a=w1,mv-b=w2,mv-c=w3
+move w1 insert_index 3 exit=0; after: mv-b=w2,mv-c=w3,mv-a=w1
+move w1 insert_index 0 exit=0; after: mv-a=w1,mv-b=w2,mv-c=w3
