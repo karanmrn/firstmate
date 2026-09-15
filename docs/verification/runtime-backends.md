@@ -298,6 +298,7 @@ The CLI matrix was checked directly:
 | Native state | `herdr agent get <pane>` | Working and done transitions were visible on some harnesses; live Claude Code 2.1.236 on Herdr 0.8.0 kept `agent_status=idle` for an entire landed turn, including a multi-second tool call, so submit confirmation falls through to the shared composer verdict. Native `busy` remains positive activity evidence, while native `idle` cannot close a turn and the adapter's semantic lifecycle decides worker state. |
 | Restart | guarded named-session stop then start | Workspace, tab, pane, and labels persisted; the agent process and registration did not. |
 | Close | `herdr pane close <pane> --session <name>` | The exact one-pane task tab closed; closing a final tab could remove the workspace. |
+| Fleet role token | `herdr pane report-metadata <pane> --source firstmate --token role=<role> --session <name>` | On 2026-09-14 against Herdr 0.9.0 protocol 22 in a named lab session, `pane get` returned `"tokens":{"role":"crewmate"}`, a second report replaced the value, a `$role` key failed with `invalid_metadata_token`, and an unknown pane failed with `pane_not_found`. |
 
 All destructive verification used `bin/fm-herdr-lab.sh` with a non-default `fm-lab-` name and a byte-identical default-session tripwire.
 No ambient `herdr server stop` command is a supported test operation.

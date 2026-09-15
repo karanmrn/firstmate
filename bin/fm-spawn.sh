@@ -3213,6 +3213,20 @@ if [ -n "$SPAWN_DEFERRED_SIGNAL" ]; then
   exit "$SPAWN_DEFERRED_SIGNAL_STATUS"
 fi
 
+# Herdr sidebar rules key on a fleet role token. The token is display-only, so a
+# failed report warns and never fails the spawn or relaunch
+# (docs/herdr-backend.md "Fleet role token"). The exact pane comes from the task
+# record this spawn just published, so a relaunch reports its replacement pane.
+if [ "$BACKEND" = herdr ]; then
+  case "$KIND" in
+    secondmate) SPAWN_HERDR_ROLE=secondmate ;;
+    scout) SPAWN_HERDR_ROLE=scout ;;
+    *) SPAWN_HERDR_ROLE=crewmate ;;
+  esac
+  fm_backend_herdr_report_role "$(fm_meta_get "$STATE/$ID.meta" herdr_session)" \
+    "$(fm_meta_get "$STATE/$ID.meta" herdr_pane_id)" "$SPAWN_HERDR_ROLE" || true
+fi
+
 SPAWN_DELIVERY=
 [ -z "$MODE" ] || SPAWN_DELIVERY=" mode=$MODE yolo=$YOLO"
 echo "spawned $ID harness=$HARNESS kind=$KIND$SPAWN_DELIVERY window=$META_WINDOW worktree=$WT"

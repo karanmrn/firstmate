@@ -256,6 +256,131 @@ test_version_check_refuses_missing_herdr() {
   pass "fm_backend_herdr_version_check: refuses loudly when herdr is not installed"
 }
 
+# --- fleet role token ---------------------------------------------------------
+
+HERDR_STATUS_090='{"client":{"version":"0.9.0","protocol":22},"server":{"running":true,"version":"0.9.0","protocol":22}}'
+
+# role_token_case <name> -> echoes "<dir>|<log>|<responses>|<fakebin>"
+role_token_case() {  # <name>
+  local dir="$TMP_ROOT/role-token-$1"
+  mkdir -p "$dir/responses"
+  : > "$dir/log"
+  printf '%s|%s|%s|%s\n' "$dir" "$dir/log" "$dir/responses" "$(make_herdr_fakebin "$dir")"
+}
+
+run_report_role() {  # <log> <responses> <fakebin> <session> <pane> <role>
+  PATH="$3:$PATH" FM_HERDR_LOG="$1" FM_HERDR_RESPONSES="$2" FM_HERDR_SCRIPT_STATUS=1 \
+    bash -c '. "$0/bin/backends/herdr.sh"; fm_backend_herdr_report_role "$1" "$2" "$3"' "$ROOT" "$4" "$5" "$6"
+}
+
+test_report_role_reports_exact_pane_token() {
+  local dir log resp fb out status
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case supported)"
+  printf '%s\n' "$HERDR_STATUS_090" > "$resp/1.out"
+  out=$(run_report_role "$log" "$resp" "$fb" fmtest w1:p2 scout 2>&1)
+  status=$?
+  expect_code 0 "$status" "report_role should succeed on Herdr 0.9.0: $out"
+  assert_contains "$(cat "$log")" $'\x1f''pane'$'\x1f''report-metadata'$'\x1f''w1:p2'$'\x1f''--source'$'\x1f''firstmate'$'\x1f''--token'$'\x1f''role=scout'$'\x1f''--session'$'\x1f''fmtest' \
+    "report_role did not report role=scout for the exact pane under source firstmate in the named session"
+  [ -z "$out" ] || fail "a successful role report must stay silent, got: $out"
+  pass "fm_backend_herdr_report_role: reports the role token for the exact pane under the firstmate source"
+}
+
+test_report_role_version_floor() {
+  local dir log resp fb out status
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case floor-074)"
+  printf '{"client":{"version":"0.7.4","protocol":16},"server":{"running":false}}\n' > "$resp/1.out"
+  run_report_role "$log" "$resp" "$fb" fmtest w1:p2 crewmate >/dev/null 2>&1
+  assert_contains "$(cat "$log")" 'role=crewmate' "Herdr 0.7.4 (protocol 16) carries metadata tokens and must be reported"
+
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case floor-073)"
+  printf '{"client":{"version":"0.7.3","protocol":16},"server":{"running":false}}\n' > "$resp/1.out"
+  out=$(run_report_role "$log" "$resp" "$fb" fmtest w1:p2 crewmate 2>&1)
+  status=$?
+  expect_code 0 "$status" "a release below the floor must skip without failing"
+  assert_not_contains "$(cat "$log")" 'report-metadata' "Herdr 0.7.3 has no metadata token surface and must not be sent a report"
+  [ -z "$out" ] || fail "a below-floor skip must stay silent, got: $out"
+
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case floor-old-server)"
+  printf '{"client":{"version":"0.9.0","protocol":22},"server":{"running":true,"version":"0.7.3","protocol":16}}\n' > "$resp/1.out"
+  run_report_role "$log" "$resp" "$fb" fmtest w1:p2 crewmate >/dev/null 2>&1
+  assert_not_contains "$(cat "$log")" 'report-metadata' "a running server below the floor must not be sent a report even from a newer client"
+  pass "fm_backend_herdr_report_role: gates on the 0.7.4 token floor for both the client and a running server"
+}
+
+test_report_role_refusals_warn_without_failing_callers() {
+  local dir log resp fb out status
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case unknown-role)"
+  out=$(run_report_role "$log" "$resp" "$fb" fmtest w1:p2 captain 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "an unknown fleet role must return non-zero"
+  assert_contains "$out" "unknown fleet role 'captain'" "unknown role warning did not name the role"
+  [ ! -s "$log" ] || fail "an unknown fleet role must make no herdr call"
+
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case no-pane)"
+  out=$(run_report_role "$log" "$resp" "$fb" fmtest "" crewmate 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a missing pane must return non-zero"
+  assert_contains "$out" "no exact herdr session and pane" "missing pane warning did not explain the gap"
+  [ ! -s "$log" ] || fail "a missing pane must make no herdr call"
+
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case report-fails)"
+  printf '%s\n' "$HERDR_STATUS_090" > "$resp/1.out"
+  printf '1\n' > "$resp/2.exit"
+  out=$(run_report_role "$log" "$resp" "$fb" fmtest w9:p9 crewmate 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a failed herdr report must return non-zero"
+  assert_contains "$out" "warning: herdr role token 'crewmate' not reported for pane 'w9:p9'" "failed report did not warn with the pane"
+  pass "fm_backend_herdr_report_role: an unknown role, a missing pane, and a failed report each warn and return non-zero"
+}
+
+run_report_own_role() {  # <log> <responses> <fakebin> <home> <socket> [env-args...]
+  local log=$1 resp=$2 fb=$3 home=$4 socket=$5
+  shift 5
+  # shellcheck disable=SC2016 # $0 and $1 expand in the child shell.
+  env "$@" PATH="$fb:$PATH" FM_HERDR_LOG="$log" FM_HERDR_RESPONSES="$resp" FM_HERDR_SCRIPT_STATUS=1 \
+    HERDR_SESSION=fmtest HERDR_SOCKET_PATH="$socket" \
+    bash -c '. "$0/bin/backends/herdr.sh"; fm_backend_herdr_report_own_role "$1"' "$ROOT" "$home"
+}
+
+test_report_own_role_primary_and_secondmate() {
+  local dir log resp fb out status home
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case own-outside)"
+  out=$(run_report_own_role "$log" "$resp" "$fb" "$dir" "$dir/herdr.sock" -u HERDR_ENV -u HERDR_PANE_ID 2>&1)
+  status=$?
+  expect_code 0 "$status" "a process outside herdr must return 0"
+  { [ ! -s "$log" ] && [ -z "$out" ]; } || fail "a process outside herdr must make no herdr call and stay silent"
+
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case own-primary)"
+  home="$dir/home"; mkdir -p "$home"
+  printf '{"sessions":[{"name":"fmtest","running":true,"socket_path":"%s"}]}\n' "$dir/herdr.sock" > "$resp/1.out"
+  printf '%s\n' "$HERDR_STATUS_090" > "$resp/2.out"
+  out=$(run_report_own_role "$log" "$resp" "$fb" "$home" "$dir/herdr.sock" HERDR_ENV=1 HERDR_PANE_ID=w1:p1 2>&1)
+  status=$?
+  expect_code 0 "$status" "primary own-role report should succeed: $out"
+  assert_contains "$(cat "$log")" $'\x1f''report-metadata'$'\x1f''w1:p1'$'\x1f''--source'$'\x1f''firstmate'$'\x1f''--token'$'\x1f''role=firstmate' \
+    "a primary home did not report role=firstmate for its own pane"
+
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case own-secondmate)"
+  home="$dir/home"; mkdir -p "$home"
+  printf 'sm1\n' > "$home/.fm-secondmate-home"
+  printf '{"sessions":[{"name":"fmtest","running":true,"socket_path":"%s"}]}\n' "$dir/herdr.sock" > "$resp/1.out"
+  printf '%s\n' "$HERDR_STATUS_090" > "$resp/2.out"
+  run_report_own_role "$log" "$resp" "$fb" "$home" "$dir/herdr.sock" HERDR_ENV=1 HERDR_PANE_ID=w2:p1 >/dev/null 2>&1
+  assert_contains "$(cat "$log")" $'\x1f''w2:p1'$'\x1f''--source'$'\x1f''firstmate'$'\x1f''--token'$'\x1f''role=secondmate' \
+    "a secondmate home did not report role=secondmate for its own pane"
+
+  IFS='|' read -r dir log resp fb <<<"$(role_token_case own-foreign-socket)"
+  home="$dir/home"; mkdir -p "$home"
+  printf '{"sessions":[{"name":"fmtest","running":true,"socket_path":"%s"}]}\n' "$dir/other.sock" > "$resp/1.out"
+  out=$(run_report_own_role "$log" "$resp" "$fb" "$home" "$dir/herdr.sock" HERDR_ENV=1 HERDR_PANE_ID=w1:p1 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a pane whose socket belongs to another server must return non-zero"
+  assert_contains "$out" "could not be proved to belong to herdr session 'fmtest'" "foreign socket warning did not name the session"
+  assert_not_contains "$(cat "$log")" 'report-metadata' "a pane from another server must never be sent a role report"
+  pass "fm_backend_herdr_report_own_role: primary and secondmate homes report their own pane, outside herdr is a no-op, and a foreign socket is refused"
+}
+
 # --- workspace_label: per-firstmate-HOME resolution (P3, herdr-sm-spaces-k4) -
 
 test_workspace_label_primary_home_no_marker() {
@@ -4658,3 +4783,7 @@ test_wait_transition_stream_absorb_clears_then_timeout
 test_wait_transition_reader_failure_returns_2
 test_wait_transition_bad_ack_returns_2_and_cleans_up
 test_wait_transition_clean_timeout_returns_1
+test_report_role_reports_exact_pane_token
+test_report_role_version_floor
+test_report_role_refusals_warn_without_failing_callers
+test_report_own_role_primary_and_secondmate
