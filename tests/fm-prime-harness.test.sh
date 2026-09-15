@@ -200,6 +200,7 @@ test_spawn_refuses_non_herdr_backend() {
   IFS='|' read -r case_dir home proj wt fakebin id <<EOF
 $rec
 EOF
+  # shellcheck disable=SC2016 # $1 and $@ expand inside the child bash
   out=$(env -u HERDR_ENV -u HERDR_PANE_ID FM_FAKE_TMUX_LOG="$home/tmux.log" \
     FM_FAKE_LAUNCH_LOG="$home/launch.log" \
     bash -c '. "$1/tests/fixtures.sh"; shift; fm_test_run_spawn "$@"' _ "$ROOT" \
