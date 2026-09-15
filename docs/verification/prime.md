@@ -36,7 +36,7 @@ ok - real prime-agent: /quit ends the client-owned worker and its Python kernel
 ```
 
 Run it after every Prime Agent or Herdr upgrade.
-The portable regressions are `tests/fm-prime-harness.test.sh`, the Prime cases in `tests/fm-busy-adapter-wiring.test.sh`, and `test_prime_control_table` in `tests/fm-control.test.sh`.
+The portable regressions are `tests/fm-prime-harness.test.sh`, the Prime cases in `tests/fm-busy-adapter-wiring.test.sh`, `test_prime_control_table` in `tests/fm-control.test.sh`, and `test_relaunch_onto_prime_on_a_non_herdr_backend_refuses_before_stop` in `tests/fm-control-relaunch.test.sh`.
 
 ## Environment marker
 
@@ -115,7 +115,7 @@ The extension's poll after `agent_end` has no cap; `tests/fm-busy-adapter-wiring
 
 - tmux was not installed on the verification host, so Prime's tmux liveness naming, tmux composer submit confirmation, and tmux control-plane attribution are unproven; the tmux control fake reads a Prime pane as ambiguous and refuses lifecycle verbs.
 - Zellij, cmux, and Orca were not exercised.
-- Because of these gaps, Prime is herdr-only: `bin/fm-spawn.sh` refuses harness `prime` on every other backend before it creates an endpoint, and `tests/fm-prime-harness.test.sh` covers the refusal.
+- Because of these gaps, Prime is herdr-only: `bin/fm-spawn.sh` refuses harness `prime` on every other backend before it creates an endpoint, and `bin/fm-control.sh` refuses a relaunch onto `prime` there before it stops the running agent; `tests/fm-prime-harness.test.sh` and `tests/fm-control-relaunch.test.sh` cover the refusals.
 - Providers other than `openrouter` and models other than kimi-k2.6 and claude-fable-5.1 were not exercised.
 - Behavior without provider credentials was not exercised.
 - A live run that stays non-idle long after `agent_end`, such as automatic compaction, was not exercised.
