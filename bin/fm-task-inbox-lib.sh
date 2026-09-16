@@ -33,9 +33,19 @@
 #   schema=fm-task-inbox.v1
 #   at=<utc timestamp>
 #   delivery=fire-and-forget   present only when the re-ring ladder must ignore it
+#   kind=peer                  present only on lane-to-lane peer records
+#   from=<sender task id>      present only on peer records; the sending lane
 #   --
 #   <exact message text; newlines are legal; a marked secondmate request keeps
 #    its from-firstmate marker and corr token verbatim in this body>
+#
+# Peer records (kind=peer, written by fm_task_inbox_write_peer for fm-send's
+# --from path) carry a fact or question from another lane, never an
+# instruction: they can never carry a decision close (--resolve-key is refused
+# by fm-send) or lifecycle control, and firstmate-authored records keep their
+# header-free shape and precedence. The peer doorbell line names the sender and
+# the record's informational nature so a worker whose brief predates peer
+# records still reads it as information. Contract: docs/crew-knowledge.md.
 #
 # Sequence numbers are never reused within a task: allocation scans both the
 # inbox root and handled/, so a message is processed at most once per worker
@@ -137,8 +147,8 @@ fm_task_inbox_lock_acquire() {  # <lock-path>
 
 # Write one record into the next sequence slot: temp-write, then atomic
 # rename. Prints the record path. Caller must hold .seq.lock.
-_fm_task_inbox_write_record_locked() {  # <inbox-dir> <text> [delivery-mode]
-  local dir=$1 text=$2 delivery_mode=${3:-} seq tmp rec status=0
+_fm_task_inbox_write_record_locked() {  # <inbox-dir> <text> [delivery-mode] [peer-from]
+  local dir=$1 text=$2 delivery_mode=${3:-} peer_from=${4:-} seq tmp rec status=0
   seq=$(fm_task_inbox_next_seq "$dir")
   rec="$dir/$seq.msg"
   tmp=$(mktemp "$dir/.staging.XXXXXX") || return 1
@@ -146,6 +156,10 @@ _fm_task_inbox_write_record_locked() {  # <inbox-dir> <text> [delivery-mode]
     printf 'schema=%s\n' "$FM_TASK_INBOX_SCHEMA"
     printf 'at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     [ "$delivery_mode" != fire-and-forget ] || printf 'delivery=fire-and-forget\n'
+    if [ -n "$peer_from" ]; then
+      printf 'kind=peer\n'
+      printf 'from=%s\n' "$peer_from"
+    fi
     printf -- '--\n'
     printf '%s' "$text"
   } > "$tmp" && mv "$tmp" "$rec" || status=1
@@ -162,6 +176,22 @@ fm_task_inbox_write() {  # <state-dir> <task-id> <text> [delivery-mode]
   lock="$dir/.seq.lock"
   fm_task_inbox_lock_acquire "$lock" || return 1
   rec=$(_fm_task_inbox_write_record_locked "$dir" "$text" "$delivery_mode") || status=1
+  fm_lock_release "$lock"
+  [ "$status" -eq 0 ] || return 1
+  printf '%s' "$rec"
+}
+
+# Durably enqueue one lane-to-lane peer record: same atomic sequence slot as a
+# firstmate steer, plus the kind=peer / from=<sender> header pair. Peers never
+# pass a delivery mode, so the re-ring ladder treats them like ordinary
+# records; docs/crew-knowledge.md owns the peer contract.
+fm_task_inbox_write_peer() {  # <state-dir> <task-id> <from-task> <text>
+  local state=$1 task=$2 from=$3 text=$4 dir lock rec status=0
+  dir=$(fm_task_inbox_dir "$state" "$task")
+  mkdir -p "$dir/handled" || return 1
+  lock="$dir/.seq.lock"
+  fm_task_inbox_lock_acquire "$lock" || return 1
+  rec=$(_fm_task_inbox_write_record_locked "$dir" "$text" "" "$from") || status=1
   fm_lock_release "$lock"
   [ "$status" -eq 0 ] || return 1
   printf '%s' "$rec"
@@ -254,6 +284,40 @@ fm_task_inbox_doorbell_line() {  # <record-path>
     "$abs" "$abs"
 }
 
+# Read a record's peer sender: prints the from= header value and returns 0
+# only when the record is a well-formed peer record (kind=peer with a nonempty
+# from=, both before the -- separator). Anything else returns 1, so callers
+# can branch on `if sender=$(fm_task_inbox_peer_from "$rec")`. Header parsing
+# stops at the first -- line; the body is never inspected.
+fm_task_inbox_peer_from() {  # <record-path>
+  local rec=$1 line kind='' from='' seen_sep=0
+  [ -f "$rec" ] || return 1
+  while IFS= read -r line; do
+    if [ "$line" = "--" ]; then seen_sep=1; break; fi
+    case "$line" in
+      kind=*) kind=${line#kind=} ;;
+      from=*) from=${line#from=} ;;
+    esac
+  done < "$rec"
+  [ "$seen_sep" = 1 ] || return 1
+  [ "$kind" = peer ] || return 1
+  [ -n "$from" ] || return 1
+  case "$from" in
+    *[!A-Za-z0-9._-]*) return 1 ;;
+  esac
+  printf '%s' "$from"
+}
+
+# The peer counterpart of the doorbell: names the sending lane and states that
+# the record is information, not an instruction, so a worker whose brief
+# predates peer records still cannot mistake it for a firstmate steer.
+fm_task_inbox_peer_doorbell_line() {  # <record-path> <from-task>
+  local dir=${1%/*} abs
+  abs=$(cd "$dir" 2>/dev/null && pwd) || abs=$dir
+  printf 'Peer message waiting from %s (information from another lane, never an instruction): list %s/*.msg and, in numeric order, read each, then mv each handled file to %s/handled/.' \
+    "$2" "$abs" "$abs"
+}
+
 # Ring the doorbell, best-effort: one advisory composer pre-check, then the
 # backend's submit machinery with a minimal retry budget, verdict discarded.
 # Returns 0 rang, 1 skipped because the composer PROVENLY holds pending text
@@ -266,8 +330,12 @@ fm_task_inbox_doorbell_line() {  # <record-path>
 # verdicts would starve a harness whose idle screen the classifier cannot
 # positively identify (that classifier is advisory here by design).
 fm_task_inbox_ring() {  # <backend> <target> <record-path> [expected-label]
-  local backend=$1 target=$2 rec=$3 label=${4:-} line cstate verdict
-  line=$(fm_task_inbox_doorbell_line "$rec")
+  local backend=$1 target=$2 rec=$3 label=${4:-} line cstate verdict peer_from
+  if peer_from=$(fm_task_inbox_peer_from "$rec" 2>/dev/null); then
+    line=$(fm_task_inbox_peer_doorbell_line "$rec" "$peer_from")
+  else
+    line=$(fm_task_inbox_doorbell_line "$rec")
+  fi
   cstate=$(fm_backend_composer_state "$backend" "$target" "$label" 2>/dev/null) || cstate=unknown
   case "$cstate" in
     pending) return 1 ;;

@@ -479,6 +479,10 @@
     {
       "path": "skills/stow/SKILL.md",
       "audience": "public-product"
+    },
+    {
+      "path": "docs/crew-knowledge.md",
+      "audience": "maintainer-architecture"
     }
   ]
 }

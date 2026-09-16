@@ -182,6 +182,19 @@
 # refused with --key, with an explicit backend target (no task ledger in this
 # home), and with an empty message.
 #
+# Peer messages (lane-to-lane): pass --from <own-task-id> (before the target)
+# to deliver a lane-to-lane peer message instead of a firstmate steer. The
+# record lands in the target's steering inbox as a kind=peer record carrying a
+# from=<sender> header and the peer doorbell line names the sender; the send
+# also appends one line each to state/<from>.peer.log and state/<target>.peer.log.
+# A peer message is a fact or a question between lanes - never a decision and
+# never an instruction: --from is refused with --resolve-key, --key, or
+# --fire-and-forget, refused for secondmate, remote, or explicit backend
+# targets, refused as a self-send, refused when the sender has no task meta in
+# this home, and refused when the message begins with "/" or "$" (harness
+# command syntax). Peer delivery is strictly local. Contract:
+# docs/crew-knowledge.md.
+#
 # After a successful TYPED-plane submit fm-send pauses FM_SEND_SETTLE seconds
 # (default 1, 0 disables) before returning: submit confirmation only proves the
 # text was accepted, but the harness needs a beat to spin up the turn before its
@@ -416,6 +429,15 @@ fm_send_resolve_target() {  # <raw-target>
   return 1
 }
 
+# A leading --from <own-task-id> marks this as a lane-to-lane peer message
+# (contract: docs/crew-knowledge.md); consume it before the target is read.
+FROM_TASK=
+if [ "${1:-}" = "--from" ]; then
+  [ $# -ge 3 ] || { echo "error: --from requires a sender task id, then <target> <text>" >&2; exit 1; }
+  FROM_TASK=$2
+  shift 2
+fi
+
 RAW_TARGET=$1
 fm_send_resolve_target "$RAW_TARGET" || exit 1
 T=$RESOLVED_TARGET
@@ -424,10 +446,11 @@ shift
 # Supervision lease guard: a steer is overlap territory between the two Pi
 # supervision actors, so refuse while the OTHER actor holds this task's live
 # lease. A home with no supervision branch has no lease files and passes
-# untouched (contract: bin/fm-lease-lib.sh).
+# untouched (contract: bin/fm-lease-lib.sh). A peer message (--from) is
+# lane-to-lane information, not a supervision steer, and skips the guard.
 # shellcheck source=bin/fm-lease-lib.sh
 . "$SCRIPT_DIR/fm-lease-lib.sh"
-if [ -n "$TARGET_META" ]; then
+if [ -n "$TARGET_META" ] && [ -z "$FROM_TASK" ]; then
   LEASE_GUARD_TASK=$(fm_send_id_from_meta "$TARGET_META")
   if [ -n "$LEASE_GUARD_TASK" ]; then
     fm_lease_guard "$LEASE_GUARD_TASK" "steer (fm-send)"
@@ -478,6 +501,17 @@ while :; do
       FIRE_AND_FORGET_ID=${1#--fire-and-forget=}
       shift
       ;;
+    --from)
+      [ $# -ge 2 ] || { echo "error: --from requires a sender task id" >&2; exit 1; }
+      [ -z "$FROM_TASK" ] || { echo "error: duplicate --from" >&2; exit 1; }
+      FROM_TASK=$2
+      shift 2
+      ;;
+    --from=*)
+      [ -z "$FROM_TASK" ] || { echo "error: duplicate --from" >&2; exit 1; }
+      FROM_TASK=${1#--from=}
+      shift
+      ;;
     *) break ;;
   esac
 done
@@ -506,6 +540,40 @@ fm_send_known_undelivered_cleanup() {
 if [ -n "$TARGET_SELECTOR" ] && [ -n "$TARGET_META" ] && [ "$(fm_meta_get "$TARGET_META" kind)" = secondmate ]; then
   MARK_FROM_FIRSTMATE=1
   TARGET_TASK_ID=$(fm_send_id_from_meta "$TARGET_META")
+fi
+
+# Validate a lane-to-lane peer send (--from) before any durable mutation:
+# peers are strictly local, strictly informational, and never a decision or a
+# lifecycle control (contract: docs/crew-knowledge.md).
+FROM_SENDER_ID=
+if [ -n "$FROM_TASK" ]; then
+  [ -z "$RESOLVE_KEYS" ] \
+    || { echo "error: --from cannot accompany --resolve-key; a peer message can never close a decision" >&2; exit 1; }
+  [ -z "$FIRE_AND_FORGET_ID" ] \
+    || { echo "error: --from cannot accompany --fire-and-forget" >&2; exit 1; }
+  if [ -z "$TARGET_SELECTOR" ] || [ -z "$TARGET_META" ]; then
+    echo "error: --from requires a task selector target recorded in this home's metadata; peer messages to explicit backend targets are not allowed" >&2
+    exit 1
+  fi
+  [ "$TARGET_BACKEND" != remote ] \
+    || { echo "error: --from cannot target a remote secondmate; peer messages are strictly local to this home" >&2; exit 1; }
+  [ "$MARK_FROM_FIRSTMATE" != 1 ] \
+    || { echo "error: --from cannot target a secondmate; peer messages flow between local lanes only" >&2; exit 1; }
+  case "$FROM_TASK" in
+    ''|*[!A-Za-z0-9._-]*)
+      echo "error: --from '$FROM_TASK' is not a valid task id (allowed: A-Z a-z 0-9 . _ -)" >&2; exit 1 ;;
+  esac
+  FROM_META=
+  for candidate in "$STATE/$FROM_TASK.meta" "$STATE/fm-$FROM_TASK.meta" "$STATE/${FROM_TASK#fm-}.meta"; do
+    if [ -f "$candidate" ]; then FROM_META=$candidate; break; fi
+  done
+  [ -n "$FROM_META" ] \
+    || { echo "error: --from sender '$FROM_TASK' has no task metadata in this home; only a live lane can send peer messages" >&2; exit 1; }
+  FROM_SENDER_ID=$(fm_send_id_from_meta "$FROM_META")
+  [ "$(fm_meta_get "$FROM_META" kind)" != secondmate ] \
+    || { echo "error: --from sender '$FROM_SENDER_ID' is a secondmate; peer messages flow between local lanes only" >&2; exit 1; }
+  [ "$FROM_SENDER_ID" != "$(fm_send_id_from_meta "$TARGET_META")" ] \
+    || { echo "error: --from sender and target are the same task; a lane cannot send a peer message to itself" >&2; exit 1; }
 fi
 
 # Validate the answerer-closes request before any durable mutation or send: the
@@ -645,6 +713,8 @@ fm_send_feed_resolved_holds() {  # <answer-text>
 if [ "${1:-}" = "--key" ]; then
   [ -z "$FIRE_AND_FORGET_ID" ] \
     || { echo "error: --fire-and-forget cannot accompany --key" >&2; exit 1; }
+  [ -z "$FROM_TASK" ] \
+    || { echo "error: --from cannot accompany --key; peer messages are text only, never lifecycle control" >&2; exit 1; }
   case "$*" in
     *--resolve-key*)
       echo "error: --resolve-key cannot accompany --key; answering a decision requires a text answer" >&2
@@ -674,6 +744,16 @@ if [ "${1:-}" = "--key" ]; then
   fm_send_record_interrupt "$semantic_key" || exit 1
 else
   MESSAGE=$*
+  if [ -n "$FROM_TASK" ]; then
+    [ -n "$MESSAGE" ] \
+      || { echo "error: --from requires a nonempty peer message" >&2; exit 1; }
+    case "$MESSAGE" in
+      /*|\$*)
+        echo "error: peer messages never begin with '/' or '\$' (harness command syntax); a peer record is information, never an instruction" >&2
+        exit 1
+        ;;
+    esac
+  fi
   if [ "$TARGET_BACKEND" = remote ]; then
     FM_SEND_REMOTE_BUDGET=${FM_SEND_REMOTE_BUDGET:-30}
     case "$FM_SEND_REMOTE_BUDGET" in
@@ -753,7 +833,7 @@ else
   # command: the pre-existing marker-first wire bytes are retained in stage 1.
   INBOX_PLANE=0
   if [ -n "$TARGET_SELECTOR" ]; then
-    if [ -n "$FIRE_AND_FORGET_ID" ] || [ "$TARGET_BACKEND" = remote ]; then
+    if [ -n "$FIRE_AND_FORGET_ID" ] || [ -n "$FROM_TASK" ] || [ "$TARGET_BACKEND" = remote ]; then
       INBOX_PLANE=1
     else
       case "$RESOLVE_ANSWER_TEXT" in
@@ -909,7 +989,10 @@ else
       echo "error: steer not sent to $INBOX_TASK_ID: the task retired or changed endpoint during target resolution" >&2
       exit 1
     fi
-    if [ "${FM_SEND_IDEMPOTENT:-0}" = 1 ]; then
+    if [ -n "$FROM_TASK" ]; then
+      INBOX_RECORD=$(fm_task_inbox_write_peer "$STATE" "$INBOX_TASK_ID" "$FROM_SENDER_ID" "$MESSAGE") \
+        || inbox_write_rc=$?
+    elif [ "${FM_SEND_IDEMPOTENT:-0}" = 1 ]; then
       INBOX_RECORD=$(fm_task_inbox_write_idempotent "$STATE" "$INBOX_TASK_ID" "$MESSAGE" \
         "${FIRE_AND_FORGET_ID:+fire-and-forget}") || inbox_write_rc=$?
     else
@@ -962,6 +1045,20 @@ else
       1) echo "fm-send: doorbell skipped (composer visibly holds pending text); the steer is durably recorded at $INBOX_RECORD and the watcher will re-ring" >&2 ;;
       2) echo "fm-send: doorbell did not reach $T; the steer is durably recorded at $INBOX_RECORD and the watcher will re-ring" >&2 ;;
     esac
+    if [ -n "$FROM_TASK" ]; then
+      # Mirror the delivered peer record into both lanes' peer logs (one line
+      # each; the inbox record remains the durable delivery). A failure here
+      # degrades only the audit trail: the message itself is already delivered.
+      peer_seq=${INBOX_RECORD##*/}; peer_seq=${peer_seq%.msg}
+      peer_excerpt=$(printf '%s' "$MESSAGE" | tr '\n' ' ' | cut -c1-120)
+      peer_line="$(date -u +%Y-%m-%dT%H:%M:%SZ) $FROM_SENDER_ID -> $INBOX_TASK_ID [seq $peer_seq] $peer_excerpt"
+      peer_log_rc=0
+      printf '%s\n' "$peer_line" >> "$STATE/$FROM_SENDER_ID.peer.log" || peer_log_rc=1
+      printf '%s\n' "$peer_line" >> "$STATE/$INBOX_TASK_ID.peer.log" || peer_log_rc=1
+      if [ "$peer_log_rc" -ne 0 ]; then
+        echo "warning: peer-log-degraded (message delivered, do not resend): the peer record is durably delivered at $INBOX_RECORD, but appending to the peer logs under $STATE failed. The inbox record itself is intact." >&2
+      fi
+    fi
     exit 0
   fi
   # Slash commands open a completion popup in some TUIs (verified on codex);

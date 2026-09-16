@@ -101,6 +101,9 @@ state/               runtime records and signals; gitignored
   <id>.reconcile-nudged  epoch second of the last inventory-reconcile nudge sent to this secondmate; bin/fm-secondmate-reconcile.sh owns its per-home cooldown window
   <id>.backlog-close  the exact backlog transition a teardown recorded before removing the task's record, so an interrupted cleanup can still be finished at the next session start; bin/fm-backlog-transition-lib.sh owns its format and replay, and a landed transition removes it
   <id>.inbox/          durable steering inbox: sequenced firstmate instruction records the worker acknowledges by moving them into its handled/ subdirectory; written by fm-send, with ordinary records re-rung and escalated by the watcher while explicit fire-and-forget records are excluded from that ladder, and removed by teardown (bin/fm-task-inbox-lib.sh)
+  <id>.peer.log       one line per lane-to-lane peer message this task sent or received (timestamp, sender, target, inbox sequence, excerpt); written by `fm-send --from`, audit only - the durable delivery stays the inbox record (docs/crew-knowledge.md)
+  <id>.peer.log       one line per lane-to-lane peer message this task sent or received (timestamp, sender, target, inbox sequence, excerpt); written by `fm-send --from`, audit only - the durable delivery stays the inbox record (docs/crew-knowledge.md)
+  knowledge/          the fleet knowledge board: entries.jsonl event log (add/confirm/expire/delete), the rendered BOARD.md, and its writer lock; owned by bin/fm-knowledge.sh, contract in docs/crew-knowledge.md
   <id>.meta          task metadata; each producer script's header owns its exact fields and mutation contract, with docs/configuration.md routing operator-facing backend and trace-context details
   <id>.herdr-presentation  quarantinable attempt and restart-binding journal for Herdr's optional visual projection; never task or endpoint authority; see docs/herdr-backend.md "Presentation spaces"
   <id>.check.sh      authenticated slow poll; the watcher dispatches validated PR data and the byte-identified Relay shim through trusted repository scripts, runs registered custom checks from hash-validated private snapshots, and rejects every other state check without execution
@@ -121,6 +124,7 @@ state/               runtime records and signals; gitignored
   decision-bindings/ private records marking a captured-answer source as feeding the keyed-answer intake, with a legacy origin on pre-collapse records; written only by bin/fm-captain-hold.sh bind, dropped by unbind and by source retirement (section 13; docs/captain-hold-lifecycle.md)
   when/              private condition->action watch specs, their trust bindings, and single-fire markers; written only by bin/fm-procevent-when.sh (section 13's process-event-sources trigger)
   inbox/             captain notes captured out of band by bin/fm-inbox.sh, including the voice handover's queued requests; each note appends one `check` wake and stays pending until acknowledged with `bin/fm-inbox.sh drain --ack <id>`, which moves it to inbox/handled/ (docs/voice-relay.md)
+  knowledge/         the fleet knowledge board: entries.jsonl event log (add/confirm/expire/delete), the rendered BOARD.md view, and its writer lock; owned by bin/fm-knowledge.sh, contract in docs/crew-knowledge.md
   x-inbox/           generated Relay pending mention payloads; fmx-respond drains it (section 14)
   x-context/         generated Relay durable per-request reply context and one-wake offer markers, keyed by request_id; survives inbox cleanup and expires within seven days (section 14; bin/fm-x-lib.sh)
   x-outbox/          generated Relay dry-run reply and dismiss previews; inspect it when FMX_DRY_RUN is set (section 14)
@@ -433,6 +437,10 @@ Guard warnings do not replace the contract.
 Queued wakes must be presented before other action and acknowledged only after handling, stale liveness must be repaired through the emitted protocol, and the worktree-tangle warning must be resolved without touching unlanded work.
 The spawn assertion and generated ship brief must both enforce that project work starts in an isolated disposable worktree, never the primary checkout.
 Harness-aware turn-end guards are structural backstops, not permission to omit the live cycle.
+
+### Fleet knowledge board and peer messages
+
+The home keeps a shared knowledge board (`bin/fm-knowledge.sh`, contract: `docs/crew-knowledge.md`): durable cross-task facts, recipes, hazards, and overlap notes with provenance and expiry, stored as an append-only event log at `state/knowledge/entries.jsonl` and rendered to `state/knowledge/BOARD.md`. Workers read it through their briefs; firstmate curates it - only firstmate deletes entries, and stale entries are retired with `expire`. At intake, run `bin/fm-knowledge.sh overlaps` (or read the digest's lane section) to spot two live lanes converging on the same files before dispatching, and record a confirmed collision as an `overlap` entry. Lanes message each other directly with `bin/fm-send.sh --from <own-task> <target> "<message>"`, which lands a `kind=peer` inbox record and mirrors one audit line to both tasks' `state/<id>.peer.log`; peer messages are information only - they never close decisions, never carry lifecycle control, and never leave this home.
 
 ### Away-mode stub
 

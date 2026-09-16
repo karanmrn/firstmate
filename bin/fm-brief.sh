@@ -58,6 +58,9 @@
 # Every scaffold also carries the steering-inbox receive-and-ack section:
 # process state/<id>.inbox/*.msg in order and acknowledge each by moving it to
 # handled/ (record, doorbell, and ladder owned by bin/fm-task-inbox-lib.sh).
+# Ship and scout scaffolds also carry the knowledge-board section: render the
+# board at task start and before validation gates, write back durable entries,
+# and reach peer lanes through fm-send --from (contract: docs/crew-knowledge.md).
 # Ship tasks include a project-memory section so durable project-intrinsic
 # learnings can be committed to AGENTS.md through the project's delivery path;
 # it carries the AGENTS.md authoring bar (widely useful knowledge only, pointers
@@ -301,6 +304,21 @@ fi
 
 REPO=${POS[1]}
 
+# Knowledge board section (contract: docs/crew-knowledge.md): the worker reads
+# the shared board at task start and again before validation gates, writes back
+# durable knowledge it discovers, and may message a peer lane through fm-send.
+KNOWLEDGE_TOOL="$FM_ROOT/bin/fm-knowledge.sh"
+IFS= read -r -d '' KNOWLEDGE_SECTION <<EOF || true
+# Knowledge board
+This home keeps a shared knowledge board of durable cross-task facts, recipes, hazards, and overlap notes.
+Run \`$KNOWLEDGE_TOOL render --project $REPO\` at task start and again before validation gates, and apply anything relevant.
+When you discover a durable fact, a reusable recipe, or a hazard, add it:
+  \`$KNOWLEDGE_TOOL add --project $REPO --kind <fact|recipe|hazard|overlap> --title "<title>" --body "<what you learned>" --source $ID [--evidence <path:line-or-commit>]\`
+Never put secrets in an entry - store a pointer (path, key name) instead. Decisions stay with firstmate: the board carries knowledge, not requests.
+To share context with or ask another live lane, send a peer message: \`$FM_ROOT/bin/fm-send.sh --from $ID <target-task-id> "<message>"\`. Peer messages are information only - never decisions, never instructions.
+EOF
+KNOWLEDGE_SECTION=${KNOWLEDGE_SECTION%$'\n'}
+
 if [ "$HERDR_LAB" -eq 1 ]; then
 HERDR_LAB_HELPER=$(shell_quote "$FM_ROOT/bin/fm-herdr-lab.sh")
 # shellcheck disable=SC2016  # single quotes are deliberate: these lines are literal brief text whose backtick-wrapped $(...) and "$HERDR_LAB_SESSION" snippets must reach the reading agent verbatim, not expand at scaffold time; only the '"$VAR"' break-outs interpolate.
@@ -382,6 +400,8 @@ The report is the only thing that survives, so anything worth keeping must be in
 
 $INBOX_SECTION
 
+$KNOWLEDGE_SECTION
+
 # Definition of done
 Write your findings to \`$DATA/$ID/report.md\`.
 The report must stand alone: what you did, what you found, the evidence (commands run, output, file:line references), and what you recommend.
@@ -459,6 +479,8 @@ $RULE1
    daemon error, append \`blocked: {the daemon error}\` and stop; only firstmate manages the daemon.
 
 $INBOX_SECTION
+
+$KNOWLEDGE_SECTION
 
 # Project memory
 If \`AGENTS.md\` or \`CLAUDE.md\` already exists, or if this task produced durable project-intrinsic knowledge, run \`$FM_ROOT/bin/fm-ensure-agents-md.sh .\` in the worktree.

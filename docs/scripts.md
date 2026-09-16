@@ -34,6 +34,7 @@ The shared no-mistakes gate refusal for fleet lifecycle entrypoints is summarize
 | `fm-decision-hold.sh`    | One-release compatibility shim mapping the retired decision commands onto fm-captain-hold.sh |
 | `fm-brief.sh`            | Scaffold ship (explicit `--mode`), scout, secondmate-charter, and Herdr-lab briefs, with Captain's intent and Firstmate spec subsections on ship/scout |
 | `fm-dod-lib.sh`          | One owner of the ship definition of done and of the no-mistakes `--intent` contract |
+| `fm-knowledge.sh`        | Fleet knowledge board over `state/knowledge/`: add/list/search/confirm/expire/delete entries, render `BOARD.md`, detect lane overlaps, print the bounded digest (contract: `docs/crew-knowledge.md`) |
 | `fm-herdr-lab.sh`        | Provision and guardedly operate an isolated, never-default Herdr lab session         |
 | `fm-install-herdr.sh`    | Install CI's exact-version Herdr pin with official asset URL, SHA-256, and protocol checks |
 | `fm-install-treehouse.sh`| Install CI's exact-version Treehouse pin for real-Herdr E2E that needs spawn worktrees |
@@ -71,6 +72,9 @@ The shared no-mistakes gate refusal for fleet lifecycle entrypoints is summarize
 | `fm-review-diff.sh`      | Review a crewmate branch or resolved PR head against the authoritative base          |
 | `fm-marker-lib.sh`       | Compatibility entry point for the from-firstmate carrier owned by `fm-operational-input.sh` |
 | `fm-task-inbox-lib.sh`   | Single owner of durable steering-inbox records, acknowledgement, doorbells, and the delivery-attempt ladder |
+| `fm-knowledge.sh`        | Fleet knowledge board over `state/knowledge/`: add/list/search/confirm/expire/delete entries, render `BOARD.md`, detect lane overlaps, and print the bounded session digest (contract: `docs/crew-knowledge.md`) |
+| `fm-knowledge.sh`        | Fleet knowledge board: add/list/search/confirm/expire/delete/render/overlaps/digest over `state/knowledge/entries.jsonl` |
+| `fm-knowledge.sh`        | Fleet knowledge board: add/list/search/confirm/expire/delete/render/overlaps/digest over `state/knowledge/entries.jsonl` |
 | `fm-pending-reply-lib.sh` | Parent-owned secondmate pending-reply expectations, recovery, and keyed escalation lifecycle |
 | `fm-secondmate-report.sh` | Optional helper to append a correlated parent status or document-pointer report       |
 | `fm-extension.mjs`       | Bind, inspect, verify, and strictly invoke trusted external process-event adapter packages |

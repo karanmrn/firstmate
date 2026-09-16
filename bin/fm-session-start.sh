@@ -884,6 +884,24 @@ if fm_pf_relay_active "$FM_HOME" \
   fi
 fi
 
+# Knowledge board: one bounded digest per session, printed only when the board
+# or any peer-message log exists, so a home that never uses the feature pays a
+# single [ -d ] test. The digest itself (counts per project, entries expiring
+# within 24h, lane overlaps, recent peer traffic) is owned by
+# bin/fm-knowledge.sh; contract in docs/crew-knowledge.md.
+KNOWLEDGE_PRESENT=0
+[ -d "$STATE/knowledge" ] && KNOWLEDGE_PRESENT=1
+if [ "$KNOWLEDGE_PRESENT" -eq 0 ]; then
+  for f in "$STATE"/*.peer.log; do
+    [ -e "$f" ] && { KNOWLEDGE_PRESENT=1; break; }
+  done
+fi
+if [ "$KNOWLEDGE_PRESENT" -eq 1 ]; then
+  subsection "Knowledge board"
+  FM_HOME="$FM_HOME" FM_STATE_OVERRIDE="$STATE" "$SCRIPT_DIR/fm-knowledge.sh" digest 2>/dev/null \
+    || printf '(knowledge digest unavailable)\n'
+fi
+
 # --- 7. network checks ------------------------------------------------------
 # Deliberately here and not later: these lines are actionable (a stuck clone, a
 # secondmate that could not be relaunched, broken GitHub auth), and the section
