@@ -364,6 +364,42 @@ test_no_mistakes_dod_wording() {
   pass "fm-brief.sh: no-mistakes DOD keeps its apostrophe prose and bans --yes outright"
 }
 
+# Exercise the rendered contract, not the script implementation.
+test_ship_build_methodology() {
+  local home mode brief section lines dod_line methodology_line
+  home="$TMP_ROOT/build-methodology-home"
+  mkdir -p "$home/data"
+  for mode in no-mistakes direct-PR local-only; do
+    FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "methodology-$mode" sample --mode "$mode" >/dev/null 2>&1 \
+      || fail "$mode methodology brief did not scaffold"
+    brief="$home/data/methodology-$mode/brief.md"
+    section=$(sed -n '/^# Build methodology$/,$p' "$brief")
+    assert_contains "$section" "# Build methodology" "$mode: missing methodology"
+    dod_line=$(grep -n '^# Definition of done$' "$brief" | cut -d: -f1)
+    methodology_line=$(grep -n '^# Build methodology$' "$brief" | cut -d: -f1)
+    [ "$methodology_line" -gt "$dod_line" ] || fail "$mode: methodology must follow Definition of done"
+    lines=$(printf '%s\n' "$section" | wc -l | tr -d ' ')
+    [ "$lines" -lt 15 ] || fail "$mode: methodology must stay under 15 lines"
+    assert_contains "$section" "Isolate - This worktree is the isolation" "$mode: missing isolation"
+    assert_contains "$section" "Never build on main" "$mode: missing main boundary"
+    assert_contains "$section" "Actions and boundaries orchestrate why and when" "$mode: missing orchestration"
+    assert_contains "$section" "A service layer owns the reusable how" "$mode: missing service ownership"
+    assert_contains "$section" "before evidence while reproducing, before the fix" "$mode: missing before evidence"
+    assert_contains "$section" "after evidence after the fix" "$mode: missing after evidence"
+    assert_contains "$section" "Run the repo checks" "$mode: missing checks"
+    assert_contains "$section" "screenshot or video for anything visible" "$mode: missing visible proof"
+    assert_contains "$section" "measured numbers or output pairs otherwise" "$mode: missing nonvisual proof"
+    assert_contains "$section" "no-mistakes run comes first" "$mode: missing validation ordering"
+    assert_contains "$section" "/greploop" "$mode: missing PR review loop"
+    assert_contains "$section" "/greploop-apps" "$mode: missing huge PR review loop"
+    assert_contains "$section" "5/5 with zero unresolved comments" "$mode: missing review target"
+    assert_contains "$section" "/unslop" "$mode: missing writing skill"
+    assert_contains "$section" "commit messages, PR titles and bodies, docs, comments and replies" "$mode: missing writing scope"
+    assert_contains "$section" "Follow the delivery mode above" "$mode: missing delivery-mode boundary"
+  done
+  pass "fm-brief.sh: all ship modes carry concise build methodology after Definition of done"
+}
+
 test_ship_project_memory_wording() {
   local home id brief
   home="$TMP_ROOT/project-memory-home"
@@ -760,6 +796,7 @@ test_scout_and_secondmate_scaffold() {
     || fail "fm-brief.sh scout scaffold exited non-zero"
   brief="$BRIEF_HOME/data/brief-scout-q6/brief.md"
   assert_present "$brief" "scout brief was not scaffolded"
+  assert_no_grep "# Build methodology" "$brief" "scout must not carry ship methodology"
   assert_grep "SCOUT task" "$brief" "scout brief must declare itself a scout task"
   assert_grep "report.md" "$brief" "scout brief must point at the report deliverable"
   assert_grep "you may host the Lavish review loop yourself" "$brief" \
@@ -773,6 +810,7 @@ test_scout_and_secondmate_scaffold() {
     || fail "fm-brief.sh secondmate scaffold exited non-zero"
   brief="$BRIEF_HOME/data/brief-sm-q6/brief.md"
   assert_present "$brief" "secondmate charter was not scaffolded"
+  assert_no_grep "# Build methodology" "$brief" "secondmate must not carry ship methodology"
   assert_grep "persistent second mate" "$brief" \
     "secondmate charter must declare its role"
   assert_no_grep "## Captain's intent" "$brief" \
@@ -791,6 +829,7 @@ test_ship_mode_is_explicit_not_registry
 test_delivery_flags_are_refused_where_they_do_not_apply
 test_faster_paths_use_configured_authority_without_stacked_review
 test_no_mistakes_dod_wording
+test_ship_build_methodology
 test_ship_project_memory_wording
 test_herdr_lab_contract_is_explicit_and_complete
 test_herdr_lab_contract_quotes_foreign_firstmate_path

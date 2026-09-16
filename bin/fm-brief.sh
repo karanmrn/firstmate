@@ -47,6 +47,8 @@
 # to launch a ship task whose explicit --mode disagrees, so an adjusted brief and the
 # recorded task metadata cannot drift apart.
 # Ship briefs begin with a worktree-isolation assertion before the branch step.
+# Ship-only Build methodology follows Definition of done; the selected delivery
+# mode still controls whether PR and pipeline steps apply.
 # --mode is refused on scout and secondmate scaffolds: a scout's deliverable is a
 # report rather than a merge, and a charter is not a delivery contract.
 # There is no --yolo flag here. The worker never owns merge decisions, so yolo is
@@ -468,5 +470,18 @@ If you touch a project \`AGENTS.md\` that lacks \`## Maintaining this file\`, ad
 Keep it proportionate: skip \`AGENTS.md\` edits for trivial tasks that produced no durable project knowledge.
 
 $DOD
+
+# Build methodology
+Follow the delivery mode above; PR and pipeline steps apply only when that mode permits them.
+- Isolate - This worktree is the isolation.
+  Never build on main.
+- Build - Actions and boundaries orchestrate why and when.
+  A service layer owns the reusable how.
+- Prove - Capture before evidence while reproducing, before the fix, and after evidence after the fix.
+  Run the repo checks.
+- Ship - The PR body carries before/after proof: screenshot or video for anything visible, measured numbers or output pairs otherwise.
+  The no-mistakes run comes first when required by the delivery mode.
+  Then run \`/greploop\`, or \`/greploop-apps\` for huge PRs, on the opened PR until Greptile reports 5/5 with zero unresolved comments.
+- Writing for humans - Run \`/unslop\` over commit messages, PR titles and bodies, docs, comments and replies.
 EOF
 echo "scaffolded: $BRIEF (ship, mode=$MODE; replace {TASK} and {FIRSTMATE_SPEC})"
