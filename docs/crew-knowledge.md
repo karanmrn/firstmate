@@ -1,7 +1,7 @@
 # Crew knowledge
 
 Crew knowledge is how lanes in a firstmate home share what they learn without routing every fact through firstmate.
-It has three parts: a knowledge board (durable shared entries with provenance and expiry), lane-to-lane peer messages (point-to-point records in the steering inbox, with a copy firstmate can see), and overlap detection (which live lanes are touching the same files).
+It has three parts: a knowledge board (durable shared entries with provenance and expiry), lane-to-lane peer messages (point-to-point records in the steering inbox, with a durable copy for firstmate in each lane's peer log), and overlap detection (which live lanes are touching the same files).
 Decisions stay with firstmate: nothing on the board and no peer message is an instruction, an approval, or a decision close.
 
 ## Ownership
@@ -80,12 +80,12 @@ bin/fm-knowledge.sh digest
 - `add` prints the new entry id.
 - `list` and `search` print one line per matching entry: id, kind, project, expiry date, title.
 - `render` rewrites `BOARD.md` with every live entry grouped by project and kind, prints the board to stdout (filtered to `--project` when given), and ends with an "Active lanes touching this area" block built from the overlap computation, so a worker sees who else is active before editing.
-- `overlaps` prints the raw lane pairs and the files and top-level directories they share, with no board mutation.
+- `overlaps` prints the raw lane pairs and the files and parent directories they share, with no board mutation.
 - `digest` prints the bounded session-start summary and nothing else.
 
 ## Lane-to-lane peer messages
 
-A lane sends a fact or a question to another lane directly:
+A lane sends a fact or a question to another lane directly. `--from` must come before the target; `fm-send` refuses `--from` after the target:
 
 ```
 bin/fm-send.sh --from <own-task> <target-task> "the auth module already handles token refresh; see src/auth/refresh.c"
@@ -116,13 +116,21 @@ Every peer send appends one identical line to `state/<from>.peer.log` and `state
 <utc> <from> -> <target> [seq NNN] <excerpt, capped at 120 chars>
 ```
 
-The session digest tails those logs so firstmate sees the traffic without reading either lane's pane.
+These logs are firstmate's copy of peer traffic.
+Firstmate reads them at session start, where the digest shows the newest lines, and whenever it reviews the fleet.
+There is no live wake or firstmate inbox note per peer message, by design: lanes talk to each other so firstmate does not spend tokens on every exchange.
+The only live signal is the watcher's escalation of a peer record that the receiver leaves unacknowledged.
+
+A peer log is task-scoped runtime state: `bin/fm-teardown.sh` removes `state/<id>.peer.log` together with the inbox.
+The digest drops any line whose sender or target has no `state/<id>.meta`, so it never shows traffic from retired tasks.
 
 ## Overlap detection
 
 `overlaps` reads every `state/<id>.meta`, keeps records whose `worktree=` is an existing git worktree, and skips `kind=secondmate` records, whose worktree is a whole home rather than a lane.
 For each remaining lane it diffs the worktree against its default-branch base (`origin/HEAD`, else `origin/main`, `origin/master`, then local `main` or `master`) with `git diff --name-only <base>`, so committed and uncommitted lane changes both count.
-Two lanes overlap when their changed-file sets share at least one exact path or one top-level directory, and only when both lanes work on the same project; identical directory names in different repos are not an overlap.
+Two lanes overlap when their changed-file sets share at least one exact path or one parent directory, and only when both lanes work on the same project; identical directory names in different repos are not an overlap.
+The parent directory is the full `dirname` of each changed file, so `bin/fm-knowledge.sh` and `bin/fm-teardown.sh` share `bin/`, but `src/billing/api.c` and `src/auth/login.c` do not share a directory.
+A file at the repository root has no parent directory key and overlaps only through the exact-path match.
 Each lane's git probe runs under a short timeout, and a lane that cannot be read is reported as unreadable rather than failing the whole run.
 The lane set is bounded by `FM_KNOWLEDGE_OVERLAP_MAX_LANES` (default 12) so the session digest stays cheap; any remainder is counted and disclosed.
 

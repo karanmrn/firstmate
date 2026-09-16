@@ -501,16 +501,9 @@ while :; do
       FIRE_AND_FORGET_ID=${1#--fire-and-forget=}
       shift
       ;;
-    --from)
-      [ $# -ge 2 ] || { echo "error: --from requires a sender task id" >&2; exit 1; }
-      [ -z "$FROM_TASK" ] || { echo "error: duplicate --from" >&2; exit 1; }
-      FROM_TASK=$2
-      shift 2
-      ;;
-    --from=*)
-      [ -z "$FROM_TASK" ] || { echo "error: duplicate --from" >&2; exit 1; }
-      FROM_TASK=${1#--from=}
-      shift
+    --from|--from=*)
+      echo "error: --from must come before the target: fm-send.sh --from <own-task-id> <target> <text>" >&2
+      exit 1
       ;;
     *) break ;;
   esac

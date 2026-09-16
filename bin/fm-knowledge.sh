@@ -31,7 +31,7 @@
 # - overlaps diffs each live task worktree (state/<id>.meta worktree=, skipping
 #   kind=secondmate) against its default-branch base with `git diff --name-only
 #   <base>` (committed and uncommitted changes both count) and reports lane
-#   pairs in the same project sharing an exact path or a top-level directory.
+#   pairs in the same project sharing an exact path or a parent directory.
 #   The lane set is bounded by FM_KNOWLEDGE_OVERLAP_MAX_LANES (default 12).
 # - digest prints the bounded (<20 line) session-start summary: live counts per
 #   project, entries expiring within 24h, overlap pairs, recent peer traffic.
@@ -282,7 +282,7 @@ def probe_lanes():
         lane["files"] = files or []
         lane["base"] = base
         lane["err"] = err
-        lane["dirs"] = sorted({p.split("/")[0] + ("/" if "/" in p else "") for p in lane["files"]})
+        lane["dirs"] = sorted({os.path.dirname(p) + "/" for p in lane["files"] if "/" in p})
     pairs = []
     readable = [l for l in lanes if l["err"] is None]
     for i in range(len(readable)):
@@ -316,16 +316,20 @@ def recent_peer_lines(n):
     # target's <id>.peer.log (bin/fm-send.sh owns the write), so collect the
     # tail of each log and de-duplicate identical lines before taking the
     # newest n. Lines begin with an ISO-8601 UTC timestamp, so a lexical sort
-    # of the deduplicated set is also chronological.
+    # of the deduplicated set is also chronological. Traffic that names a
+    # retired task (no <id>.meta left) is dropped.
     seen = set()
     for log in sorted(STATE.glob("*.peer.log")):
         try:
-            tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-n:]
+            lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
         except OSError:
             continue
-        for ln in tail:
+        for ln in lines:
             ln = ln.rstrip()
-            if ln:
+            parts = ln.split(" ", 4)
+            if len(parts) < 4 or parts[2] != "->":
+                continue
+            if all((STATE / (task + ".meta")).is_file() for task in (parts[1], parts[3])):
                 seen.add(ln)
     return sorted(seen)[-n:]
 
@@ -593,14 +597,14 @@ def cmd_overlaps(a):
             print("lane {} ({}): no changes vs {}".format(lane["id"], proj, lane["base"]))
         else:
             dirs = ", ".join(lane["dirs"][:6]) + (" ..." if len(lane["dirs"]) > 6 else "")
-            print("lane {} ({}): {} files vs {} (top dirs: {})".format(
+            print("lane {} ({}): {} files vs {} (dirs: {})".format(
                 lane["id"], proj, len(lane["files"]), lane["base"], dirs))
     if not pairs:
         print("no overlapping lanes")
     for pair in pairs:
         seg = []
         if pair["dirs"]:
-            seg.append("shared top-level dirs: " + ", ".join(pair["dirs"][:6]))
+            seg.append("shared dirs: " + ", ".join(pair["dirs"][:6]))
         if pair["files"]:
             seg.append("shared files: " + ", ".join(pair["files"][:5])
                        + (" (+{} more)".format(len(pair["files"]) - 5) if len(pair["files"]) > 5 else ""))

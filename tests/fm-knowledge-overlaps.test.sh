@@ -5,10 +5,11 @@
 # overlaps reads every state/<id>.meta with a worktree= (skipping
 # kind=secondmate), diffs the worktree against its default-branch base with
 # `git diff --name-only <base>`, and reports lane pairs in the same project
-# that share an exact path or a top-level directory. These tests build real
-# git worktrees and pin:
-#   1. Two lanes in the same project touching the same top-level directory
-#      are reported as an overlap pair.
+# that share an exact path or a parent directory (the full dirname of a
+# changed file). These tests build real git worktrees and pin:
+#   1. Two lanes in the same project touching the same parent directory are
+#      reported as an overlap pair; sibling subdirectories under one top-level
+#      directory are not.
 #   2. Two lanes in the same project touching the same file are reported with
 #      the shared file named.
 #   3. Lanes in different projects never pair, even on identical paths.
@@ -65,9 +66,19 @@ test_same_dir_overlap_detected() {
   local home out
   home=$(setup_lanes samedir src/billing/api.c src/auth/login.c -- src/billing/tax.c)
   out=$(FM_HOME="$home" "$KNOW" overlaps) || fail "overlaps failed"
-  assert_contains "$out" "fm-lane-a + fm-lane-b" "same-project lanes sharing src/ must pair"
-  assert_contains "$out" "shared top-level dirs: src/" "the shared top-level dir should be named"
-  pass "overlaps: same-project lanes sharing a top-level directory are paired"
+  assert_contains "$out" "fm-lane-a + fm-lane-b" "same-project lanes sharing src/billing/ must pair"
+  printf '%s\n' "$out" | grep -qx "overlap fm-lane-a + fm-lane-b: shared dirs: src/billing/" \
+    || fail "only the exact shared parent dir should be named: $out"
+  pass "overlaps: same-project lanes sharing a parent directory are paired"
+}
+
+test_sibling_subdirs_do_not_pair() {
+  local home out
+  home=$(setup_lanes siblings src/auth/login.c README.md -- src/billing/tax.c docs/guide.md)
+  out=$(FM_HOME="$home" "$KNOW" overlaps) || fail "overlaps failed"
+  assert_contains "$out" "no overlapping lanes" \
+    "lanes under the same top-level dir but different parent dirs must not pair"
+  pass "overlaps: sibling subdirectories under one top-level directory never pair"
 }
 
 test_same_file_overlap_named() {
@@ -125,6 +136,7 @@ test_clean_lane_pairs_with_nobody() {
 }
 
 test_same_dir_overlap_detected
+test_sibling_subdirs_do_not_pair
 test_same_file_overlap_named
 test_cross_project_never_pairs
 test_secondmate_meta_is_skipped

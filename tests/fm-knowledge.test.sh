@@ -171,13 +171,18 @@ test_digest_is_bounded_and_includes_peers() {
   local home lines out
   home=$(setup_home digest)
   FM_HOME="$home" "$KNOW" add --project alpha --kind fact --title "F" --body "b" >/dev/null
+  : > "$home/state/fm-lane-a.meta"
+  : > "$home/state/fm-lane-b.meta"
   printf '2026-09-16T10:00:00Z fm-lane-a -> fm-lane-b [seq 001] test line\n' > "$home/state/fm-lane-a.peer.log"
+  printf '2026-09-16T11:00:00Z fm-retired -> fm-lane-b [seq 002] retired line\n' >> "$home/state/fm-lane-b.peer.log"
   out=$(FM_HOME="$home" "$KNOW" digest)
   assert_contains "$out" "Knowledge board:" "digest header"
   assert_contains "$out" "Recent peer traffic:" "digest should fold in peer traffic"
+  assert_contains "$out" "test line" "digest should show traffic between live lanes"
+  case "$out" in *"retired line"*) fail "digest must never show traffic from a retired task: $out" ;; esac
   lines=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
   [ "$lines" -le 19 ] || fail "digest must stay under 20 lines, got $lines"
-  pass "knowledge digest: bounded and carries peer traffic"
+  pass "knowledge digest: bounded, carries live peer traffic, drops retired tasks"
 }
 
 test_add_records_provenance_and_ttl

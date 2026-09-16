@@ -1473,6 +1473,26 @@ test_teardown_missing_busy_sidecar_completes() {
   pass "teardown completes when an exact busy-state sidecar is already absent"
 }
 
+test_teardown_removes_peer_log() {
+  local case_dir rc
+  case_dir=$(make_case peer-log)
+  write_meta "$case_dir" local-only ship
+  printf '2026-09-16T10:00:00Z task-x2 -> task-x1 [seq 001] note\n' > "$case_dir/state/task-x1.peer.log"
+  printf '2026-09-16T10:00:00Z task-x2 -> task-x1 [seq 001] note\n' > "$case_dir/state/task-x2.peer.log"
+
+  set +e
+  run_teardown "$case_dir" --force > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+
+  expect_code 0 "$rc" "peer-log: teardown should succeed"
+  assert_absent "$case_dir/state/task-x1.peer.log" \
+    "peer-log: teardown left the retired task's peer log"
+  [ -f "$case_dir/state/task-x2.peer.log" ] \
+    || fail "peer-log: teardown must not remove another task's peer log"
+  pass "teardown removes the retired task's peer log and leaves other lanes' logs"
+}
+
 test_herdr_teardown_clears_escalation_marker() {
   local case_dir marker
   case_dir=$(make_case herdr-marker-cleanup)
@@ -2749,6 +2769,7 @@ test_local_only_force_overrides_unpushed
 test_secondmate_pr_registration_publishes_ready_line
 test_secondmate_home_teardown_delivers_final_line_or_refuses
 test_teardown_missing_busy_sidecar_completes
+test_teardown_removes_peer_log
 test_herdr_teardown_clears_escalation_marker
 test_herdr_flat_teardown_refuses_orphaning_records_then_retry_completes
 test_herdr_flat_teardown_refuses_records_on_unparseable_presence
