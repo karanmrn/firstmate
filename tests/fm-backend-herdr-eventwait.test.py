@@ -81,11 +81,20 @@ class EventWaitReadLineTest(unittest.TestCase):
         self.assertEqual(buf, b"")
         self.assertEqual(outcome, "error")
 
+    def test_main_rejects_a_relative_socket_path(self):
+        stderr = io.StringIO()
+        with mock.patch.object(READER.sys, "stderr", stderr):
+            result = READER.main(["herdr-eventwait.py", "herdr.sock", "1", "pane"])
+
+        self.assertEqual(result, 2)
+        self.assertIn("must be absolute", stderr.getvalue())
+
     def test_main_reports_early_stream_closure(self):
         stdout = io.StringIO()
         with mock.patch.object(READER.socket, "socket", return_value=ClosingStreamSocket()):
-            with mock.patch.object(READER.sys, "stdout", stdout):
-                result = READER.main(["herdr-eventwait.py", "socket", "1", "pane"])
+            with mock.patch.object(READER.os, "chdir"):
+                with mock.patch.object(READER.sys, "stdout", stdout):
+                    result = READER.main(["herdr-eventwait.py", "/run/herdr.sock", "1", "pane"])
 
         self.assertEqual(result, 4)
         self.assertEqual(stdout.getvalue(), "@subscribed\n")
@@ -95,8 +104,9 @@ class EventWaitReadLineTest(unittest.TestCase):
         with mock.patch.object(
             READER.socket, "socket", return_value=RejectedSubscriptionSocket()
         ):
-            with mock.patch.object(READER.sys, "stdout", stdout):
-                result = READER.main(["herdr-eventwait.py", "socket", "1", "pane"])
+            with mock.patch.object(READER.os, "chdir"):
+                with mock.patch.object(READER.sys, "stdout", stdout):
+                    result = READER.main(["herdr-eventwait.py", "/run/herdr.sock", "1", "pane"])
 
         self.assertEqual(result, 3)
         self.assertEqual(stdout.getvalue(), "")
