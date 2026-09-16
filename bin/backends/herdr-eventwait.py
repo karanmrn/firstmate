@@ -86,7 +86,8 @@ def main(argv):
 
     # AF_UNIX addresses are capped near 104 bytes, and a Herdr session socket
     # beneath a deep home can exceed that. Connect by basename from the socket
-    # directory; this process exits after one request, so chdir leaks nowhere.
+    # directory; nothing after the connect resolves a relative path, and this
+    # reader is its own subprocess, so the chdir leaks nowhere.
     socket_dir, socket_name = os.path.split(sock_path)
     socket_dir = socket_dir or "."
     try:

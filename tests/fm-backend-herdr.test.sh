@@ -4373,7 +4373,7 @@ test_eventwait_connects_to_long_socket_path() {
   }
   reader="$ROOT/bin/backends/herdr-eventwait.py"
   tmp_root="$TMP_ROOT"
-  EVENTWAIT_READER="$reader" EVENTWAIT_TMP_ROOT="$tmp_root" python3 - <<'PY'
+  EVENTWAIT_READER="$reader" EVENTWAIT_TMP_ROOT="$tmp_root" python3 - <<'PY' || fail "eventwait could not connect over a long socket path"
 import os
 import subprocess
 import sys
@@ -4431,7 +4431,7 @@ with tempfile.TemporaryDirectory(dir=tmp_root, prefix="eventwait-socket-") as ba
             error = listener.stderr.read()
             raise AssertionError(f"listener did not start: {ready!r} {error!r}")
         client = subprocess.run(
-            [sys.executable, reader, socket_path, "0.2", "pane-1"],
+            [sys.executable, reader, socket_path, "1.0", "pane-1"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
