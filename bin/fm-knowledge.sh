@@ -152,8 +152,15 @@ def locked():
 
 
 def append_op(rec):
-    with LOG.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    # Callers hold locked(). A crashed writer can leave a partial last line;
+    # terminate it first so this record starts on its own line.
+    line = json.dumps(rec, ensure_ascii=False) + "\n"
+    with LOG.open("ab+") as fh:
+        if fh.seek(0, os.SEEK_END) > 0:
+            fh.seek(-1, os.SEEK_END)
+            if fh.read(1) != b"\n":
+                line = "\n" + line
+        fh.write(line.encode("utf-8"))
         fh.flush()
         os.fsync(fh.fileno())
 

@@ -12,7 +12,8 @@
 #      never the matched text.
 #   4. confirm re-arms an entry; delete requires --as firstmate and tombstones.
 #   5. expire retires past-TTL entries exactly once (idempotent second run).
-#   6. A corrupt log line warns on stderr but never breaks the fold.
+#   6. A corrupt log line warns on stderr but never breaks the fold, and a
+#      partial trailing line never swallows the next appended record.
 #   7. render --project scopes stdout while BOARD.md always holds the full board.
 #   8. digest stays under 20 lines and folds in peer traffic when present.
 # Contract: docs/crew-knowledge.md.
@@ -154,6 +155,20 @@ test_corrupt_line_warns_but_reads() {
   pass "knowledge fold: a corrupt line warns and is skipped"
 }
 
+test_add_after_partial_line_persists() {
+  local home out log
+  home=$(setup_home partial); log="$home/state/knowledge/entries.jsonl"
+  FM_HOME="$home" "$KNOW" add --project alpha --kind fact --title "Before crash" --body "b" >/dev/null
+  printf '{"op":"add","id":"k-broken' >> "$log"
+  FM_HOME="$home" "$KNOW" add --project alpha --kind fact --title "After crash" --body "b" >/dev/null
+  FM_HOME="$home" "$KNOW" add --project alpha --kind fact --title "Later entry" --body "b" >/dev/null
+  out=$(FM_HOME="$home" "$KNOW" list 2>/dev/null)
+  assert_contains "$out" "Before crash" "entries before the crash must survive"
+  assert_contains "$out" "After crash" "the first add after a partial line must persist"
+  assert_contains "$out" "Later entry" "later adds must persist"
+  pass "knowledge append: a partial trailing line never swallows the next record"
+}
+
 test_render_scopes_stdout_board_stays_full() {
   local home out
   home=$(setup_home render)
@@ -191,5 +206,6 @@ test_secret_rejection
 test_confirm_delete_expire_lifecycle
 test_expire_is_idempotent
 test_corrupt_line_warns_but_reads
+test_add_after_partial_line_persists
 test_render_scopes_stdout_board_stays_full
 test_digest_is_bounded_and_includes_peers
