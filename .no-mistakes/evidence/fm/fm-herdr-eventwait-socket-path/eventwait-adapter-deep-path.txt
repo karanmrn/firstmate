@@ -1,0 +1,7 @@
+== production adapter: fm_backend_herdr_wait_transition over a deep socket path ==
+socket path bytes: 141
+adapter stdout (normalized escalation record):
+  pane-1	ws-7		blocked	claude
+  wait_transition exit: 0
+adapter stderr:
+escalation markers written:

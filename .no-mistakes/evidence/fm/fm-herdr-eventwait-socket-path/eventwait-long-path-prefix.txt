@@ -1,0 +1,8 @@
+== PRE-FIX reader (base commit 514e48e) on same deep socket path ==
+socket path bytes: 137
+$ herdr-eventwait.py <104+ byte socket path> 1.5 pane-1
+exit status: 2
+stdout:
+stderr:
+listener saw:
+  ready

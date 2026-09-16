@@ -1,0 +1,11 @@
+== FIXED reader (target commit) on deep socket path ==
+socket path bytes: 137
+$ herdr-eventwait.py <104+ byte socket path> 1.5 pane-1
+exit status: 0
+stdout:
+  @subscribed
+  pane-1	ws-7	blocked	claude
+stderr:
+listener saw:
+  ready
+  request={"id": "fm-eventwait", "method": "events.subscribe", "params": {"subscriptions": [{"type": "pane.agent_status_changed", "pane_id": "pane-1"}]}}

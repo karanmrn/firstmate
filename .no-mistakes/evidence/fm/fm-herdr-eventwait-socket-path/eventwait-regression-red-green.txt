@@ -1,0 +1,13 @@
+tests/fm-backend-herdr.test.sh - the runner-executed suite (bin/fm-test-run.sh globs tests/*.test.sh)
+
+--- WITH the fix (target 671129f), suite exit 0 ---
+190:ok - herdr-eventwait.py connects to a throwaway AF_UNIX listener beyond the 104-byte path limit
+191:ok - herdr-eventwait.py refuses a relative socket path
+
+--- WITH bin/backends/herdr-eventwait.py connect reverted to sock.connect(sock_path), suite exit 1 ---
+Traceback (most recent call last):
+  File "<stdin>", line 66, in <module>
+AssertionError: eventwait failed for a long socket path: rc=2 stdout='' stderr=''
+not ok - eventwait could not connect over a long socket path
+
+(file restored afterwards; git status --porcelain is empty)

@@ -1,0 +1,20 @@
+== guard: relative socket path ==
+$ cd /tmp/fm-eventwait-drive && herdr-eventwait.py herdr.sock 1 pane-1
+exit status: 2
+output: herdr-eventwait.py: socket path must be absolute; the control socket is connected by basename from its own directory
+
+== guard: relative dotted path ==
+$ herdr-eventwait.py ./sub/herdr.sock 1 pane-1
+exit status: 2
+output: herdr-eventwait.py: socket path must be absolute; the control socket is connected by basename from its own directory
+
+== guard: absolute path, missing directory ==
+$ herdr-eventwait.py /nonexistent-dir-xyz/herdr.sock 1 pane-1
+exit status: 2
+output: <none>
+
+== guard: absolute path, directory exists, no listener ==
+$ herdr-eventwait.py /tmp/fm-eventwait-drive/absent.sock 1 pane-1
+exit status: 2
+output: <none>
+cwd after all runs: /tmp/fm-eventwait-drive

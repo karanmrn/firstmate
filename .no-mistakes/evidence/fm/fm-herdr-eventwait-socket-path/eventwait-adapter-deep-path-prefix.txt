@@ -1,0 +1,7 @@
+== production adapter with PRE-FIX reader (base 514e48e) over a deep socket path ==
+socket path bytes: 141
+adapter stdout (normalized escalation record):
+  
+  wait_transition exit: 2
+adapter stderr:
+escalation markers written:
