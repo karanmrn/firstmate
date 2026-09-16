@@ -176,6 +176,8 @@ test_peer_refusal_boundaries() {
     t1 --from t2 "hello"
   expect_refusal "$dir" "--from must come before the target" \
     t1 --from=t2 "hello"
+  expect_refusal "$dir" "--from must come before the target" \
+    --from=t2 t1 "hello"
   [ ! -e "$dir/home/state/t1.inbox" ] \
     || fail "a refused peer send must never enqueue a record:"$'\n'"$(ls "$dir/home/state/t1.inbox" 2>/dev/null)"
   [ ! -e "$dir/home/state/t1.peer.log" ] && [ ! -e "$dir/home/state/t2.peer.log" ] \

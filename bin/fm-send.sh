@@ -432,11 +432,17 @@ fm_send_resolve_target() {  # <raw-target>
 # A leading --from <own-task-id> marks this as a lane-to-lane peer message
 # (contract: docs/crew-knowledge.md); consume it before the target is read.
 FROM_TASK=
-if [ "${1:-}" = "--from" ]; then
-  [ $# -ge 3 ] || { echo "error: --from requires a sender task id, then <target> <text>" >&2; exit 1; }
-  FROM_TASK=$2
-  shift 2
-fi
+case "${1:-}" in
+  --from)
+    [ $# -ge 3 ] || { echo "error: --from requires a sender task id, then <target> <text>" >&2; exit 1; }
+    FROM_TASK=$2
+    shift 2
+    ;;
+  --from=*)
+    echo "error: --from must come before the target: fm-send.sh --from <own-task-id> <target> <text>" >&2
+    exit 1
+    ;;
+esac
 
 RAW_TARGET=$1
 fm_send_resolve_target "$RAW_TARGET" || exit 1
