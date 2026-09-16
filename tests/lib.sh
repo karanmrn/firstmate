@@ -41,6 +41,12 @@ export FM_GATE_REFUSE_BYPASS=1
 # CI; a suite that exercises a Herdr pane sets these itself.
 unset HERDR_ENV HERDR_PANE_ID HERDR_TAB_ID HERDR_WORKSPACE_ID HERDR_SOCKET_PATH
 
+# Prime exports its identity beside Pi's marker into every tool process.
+# Simulated harness fixtures must establish their own identity, not inherit
+# Prime's higher-precedence markers from the agent running the suite.
+# Prime adapter tests set these explicitly when testing Prime detection.
+unset PRIME_AGENT_KERNEL_OWNER_PID PRIME_AGENT_INTERNAL_DAEMON_WORKER
+
 # Resolve the repo root from this library's own location. Consumed by sourcing
 # test files, not by this library, so it reads as "unused" here.
 # shellcheck disable=SC2034
