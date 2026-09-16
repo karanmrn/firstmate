@@ -305,6 +305,10 @@
       "audience": "operator-current"
     },
     {
+      "path": "docs/crew-knowledge.md",
+      "audience": "maintainer-architecture"
+    },
+    {
       "path": "docs/captain-hold-lifecycle.md",
       "audience": "maintainer-architecture"
     },
@@ -479,10 +483,6 @@
     {
       "path": "skills/stow/SKILL.md",
       "audience": "public-product"
-    },
-    {
-      "path": "docs/crew-knowledge.md",
-      "audience": "maintainer-architecture"
     }
   ]
 }
