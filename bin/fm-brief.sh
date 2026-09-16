@@ -481,7 +481,7 @@ Follow the delivery mode above; PR and pipeline steps apply only when that mode 
   Run the repo checks.
 - Ship - The PR body carries before/after proof: screenshot or video for anything visible, measured numbers or output pairs otherwise.
   The no-mistakes run comes first when required by the delivery mode.
-  Only when this brief asks, run \`/greploop\` on the opened PR, or \`/greploop-apps\` for huge PRs.
+  Only when this brief asks, run \`/greploop\` on the opened PR (or \`/greploop-apps\` for huge PRs), and completion follows the Definition of done above (report done when CI first turns green for no-mistakes).
   Target Greptile 5/5 with zero unresolved comments.
   Completion follows the Definition of done above; report done when CI first turns green for no-mistakes.
 - Writing for humans - Run \`/unslop\` over commit messages, PR titles and bodies, docs, comments and replies.
