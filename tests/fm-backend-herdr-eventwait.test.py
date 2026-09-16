@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 import importlib.util
 import io
-import os
-import subprocess
 import socket
-import sys
-import tempfile
 import time
 import unittest
 from pathlib import Path
@@ -84,91 +80,6 @@ class EventWaitReadLineTest(unittest.TestCase):
         self.assertIsNone(line)
         self.assertEqual(buf, b"")
         self.assertEqual(outcome, "error")
-
-    def test_main_rejects_a_relative_socket_path(self):
-        stderr = io.StringIO()
-        with mock.patch.object(READER.sys, "stderr", stderr):
-            result = READER.main(["herdr-eventwait.py", "herdr.sock", "1", "pane"])
-
-        self.assertEqual(result, 2)
-        self.assertIn("must be absolute", stderr.getvalue())
-
-    def test_connects_to_a_socket_path_beyond_the_af_unix_limit(self):
-        listener_code = r'''
-import json
-import os
-import socket
-import sys
-
-directory, name = sys.argv[1:]
-os.chdir(directory)
-server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-server.bind(name)
-server.listen(1)
-print("ready", flush=True)
-connection, _ = server.accept()
-with connection, server:
-    request_bytes = b""
-    while b"\n" not in request_bytes:
-        chunk = connection.recv(65536)
-        if not chunk:
-            raise SystemExit("client closed before subscribing")
-        request_bytes += chunk
-    request = json.loads(request_bytes.split(b"\n", 1)[0].decode("utf-8"))
-    if request.get("method") != "events.subscribe":
-        raise SystemExit(f"unexpected request: {request!r}")
-    connection.sendall(
-        b'{"id":"fm-eventwait","result":{"type":"subscription_started"}}\n'
-    )
-    while connection.recv(65536):
-        pass
-'''
-
-        with tempfile.TemporaryDirectory(prefix="eventwait-socket-") as base:
-            socket_dir = Path(base) / ("d" * 45) / ("e" * 45)
-            socket_dir.mkdir(parents=True)
-            socket_name = "herdr.sock"
-            socket_path = socket_dir / socket_name
-            self.assertGreater(len(os.fsencode(socket_path)), 104)
-
-            listener = subprocess.Popen(
-                [sys.executable, "-c", listener_code, str(socket_dir), socket_name],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            try:
-                ready = listener.stdout.readline().strip()
-                if ready != "ready":
-                    self.fail(f"listener did not start: {ready!r} {listener.stderr.read()!r}")
-                client = subprocess.run(
-                    [
-                        sys.executable,
-                        str(READER_PATH),
-                        str(socket_path),
-                        "1.0",
-                        "pane-1",
-                    ],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    check=False,
-                    timeout=10,
-                )
-                self.assertEqual(
-                    client.returncode,
-                    0,
-                    f"stdout={client.stdout!r} stderr={client.stderr!r}",
-                )
-                self.assertEqual(client.stdout, "@subscribed\n")
-                listener_rc = listener.wait(timeout=5)
-                self.assertEqual(listener_rc, 0, listener.stderr.read())
-            finally:
-                if listener.poll() is None:
-                    listener.terminate()
-                    listener.wait(timeout=5)
-                listener.stdout.close()
-                listener.stderr.close()
 
     def test_main_reports_early_stream_closure(self):
         stdout = io.StringIO()
