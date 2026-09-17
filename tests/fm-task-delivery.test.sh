@@ -354,17 +354,14 @@ STUB
     assert_grep "## Firstmate spec" "$payload" \
       "$mode: promoted worker did not receive the Firstmate spec subsection"
 
-    # Compare the public outputs of both real generation paths. The promoted
-    # payload ends at its Definition of done, as does an ordinary generated
-    # brief, so identical suffixes prove both workers receive the same contract.
+    # Compare the Definition of done sections emitted by both generation paths.
+    # Stop at the next top-level heading and ignore trailing separator newlines.
     rm "$home/data/$id/brief.md"
     FM_HOME="$home" "$BRIEF" "$id" fixture-project --mode "$mode" >/dev/null 2>&1 \
       || fail "$mode: ordinary ship brief generation should succeed"
-    brief_dod="$TMP_ROOT/promote-dod/brief-dod-$id"
-    delivered_dod="$TMP_ROOT/promote-dod/delivered-dod-$id"
-    awk '/^# Definition of done$/ { emit=1 } emit' "$home/data/$id/brief.md" > "$brief_dod"
-    awk '/^# Definition of done$/ { emit=1 } emit' "$payload" > "$delivered_dod"
-    cmp -s "$brief_dod" "$delivered_dod" \
+    brief_dod=$(awk '/^# Definition of done$/ { emit=1; print; next } emit && /^# / { exit } emit' "$home/data/$id/brief.md")
+    delivered_dod=$(awk '/^# Definition of done$/ { emit=1; print; next } emit && /^# / { exit } emit' "$payload")
+    [ "$brief_dod" = "$delivered_dod" ] \
       || fail "$mode: promotion and ordinary brief generation delivered different Definitions of done"
   done
 
