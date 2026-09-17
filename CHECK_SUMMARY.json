@@ -1,4 +1,0 @@
-{
-  "summary": "14 CI checks failing after PR #5 (fm/fm-brief-four-beats). Code changes (fm-brief.sh methodology section, test additions, task-delivery test fix) pass all individual test suites locally. Lint, coverage guard (total=179 scripts), repo invariants, and bash snapshot compatibility all pass in the local worktree. Remaining failures (behavior portable parallel/serial, Herdr tests, timing aggregate, PR must be raised via no-mistakes) are infrastructure-dependent: Herdr not installed, multi-CI-runner execution, and PR metadata checks. User-declined decisions R2 (four beats for scouts), R3 (openrouter stealth model), R4 (AGENTS.md/cloud.md updates) explicitly supersede the user intent per recorded metadata. Only R1 (greploop/completion contract rewording) was previously fixed. No code change is needed - the failing checks are not caused by this PR's code.",
-  "code_change_needed": false
-}
