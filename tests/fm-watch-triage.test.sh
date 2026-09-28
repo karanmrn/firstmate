@@ -2488,11 +2488,23 @@ test_paused_authoritative_working_preserves_wedge_timer() {
   wait_for_exit "$pid" 100 || fail "declared pause with active run-step did not re-surface on the long cadence"
   grep -F "awaiting external" "$out" >/dev/null || fail "recheck was not labeled a declared-pause recheck"
   grep -F "possible wedge" "$out" >/dev/null && fail "declared pause with active run-step was mislabeled a possible wedge on recheck"
+  ack_stopped_cycle "$state" || fail "could not acknowledge the declared-pause recheck"
 
   printf 'working: pipeline finished, resuming\n' > "$statusf"
   sig=$(seen_sig "$statusf"); printf '%s' "$sig" > "$state/.seen-paused-working_status"
   : > "$out"
+  PATH="$fakebin:$PATH" FM_FAKE_TMUX_WINDOW="$window" FM_FAKE_TMUX_CAPTURE="$capture_file" \
+    FM_STATE_OVERRIDE="$state" FM_CREW_STATE_BIN="$fakebin/fm-crew-state.sh" FM_STALE_ESCALATE_SECS=999 FM_PAUSE_RESURFACE_SECS=999 FM_POLL=1 FM_SIGNAL_GRACE=1 \
+    FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out" &
+  pid=$!
+  wait_poll_cycle "$state" "$pid" || { reap "$pid"; fail "a lifted pause escalated before the wedge threshold: $(cat "$out")"; }
+  reap "$pid"
+  [ -s "$state/.stale-since-$key" ] || fail "a lifted pause did not restore the wedge timer"
+  [ ! -e "$state/.paused-$key" ] || fail "a lifted pause left pause bookkeeping behind"
+  ack_stopped_cycle "$state" || fail "could not acknowledge the intentional lifted-pause priming stop"
+
   echo $(( $(date +%s) - 500 )) > "$state/.stale-since-$key"
+  : > "$out"
   PATH="$fakebin:$PATH" FM_FAKE_TMUX_WINDOW="$window" FM_FAKE_TMUX_CAPTURE="$capture_file" \
     FM_STATE_OVERRIDE="$state" FM_CREW_STATE_BIN="$fakebin/fm-crew-state.sh" FM_STALE_ESCALATE_SECS=240 FM_PAUSE_RESURFACE_SECS=999 FM_POLL=1 FM_SIGNAL_GRACE=1 \
     FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out" &
