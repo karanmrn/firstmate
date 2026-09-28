@@ -924,6 +924,9 @@ clear_pause_tracking() {  # <window-key>
 }
 
 # Reconcile a declared pause or captain-held status with authoritative crew state.
+# A current paused: declaration outranks an active run-step or busy pane for absorb
+# classification: the crew named a long external wait, which includes waiting on a
+# no-mistakes pipeline step, until a non-paused status line ends the declaration.
 # After fm-crew-state has fallen back to stopped or unknown, paused classification is
 # recovered only for a confidently dead ordinary crew, or for a secondmate, whose
 # endpoint liveness this function deliberately never reads.
@@ -954,17 +957,30 @@ pause_state_class() {  # <window> <task>
     return
   fi
   class=$(crew_absorb_class "$task")
+  authoritative_working=0
   if [ "$class" = working ]; then
-    rm -f "$recheck_file"
-    printf 'working'
-    return
+    if status_is_paused "$last"; then
+      class=paused
+      authoritative_working=1
+    else
+      rm -f "$recheck_file"
+      printf 'working'
+      return
+    fi
   fi
   if [ "$kind" != secondmate ]; then
     agent_alive=$(fm_backend_agent_alive "$(window_backend "$win")" "$win" 2>/dev/null) || agent_alive=unknown
     if [ "$agent_alive" != dead ]; then
-      rm -f "$recheck_file"
-      printf 'none'
-      return
+      if status_is_paused "$last" && [ "$class" = paused ] && [ "$authoritative_working" -eq 0 ]; then
+        rm -f "$recheck_file"
+        printf 'none'
+        return
+      fi
+      if ! status_is_paused "$last"; then
+        rm -f "$recheck_file"
+        printf 'none'
+        return
+      fi
     fi
   fi
   # Recover paused classification for a declared wait that authoritative crew state
