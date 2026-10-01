@@ -148,10 +148,10 @@
 #     whose CURRENT WORKING DIRECTORY is this task's own worktree or tasktmp
 #     root via `lsof -a -d cwd` (cheap: bounded by process count, not by
 #     walking the worktree's file tree) and sends TERM, then KILL after a short
-#     grace period to any survivor whose process identity still matches. Both
-#     roots are unique per task and never
-#     shared, so this can never reach another task's or the primary's
-#     processes. Idempotent: nothing left to find is a silent no-op.
+#     grace period to any survivor whose process identity still matches. The
+#     tasktmp root is unique per task. The worktree is reaped only when the
+#     shared-slot guard below is not holding it for another task. Idempotent:
+#     nothing left to find is a silent no-op.
 #   Fix 3 - sweep abandoned remote job workers. A remote job worker started
 #     from a worktree's own bin/ outlives that worktree's removal without
 #     being reachable by Fix 2, because its working directory is wherever it
@@ -162,6 +162,18 @@
 #     root still exists, so the account's healthy LaunchAgent worker and every
 #     live remote secondmate worker are out of scope. Best effort: a sweep
 #     failure never blocks this teardown.
+#
+# Shared-slot guard: a stale task can still record a treehouse or Orca slot a
+# later task is using. Before any landed-work refusal, run abort, process reap,
+# branch delete, hook cleanup, or pool return, teardown scans this home's other
+# task records for the same worktree path (recorded string or canonical path).
+# Another record blocks release when its endpoint is not confidently dead
+# (alive, unknown, or unreadable) or the checkout is not this task's fm/<id>
+# branch. Teardown names that task id, leaves the worktree and its processes
+# untouched, and still removes this task's own endpoint and record. A
+# confidently dead record whose checkout is still fm/<id> does not block
+# return, and the landed-work and dirty refusals stay in force for that
+# release. --force does not override the guard.
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -1441,6 +1453,73 @@ teardown_treehouse_return() {
   return 1
 }
 
+# True when both recorded paths name one worktree. Equal strings match even
+# after the directory is gone. Live directories also match through their
+# canonical paths, so a symlink alias cannot hide a shared slot.
+worktree_paths_same() {
+  local a=$1 b=$2 ca cb
+  [ -n "$a" ] && [ -n "$b" ] || return 1
+  [ "$a" = "/" ] || a=${a%/}
+  [ "$b" = "/" ] || b=${b%/}
+  [ "$a" = "$b" ] && return 0
+  [ -d "$a" ] && [ -d "$b" ] || return 1
+  ca=$(cd -- "$a" && pwd -P) || return 1
+  cb=$(cd -- "$b" && pwd -P) || return 1
+  [ "$ca" = "$cb" ]
+}
+
+# alive, dead, or unknown. Unknown covers a record whose endpoint cannot be
+# validated or whose backend cannot prove the agent is gone. Restores the
+# caller's validated endpoint globals; child cleanup reads them later.
+other_task_endpoint_class() {
+  local meta=$1 id=$2 backend target state
+  local saved_backend=${FM_BACKEND_VALIDATED_BACKEND:-}
+  local saved_target=${FM_BACKEND_VALIDATED_TARGET:-}
+  if ! fm_backend_validate_task_endpoint "$meta" "$id" >/dev/null 2>&1; then
+    FM_BACKEND_VALIDATED_BACKEND=$saved_backend
+    FM_BACKEND_VALIDATED_TARGET=$saved_target
+    printf 'unknown'
+    return 0
+  fi
+  backend=$FM_BACKEND_VALIDATED_BACKEND
+  target=$FM_BACKEND_VALIDATED_TARGET
+  FM_BACKEND_VALIDATED_BACKEND=$saved_backend
+  FM_BACKEND_VALIDATED_TARGET=$saved_target
+  state=$(fm_backend_agent_alive "$backend" "$target" 2>/dev/null || true)
+  case "$state" in
+    alive|dead|unknown) printf '%s' "$state" ;;
+    *) printf 'unknown' ;;
+  esac
+}
+
+# True when the checkout is still the branch this task's brief creates.
+worktree_checkout_is_task_branch() {
+  local wt=$1 id=$2 branch
+  [ -d "$wt" ] || return 1
+  branch=$(git -C "$wt" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+  [ "$branch" = "fm/$id" ]
+}
+
+# Print one task id per line for every other record that blocks release of
+# <worktree>. A confidently dead record on this task's own branch is silent.
+worktree_release_conflict_ids() {
+  local self=$1 wt=$2 state=$3 meta id other_wt liveness
+  [ -n "$wt" ] && [ -d "$state" ] || return 1
+  for meta in "$state"/*.meta; do
+    [ -f "$meta" ] && [ ! -L "$meta" ] || continue
+    id=$(basename "$meta" .meta)
+    [ "$id" != "$self" ] || continue
+    case "$id" in ''|*[!A-Za-z0-9._-]*) continue ;; esac
+    other_wt=$(fm_meta_get "$meta" worktree)
+    [ -n "$other_wt" ] || continue
+    worktree_paths_same "$wt" "$other_wt" || continue
+    liveness=$(other_task_endpoint_class "$meta" "$id")
+    if [ "$liveness" != dead ] || ! worktree_checkout_is_task_branch "$wt" "$self"; then
+      printf '%s\n' "$id"
+    fi
+  done
+}
+
 validate_worktree_teardown_safety() {
   local dirty_raw dirty unpushed_raw unpushed DEFAULT unmerged_raw unmerged branch
   [ -d "$WT" ] || return 0
@@ -1718,8 +1797,9 @@ reap_task_backend_process_group() {  # <label>
   fi
 }
 
-# Reap every process rooted (by cwd) under this task's own worktree or tasktmp
-# - both unique per task and never shared - before either is removed. TERM
+# Reap every process rooted (by cwd) under the directories the caller passes.
+# The caller omits a worktree the shared-slot guard is holding for another
+# task. TERM
 # first, then KILL after a short grace period for anything still alive; a
 # process that exits on its own between the two passes is simply absent from
 # the recheck. A missing lsof uses the backend process-group fallback; an lsof
@@ -2684,7 +2764,12 @@ if [ -n "$X_REQUEST" ]; then
   echo "warning: task $ID still carries an unreconciled Relay request link ($X_REQUEST) on its task record." >&2
 fi
 
-if [ "$BACKEND" = orca ] && [ "$KIND" != scout ] && [ "$KIND" != secondmate ] && [ "$FORCE" != "--force" ]; then
+WORKTREE_RELEASE_CONFLICTS=
+if [ "$KIND" != secondmate ]; then
+  WORKTREE_RELEASE_CONFLICTS=$(worktree_release_conflict_ids "$ID" "$WT" "$STATE" || true)
+fi
+
+if [ -z "$WORKTREE_RELEASE_CONFLICTS" ] && [ "$BACKEND" = orca ] && [ "$KIND" != scout ] && [ "$KIND" != secondmate ] && [ "$FORCE" != "--force" ]; then
   if ! inspectable_git_worktree "$WT"; then
     echo "REFUSED: Orca ship task $ID has no inspectable git worktree at ${WT:-<missing>}." >&2
     echo "Cannot verify dirty or unlanded work; restore the worktree path or get explicit OK to discard, then --force." >&2
@@ -2694,7 +2779,7 @@ if [ "$BACKEND" = orca ] && [ "$KIND" != scout ] && [ "$KIND" != secondmate ] &&
   ORCA_PATH_MATCH_VERIFIED=1
 fi
 
-if [ -d "$WT" ] && [ "$FORCE" != "--force" ]; then
+if [ -z "$WORKTREE_RELEASE_CONFLICTS" ] && [ -d "$WT" ] && [ "$FORCE" != "--force" ]; then
   if validate_worktree_teardown_safety; then
     :
   else
@@ -2756,8 +2841,14 @@ fi
 # dedicated process-event and firstmate-home removal machinery further below,
 # not by task-worktree cleanup.
 if [ "$KIND" != secondmate ]; then
-  conclude_task_no_mistakes_run "$WT"
-  reap_task_worktree_processes worktree "$WT" "$TASK_TMP"
+  if [ -n "$WORKTREE_RELEASE_CONFLICTS" ]; then
+    # The shared checkout belongs to the conflicting task. Reap only this
+    # task's private temp root.
+    [ -z "$TASK_TMP" ] || reap_task_worktree_processes tasktmp "$TASK_TMP"
+  else
+    conclude_task_no_mistakes_run "$WT"
+    reap_task_worktree_processes worktree "$WT" "$TASK_TMP"
+  fi
 fi
 
 # Fix 3 (see script header): sweep remote job workers abandoned by an already
@@ -2765,7 +2856,20 @@ fi
 "$SCRIPT_DIR/fm-remote-job-reap-orphans.sh" >&2 || true
 
 # Best-effort: drop the local task branch so the shared repo does not accumulate refs.
-if [ "$BACKEND" = orca ] && [ "$KIND" != secondmate ]; then
+# A conflicting record keeps the checkout; this task's own endpoint is still
+# closed below (tmux/herdr/cmux) or here (orca, which otherwise closes it in
+# the same branch as the worktree removal).
+if [ -n "$WORKTREE_RELEASE_CONFLICTS" ]; then
+  while IFS= read -r conflict_id; do
+    [ -n "$conflict_id" ] || continue
+    echo "teardown: refusing to return, reset, or clean worktree $WT; task $conflict_id still records it" >&2
+  done <<EOF
+$WORKTREE_RELEASE_CONFLICTS
+EOF
+  if [ "$BACKEND" = orca ] && [ "$KIND" != secondmate ]; then
+    [ -z "$T_ORCA" ] || fm_backend_kill "$BACKEND" "$T" "$(meta_value "$META" zellij_tab_id)" "fm-$ID" 2>/dev/null || true
+  fi
+elif [ "$BACKEND" = orca ] && [ "$KIND" != secondmate ]; then
   if [ "$ORCA_PATH_MATCH_VERIFIED" != 1 ]; then
     require_orca_worktree_path_match_if_present "$ORCA_WORKTREE_ID" "$WT" || exit 1
     ORCA_PATH_MATCH_VERIFIED=1
