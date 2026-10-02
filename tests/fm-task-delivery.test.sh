@@ -1456,7 +1456,7 @@ EOF
 # binding, so promotion takes it from the registry with no flag to remember, and
 # refuses a flag that contradicts it.
 test_promotion_carries_the_forge_binding() {
-  local home sendroot meta out payload id
+  local home sendroot meta out payload id brief_dod delivered_dod
   home="$TMP_ROOT/forge-promote/home"
   sendroot="$TMP_ROOT/forge-promote/sendroot"
   mkdir -p "$home/state" "$home/data" "$home/projects/proj" "$sendroot/bin"
@@ -1493,14 +1493,15 @@ STUB
   assert_no_grep 'done [at=<epoch>]: PR {url} checks green' "$payload" \
     "the promoted worker was still told to report a PR with green checks"
 
-  # Both real generation paths must end in the same contract, as they do for every
+  # Both real generation paths must carry the same contract, as they do for every
   # mode: a promoted worker is never handed a weaker one than a briefed worker.
+  # Compare the Definition of done sections, stopping at the next top-level heading.
   rm "$home/data/$id/brief.md"
   FM_HOME="$home" "$BRIEF" "$id" proj --mode no-mistakes --forge gerrit >/dev/null 2>&1 \
     || fail "ordinary gerrit ship brief generation should succeed"
-  awk '/^# Definition of done$/ { emit=1 } emit' "$home/data/$id/brief.md" > "$TMP_ROOT/forge-promote/brief-dod"
-  awk '/^# Definition of done$/ { emit=1 } emit' "$payload" > "$TMP_ROOT/forge-promote/delivered-dod"
-  cmp -s "$TMP_ROOT/forge-promote/brief-dod" "$TMP_ROOT/forge-promote/delivered-dod" \
+  brief_dod=$(awk '/^# Definition of done$/ { emit=1; print; next } emit && /^# / { exit } emit' "$home/data/$id/brief.md")
+  delivered_dod=$(awk '/^# Definition of done$/ { emit=1; print; next } emit && /^# / { exit } emit' "$payload")
+  [ "$brief_dod" = "$delivered_dod" ] \
     || fail "promotion and ordinary brief generation delivered different gerrit contracts"
   pass "fm-promote: a promoted worker receives the project's registered forge contract with no flag to remember"
 }
