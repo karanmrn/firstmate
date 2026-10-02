@@ -6,18 +6,22 @@
 #   - The running firstmate repo (on its default branch) fast-forwards from
 #     origin; a leased secondmate home (detached HEAD on the default branch)
 #     fast-forwards the same way.
-#   - FAST-FORWARD ONLY: a dirty, diverged, offline, or wrong-branch target is
+#   - A dirty, offline, wrong-branch, or genuinely unique diverged target is
 #     skipped and reported, never forced or stashed, so unlanded work survives.
+#     Divergence leaves a durable reconciliation record, while a clean local
+#     result already present upstream after a squash merge heals automatically.
 #   - The update is a single-parent fast-forward (never a merge commit) and a
 #     fast-forward of one worktree never disturbs another worktree's checkout
 #     or the shared default branch.
 #   - The caller-action summary is correct: reread-firstmate flips to yes only
 #     when the instruction surface (AGENTS.md / bin / .agents/skills) changed, and
 #     the two secondmate action sets are disjoint and correctly gated -
-#     restart-secondmates carries a live mate whose AGENTS.md or .agents/skills/
-#     changed AND whose recorded runtime can prove a restart, nudge-secondmates
-#     carries the residual, and an advance that changed no instruction surface,
-#     or only bin/, produces no restart at all.
+#     restart-secondmates carries EVERY live mate this pass left on origin's tip
+#     whose recorded runtime can prove a restart, INCLUDING one that was already
+#     there and one whose advance touched no instruction surface, because a
+#     restart is also what re-resolves launch-time harness wiring; a live mate
+#     whose runtime cannot prove a restart falls to nudge-secondmates; and a mate
+#     whose home was skipped or whose endpoint is stopped gets no action at all.
 #   - Secondmate homes resolve from both state/<id>.meta and the
 #     data/secondmates.md registry, deduped, and the firstmate repo is never
 #     re-processed as one of its own secondmates.
@@ -183,16 +187,19 @@ test_reread_gate_is_instruction_only() {
 
   assert_contains "$out" "firstmate: updated " "firstmate still advanced"
   assert_contains "$out" "reread-firstmate: no" "non-instruction change skips reread"
-  # Nothing the secondmate reads or runs moved, so neither action set names it.
-  assert_contains "$out" "restart-secondmates: none" "a README-only advance must not restart anything"
-  assert_contains "$out" "nudge-secondmates: none" "a README-only advance must not steer anything"
-  pass "T3 an advance that touched no instruction surface produces no secondmate action"
+  # The running firstmate reads nothing new, but the mate's agent still holds its
+  # launch-time wiring from before the pass, which only a restart re-resolves.
+  assert_contains "$out" "restart-secondmates: fm-sm1" \
+    "a live mate on the new tip must restart even when no instruction file moved"
+  assert_contains "$out" "nudge-secondmates: none" "a restarted secondmate must not also be nudged"
+  pass "T3 a non-instruction advance still restarts the live secondmate"
 }
 
-# --- T3b: a bin/-only advance is nudged but never restarted ----------------
-# Every helper under bin/ is executed fresh on each call, so that advance reaches
-# the mate without a new conversation; spending one would be pure cost.
-test_bin_only_advance_never_restarts() {
+# --- T3b: a bin/-only advance restarts too ---------------------------------
+# Helpers under bin/ do reload themselves on the next call, but the mate's agent
+# still froze its launch-time harness wiring before this pass, so the restart is
+# not redundant and the old bin/-only carve-out no longer applies.
+test_bin_only_advance_restarts() {
   local w out
   w=$(new_world t3b)
   add_sm "$w" sm1
@@ -201,9 +208,9 @@ test_bin_only_advance_never_restarts() {
   out=$(run_update "$w")
 
   assert_contains "$out" "reread-firstmate: yes" "a bin/ change is still an instruction-surface advance"
-  assert_contains "$out" "restart-secondmates: none" "a bin/-only advance must not cost a conversation"
-  assert_contains "$out" "nudge-secondmates: fm-sm1" "a bin/-only advance still steers the secondmate"
-  pass "T3b a bin/-only advance steers the secondmate instead of restarting it"
+  assert_contains "$out" "restart-secondmates: fm-sm1" "a bin/-only advance must still restart the live mate"
+  assert_contains "$out" "nudge-secondmates: none" "a restarted secondmate must not also be nudged"
+  pass "T3b a bin/-only advance restarts the secondmate"
 }
 
 # --- T3c: an unverifiable runtime receives the fallback nudge ----------------
@@ -238,8 +245,10 @@ test_dead_secondmate_gets_no_action() {
   pass "T3d an already-stopped secondmate is left to startup recovery"
 }
 
-# --- T3e: a legacy remote advance gets the safe fallback steer --------------
-test_legacy_remote_advance_is_nudged() {
+# --- T3e: a legacy remote advance still restarts ---------------------------
+# The host's instr= suffix is reporting detail; the parent no longer routes on it,
+# so an older host that cannot report a diff can no longer suppress the restart.
+test_legacy_remote_advance_restarts() {
   local w out fake_ssh
   w=$(new_world t3e)
   fake_ssh="$w/fakebin/fake-ssh"
@@ -280,11 +289,11 @@ EOF
 
   assert_contains "$out" "remote secondmate sm1: updated on remote-mac" \
     "the legacy remote advance was not accepted"
-  assert_contains "$out" "restart-secondmates: none" \
-    "an unknown remote instruction diff must not authorize restart"
-  assert_contains "$out" "nudge-secondmates: fm-sm1" \
-    "an unknown remote instruction diff must receive the safe re-read steer"
-  pass "T3e a legacy remote advance falls back to the re-read steer"
+  assert_contains "$out" "restart-secondmates: fm-sm1" \
+    "a live remote mate on the new tip must restart even when the host reports no instruction diff"
+  assert_contains "$out" "nudge-secondmates: none" \
+    "a restarted remote mate must not also be steered"
+  pass "T3e a legacy remote advance still restarts the live remote mate"
 }
 
 # --- T4: dirty secondmate is skipped, its edit preserved -------------------
@@ -306,7 +315,7 @@ test_dirty_secondmate_skipped() {
 
 # --- T5: diverged secondmate is skipped, its commit preserved --------------
 test_diverged_secondmate_skipped() {
-  local w out before
+  local w out before marker second_out
   w=$(new_world t5)
   add_sm "$w" sm1
   # Local commit on the secondmate's detached HEAD makes it diverge from origin.
@@ -319,27 +328,99 @@ test_diverged_secondmate_skipped() {
   out=$(run_update "$w")
 
   assert_contains "$out" "secondmate sm1: skipped: diverged from origin/main" "diverged home skipped"
+  assert_contains "$out" "reconciliation required (record:" "diverged skip is actionable"
   assert_not_contains "$out" "fm-sm1" "diverged secondmate is not nudged"
   [ "$(git -C "$w/sm1" rev-parse HEAD)" = "$before" ] \
     || fail "diverged secondmate HEAD moved (unlanded work at risk)"
-  pass "T5 diverged secondmate skipped, local commit preserved"
+  marker="$w/home/state/.secondmate-update-reconcile/sm1.pending"
+  assert_present "$marker" "diverged secondmate did not retain a durable reconciliation record"
+  assert_grep 'schema=fm-secondmate-update-reconcile.v1' "$marker" "divergence record schema missing"
+  assert_grep "local_commit=$before" "$marker" "divergence record lost the protected local commit"
+
+  second_out=$(run_update "$w")
+  assert_contains "$second_out" "reconciliation required (record: $marker)" \
+    "a later update did not surface the durable divergence"
+  pass "T5 diverged secondmate is preserved and durably actionable"
 }
 
-# --- T6: idempotent; second run reports already current --------------------
-test_idempotent_already_current() {
-  local w out
+test_squash_merged_divergence_reconciles() {
+  local w branch_base local_tip out marker
+  w=$(new_world t5b)
+  add_sm "$w" sm1
+  branch_base=$(git -C "$w/sm1" rev-parse HEAD)
+
+  printf 'v2\n' > "$w/sm1/AGENTS.md"
+  git -C "$w/sm1" add AGENTS.md
+  git -C "$w/sm1" commit -qm local-instructions
+  printf 'echo squash-landed\n' > "$w/sm1/bin/tool.sh"
+  git -C "$w/sm1" add bin/tool.sh
+  git -C "$w/sm1" commit -qm local-tooling
+  local_tip=$(git -C "$w/sm1" rev-parse HEAD)
+
+  bump_origin "$w" readme
+  out=$(run_update "$w")
+  marker="$w/home/state/.secondmate-update-reconcile/sm1.pending"
+  assert_contains "$out" "secondmate sm1: skipped: diverged from origin/main" \
+    "unique local work was not initially protected"
+  assert_present "$marker" "initial divergence did not leave its durable record"
+
+  git -C "$w/sm1" diff "$branch_base" "$local_tip" | git -C "$w/seed" apply
+  git -C "$w/seed" add -A
+  git -C "$w/seed" commit -qm squash-local-contribution
+  git -C "$w/seed" push -q origin main
+
+  out=$(run_update "$w")
+
+  assert_contains "$out" "secondmate sm1: reconciled redundant divergence" \
+    "the squash-merged local result did not heal"
+  [ "$(git -C "$w/sm1" rev-parse HEAD)" = "$(git -C "$w/sm1" rev-parse origin/main)" ] \
+    || fail "reconciled secondmate did not reach origin/main"
+  assert_absent "$marker" "successful reconciliation left the divergence marker behind"
+  assert_contains "$out" "restart-secondmates: fm-sm1" \
+    "the reconciled live secondmate was excluded from restart"
+  pass "T5b squash-merged divergence heals and rejoins live convergence"
+}
+
+# --- T6: the git side is idempotent; the restart set is not -----------------
+# This is the SSHHIP case: that mate's home was already at the target commit, so
+# the old classifier skipped it entirely and its agent kept running the launch-time
+# wiring it started with. An already-current live mate must still be restarted.
+test_already_current_secondmate_still_restarts() {
+  local w out restart_line
   w=$(new_world t6)
   add_sm "$w" sm1
   bump_origin "$w" instr
   run_update "$w" >/dev/null   # first run advances both
 
-  out=$(run_update "$w")       # second run: nothing to do
+  out=$(run_update "$w")       # second run: nothing left to fast-forward
 
   assert_contains "$out" "firstmate: already current" "firstmate already current"
   assert_contains "$out" "secondmate sm1: already current" "secondmate already current"
   assert_contains "$out" "reread-firstmate: no" "no reread when nothing changed"
-  assert_contains "$out" "nudge-secondmates: none" "no nudge when nothing advanced"
-  pass "T6 idempotent: a second run is a no-op"
+  restart_line=$(printf '%s\n' "$out" | grep '^restart-secondmates:')
+  assert_contains "$restart_line" "fm-sm1" \
+    "an already-current live secondmate must still be in the restart set"
+  assert_contains "$out" "nudge-secondmates: none" "a restarted secondmate must not also be nudged"
+  pass "T6 an already-current live secondmate is still restarted"
+}
+
+# --- T6b: an already-current mate that cannot be restarted stays honest -----
+# Unconditional restart must not become an unconditional CLAIM of one.
+test_already_current_unprovable_mate_is_nudged() {
+  local w out restart_line nudge_line
+  w=$(new_world t6b)
+  add_sm "$w" sm1 claude zellij
+  bump_origin "$w" instr
+  run_update "$w" >/dev/null   # first run advances both
+
+  out=$(run_update "$w")       # second run: the home is already on the tip
+
+  assert_contains "$out" "secondmate sm1: already current" "the mate must need no advance"
+  restart_line=$(printf '%s\n' "$out" | grep '^restart-secondmates:')
+  nudge_line=$(printf '%s\n' "$out" | grep '^nudge-secondmates:')
+  assert_not_contains "$restart_line" "sm1" "an unprovable runtime must stay out of the restart set"
+  assert_contains "$nudge_line" "fm-sm1" "an unprovable runtime must keep the honest re-read steer"
+  pass "T6b an already-current mate with an unprovable runtime is steered, not claimed as reloaded"
 }
 
 # --- T7: registry backstop + dedup + self-exclusion, one world -------------
@@ -439,18 +520,57 @@ test_unsafe_secondmate_home_skipped_before_git_update() {
   pass "T11 unsafe secondmate home is not fast-forwarded"
 }
 
+# --- T12: a self-update rebinds a locally armed watch on the primary --------
+# A self-update fast-forwards bin/ in place, changing bytes an armed
+# fm-procevent-when watch's trust binding was hashed against with no
+# tampering involved; without a rebind the very next fire would be refused.
+test_primary_update_rebinds_local_watch() {
+  local w before_hash after_hash out spec
+  w=$(new_world t12)
+  mkdir -p "$w/seed/bin"
+  printf "#!/usr/bin/env bash\necho v1 >> \"\$1\"\n" > "$w/seed/bin/watched-action.sh"
+  chmod +x "$w/seed/bin/watched-action.sh"
+  git -C "$w/seed" add -A
+  git -C "$w/seed" commit -qm add-watched-action
+  git -C "$w/seed" push -q origin main
+  git -C "$w/main" pull -q origin main
+
+  FM_ROOT_OVERRIDE="$w/main" FM_HOME="$w/home" "$ROOT/bin/fm-procevent-when.sh" \
+    arm rebind-primary --interval 60 --stable 1 \
+    --condition true --action "$w/main/bin/watched-action.sh" "$w/rebind.log" >/dev/null
+  spec="$w/home/state/when/when-rebind-primary.spec"
+  before_hash=$(grep '^action_sha256=' "$spec")
+
+  printf "#!/usr/bin/env bash\necho v2 >> \"\$1\"\n" > "$w/seed/bin/watched-action.sh"
+  git -C "$w/seed" add -A
+  git -C "$w/seed" commit -qm bump-watched-action
+  git -C "$w/seed" push -q origin main
+
+  out=$(run_update "$w")
+
+  assert_contains "$out" "firstmate: updated " "the primary still advanced"
+  assert_contains "$out" "rebound: when-rebind-primary" "the primary self-update rebound its own locally armed watch"
+  after_hash=$(grep '^action_sha256=' "$spec")
+  [ "$before_hash" != "$after_hash" ] \
+    || fail "the watch's trust binding was not refreshed to match the updated action bytes"
+  pass "T12 a self-update rebinds a locally armed watch on the primary"
+}
+
 test_updates_main_and_secondmate
 test_reread_gate_is_instruction_only
-test_bin_only_advance_never_restarts
+test_bin_only_advance_restarts
 test_unprovable_runtime_gets_fallback_nudge
 test_dead_secondmate_gets_no_action
-test_legacy_remote_advance_is_nudged
+test_legacy_remote_advance_restarts
 test_dirty_secondmate_skipped
 test_diverged_secondmate_skipped
-test_idempotent_already_current
+test_squash_merged_divergence_reconciles
+test_already_current_secondmate_still_restarts
+test_already_current_unprovable_mate_is_nudged
 test_registry_backstop_dedup_and_self_exclusion
 test_firstmate_wrong_branch_skipped
 test_firstmate_detached_head_skipped
 test_unsafe_secondmate_home_skipped_before_git_update
+test_primary_update_rebinds_local_watch
 
 echo "# all fm-update tests passed"

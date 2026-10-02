@@ -20,8 +20,21 @@
 // file lives in .pi/extensions, so no
 // other harness ever loads it. Supervision is default-on for every task once
 // this Pi session owns the fleet lock: no captain grant file is required.
-// Away mode (or a broken branch between its bounded recovery probes) keeps
-// today's wake-to-main behavior untouched regardless.
+// A broken branch between its bounded recovery probes keeps today's
+// wake-to-main behavior.
+//
+// Postures (docs/pi-supervision-branch.md "Postures"): the away-posture
+// record state/.afk-contract (owner: bin/fm-afk-contract.sh) is read as a
+// file at the tail of every wake and at every captain-outcome presentation,
+// never inferred from chat and never placed in the byte-stable prompt prefix.
+// While it exists the branch takes every row the dispatcher offers, the
+// record's read-back is appended to the wake message so the branch knows the
+// posture and the recorded facts at execution time, captain-verdict outcomes
+// accumulate unprocessed in the store instead of opening the processing turn
+// on the parked main, and the guarded scripts pass the branch actor under
+// main's standing authority (bin/fm-lease-lib.sh). The first unmarked captain
+// message archives the record; the next run boundary then presents the
+// accumulated captain rows exactly as after any other gap.
 //
 // Prefix stability (the cache contract, owner: bin/fm-branch-prompt.sh
 // header): the branch's system prompt is the generator's byte-stable output,
@@ -78,8 +91,10 @@ import {
   getAgentDir,
   keyHint,
   ModelRuntime,
+  type ModelRegistry,
   SessionManager,
   ToolExecutionComponent,
+  VERSION,
   type AgentSession,
   type ExtensionAPI,
   type ExtensionCommandContext,
@@ -87,6 +102,8 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Box, Container, fuzzyFilter, Input, SelectList, Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { registerFirstmateTool } from "./lib/fm-native-contract.ts";
+import { runCommandAsync } from "./lib/fm-async-exec.ts";
 import {
   type CalmPresentationState,
   calmTranscriptClassIsVisible,
@@ -94,6 +111,9 @@ import {
 } from "./lib/fm-calm-visibility.ts";
 import {
   activateEligibleRowsOwner,
+  afkPostureRecordPresent,
+  awayPostureTailFor,
+  branchWakePrompt,
   deactivateEligibleRowsOwner,
   FM_BRANCH_DISPATCH_EVENT,
   releaseEligibleRowsSnapshot,
@@ -110,7 +130,7 @@ import {
 } from "./lib/fm-branch-model-picker.ts";
 import {
   classifyFirstmateOperationalText,
-  encodeFirstmateOperationalInput,
+  encodeFirstmateOperationalInputWith,
 } from "./lib/fm-operational-input.ts";
 
 const extensionFile = fileURLToPath(import.meta.url);
@@ -120,11 +140,11 @@ const fmHome = process.env.FM_HOME || process.env.FM_ROOT_OVERRIDE || root;
 const fmRoot = process.env.FM_ROOT_OVERRIDE || root;
 const state = process.env.FM_STATE_OVERRIDE || `${fmHome}/state`;
 const config = process.env.FM_CONFIG_OVERRIDE || `${fmHome}/config`;
-const afkFlag = join(state, ".afk");
 const sessionsDir = join(state, "branch-session");
 const sessionPointer = join(state, ".branch-session");
 const mirrorCursorFile = join(state, ".branch-mirror-cursor");
 const promptScript = join(fmRoot, "bin", "fm-branch-prompt.sh");
+const afkContractScript = join(fmRoot, "bin", "fm-afk-contract.sh");
 const outcomeScript = join(fmRoot, "bin", "fm-branch-outcome.sh");
 const leaseScript = join(fmRoot, "bin", "fm-lease.sh");
 const wakeGrantScript = join(fmRoot, "bin", "fm-wake-grant.sh");
@@ -169,8 +189,12 @@ const PROVIDER_REPROBE_MAX_MS = 60 * 60 * 1000;
 const PROCESSING_INSTRUCTION =
   "This is a supervision processing request delivered automatically by the supervision branch. " +
   "It was not typed by the captain. " +
-  "The outcomes below are already stored durably and already shown to the captain as anchor entries in this transcript; each fleet event is already handled, so do not re-drain, re-run, or acknowledge the wake. " +
-  "Process each outcome now as firstmate: give the captain a visible response where one is due, answer or escalate a decision, act on a blocker or failure, or record that no further action is needed. " +
+  "The outcomes below are stored durably, and each was recorded earlier, possibly before a restart or a switch of primary, so the captain may already have seen it and it may already have been handled; each fleet event is already handled, so do not re-drain, re-run, or acknowledge the wake. " +
+  "Each outcome says what was true when it was recorded and how long ago, so check the task's current state first. " +
+  "An abbreviated line is incomplete: read the full outcome before acting on, relaying, or acknowledging it, using that line's lookup --seqs command. " +
+  "First sort the outcomes by that current state into still open and already settled, such as a decision since answered, a PR since merged, or a task since finished. " +
+  "Your reply to the captain covers only the still-open outcomes: give the captain a visible response where one is due, answer or escalate a decision, or act on a blocker or failure. " +
+  "Write that reply as if the settled outcomes had never been listed: leave them out entirely, without naming them, summarizing them, or saying they are settled, because checking them is all the processing they need. " +
   "When every outcome below is processed, call fm_branch_processed with through={N} exactly once. " +
   "Until that call the outcomes stay open and are presented again; an answer that does not make that call never counts as processing.";
 type MirrorItem = { tag: "captain" | "main"; text: string };
@@ -185,6 +209,9 @@ type OutcomeRow = {
   silent: boolean;
 };
 type VisibleOutcomeRecord = OutcomeRow & { version: 1 };
+// An unprocessed captain row with the store's "recordedAgo" (bin/fm-branch-outcome.sh
+// owns its wording).
+type UnprocessedOutcome = OutcomeRow & { recordedAgo: string };
 type ProviderRecovery = {
   cooldownMs: number;
   retryNotBefore: number;
@@ -203,8 +230,8 @@ function offerEligible(offer: BranchDispatchOffer): boolean {
   return offer.eligible === true;
 }
 
-function afkActive(): boolean {
-  return existsSync(afkFlag);
+function isProcessingCustomMessage(message: { role?: string; customType?: string }): boolean {
+  return message.role === "custom" && message.customType === PROCESSING_MESSAGE_TYPE;
 }
 
 // Pi persists provider failures as ordinary assistant messages and resolves
@@ -232,6 +259,9 @@ type BranchModel = NonNullable<ReturnType<ModelRuntime["getModel"]>>;
 type BranchEffort = ReturnType<NonNullable<ExtensionAPI["getThinkingLevel"]>>;
 type PinnedBranchModel = { model: BranchModel; modelRuntime: ModelRuntime };
 type BranchModelResolution = { ok: true; selection: PinnedBranchModel } | { ok: false; reason: string };
+type FollowMainResolution =
+  | { ok: true; selection: PinnedBranchModel }
+  | { ok: false; reason: string; refusesBuild: boolean };
 
 // Pi owns the effort vocabulary. The picker's options and every clamp still
 // come from Pi's own getSupportedThinkingLevels/clampThinkingLevel, so this
@@ -306,7 +336,13 @@ function modelLabel(model: { provider: string; id: string }): string {
   return `${model.provider}/${model.id}`;
 }
 
-function parentPid(pid: string): string {
+async function parentPid(pid: string): Promise<string> {
+  const result = await runCommandAsync("ps", ["-o", "ppid=", "-p", pid]);
+  if (result.status !== 0) return "";
+  return result.stdout.trim();
+}
+
+function parentPidSync(pid: string): string {
   const result = spawnSync("ps", ["-o", "ppid=", "-p", pid], { encoding: "utf8" });
   if (result.status !== 0) return "";
   return result.stdout.trim();
@@ -326,25 +362,70 @@ let ownedLockPid = "";
 // Same ownership read as the watcher extension's lockOwnership(): the lock
 // names the harness pid, and this process owns it when that pid appears in
 // its own ancestry.
-function lockOwnership(): LockOwnership {
+//
+// The ancestry is walked in full at every boundary that asks, never cached:
+// process ancestry is not immutable (a parent exiting reparents its child,
+// and pid identity is reused), and this answer is an ownership AUTHORITY
+// rather than a hint, so a stale chain would misattribute ownership. Moving
+// delivery off Pi's render thread does not trade that away - it awaits each
+// `ps` instead of shortening the walk.
+//
+// The lock file's own answer and the verdict after the walk are shared by the
+// awaited and synchronous forms below, so the only difference between them
+// stays the wait.
+const LOCK_ANCESTRY_DEPTH = 8;
+
+function readLockPid(): { lockPid: string; verdict: LockOwnership | null } {
   ownedLockPid = "";
   let lockPid = "";
   try {
     lockPid = readFileSync(`${state}/.lock`, "utf8").trim();
   } catch {
-    return "missing";
+    return { lockPid: "", verdict: "missing" };
   }
-  if (!/^[0-9]+$/.test(lockPid) || lockPid === "1") return "other";
-  let pid = String(process.pid);
-  for (let i = 0; i < 8; i += 1) {
-    if (pid === lockPid) {
-      ownedLockPid = lockPid;
-      return "owned";
-    }
-    pid = parentPid(pid);
-    if (!pid || pid === "1") break;
+  if (!/^[0-9]+$/.test(lockPid) || lockPid === "1") return { lockPid, verdict: "other" };
+  return { lockPid, verdict: null };
+}
+
+function ownershipVerdict(lockPid: string, ancestryMatched: boolean): LockOwnership {
+  if (ancestryMatched) {
+    ownedLockPid = lockPid;
+    return "owned";
   }
   return pidAlive(lockPid) ? "other" : "missing";
+}
+
+async function lockOwnership(): Promise<LockOwnership> {
+  const { lockPid, verdict } = readLockPid();
+  if (verdict) return verdict;
+  let pid = String(process.pid);
+  for (let i = 0; i < LOCK_ANCESTRY_DEPTH; i += 1) {
+    if (pid === lockPid) {
+      const current = readLockPid();
+      if (current.verdict || current.lockPid !== lockPid) return current.verdict ?? "other";
+      return ownershipVerdict(lockPid, true);
+    }
+    pid = await parentPid(pid);
+    if (!pid || pid === "1") break;
+  }
+  return ownershipVerdict(lockPid, false);
+}
+
+// Pi types its bash spawn hook as a synchronous function
+// (BashSpawnHook: (context) => context), so the guard on the BRANCH's own
+// shell commands cannot await. It keeps the synchronous walk unchanged rather
+// than caching the authority: what blocks there is one branch shell command
+// about to spawn a shell anyway, never an arriving outcome.
+function lockOwnershipSync(): LockOwnership {
+  const { lockPid, verdict } = readLockPid();
+  if (verdict) return verdict;
+  let pid = String(process.pid);
+  for (let i = 0; i < LOCK_ANCESTRY_DEPTH; i += 1) {
+    if (pid === lockPid) return ownershipVerdict(lockPid, true);
+    pid = parentPidSync(pid);
+    if (!pid || pid === "1") break;
+  }
+  return ownershipVerdict(lockPid, false);
 }
 
 function textOfContent(content: unknown): string {
@@ -409,7 +490,7 @@ function parseOutcomeRow(value: unknown): OutcomeRow | null {
   if (typeof row.summary !== "string" || !row.summary) return null;
   if (row.silent !== undefined && typeof row.silent !== "boolean") return null;
   const silent = row.silent === true;
-  if (silent && (row.task !== "fleet" || row.verdict !== "routine")) return null;
+  if (silent && row.verdict !== "routine") return null;
   return { seq: row.seq, task: row.task, verdict: row.verdict, summary: row.summary, silent };
 }
 
@@ -512,6 +593,14 @@ export default function (pi: ExtensionAPI) {
   // so a prompt can prove that it created a durable outcome after claiming its
   // wake rows without relying on provider text or incidental session shape.
   let durableReportRevision = 0;
+  // The task set the wake being handled right now may be reported on, fixed
+  // deterministically from the eligible rows before a signal or stale prompt
+  // opens and cleared when it settles: exactly the tasks those rows resolve
+  // to. fm_branch_report refuses every other task id during such a prompt,
+  // `fleet` included, so a report typed from memory about a task the wake
+  // never named is never stored or delivered. Null outside a wake prompt and
+  // during a heartbeat review, which is not scoped by task.
+  let wakeTaskScope: { rows: string[]; tasks: Set<string> } | null = null;
   let mainStreaming = false;
   let shuttingDown = false;
   // Bumps at every session replacement so a stale chain continuation from the
@@ -524,6 +613,29 @@ export default function (pi: ExtensionAPI) {
   // dispatch order, one at a time (the branch runs drain -> handle -> ack
   // serially by design).
   let branchChain: Promise<void> = Promise.resolve();
+  // Serializes DELIVERY work. The store scripts and the ownership walk are
+  // awaited rather than synchronous now (lib/fm-async-exec.ts), which means a
+  // second outcome, a turn boundary, or main's acknowledgement can reach this
+  // extension while an earlier one is still between two of its own steps.
+  // Every such unit runs to completion here before the next one starts, so
+  // the guarantees the single thread used to provide for free - one delivery
+  // at a time, the durable append before anything visible, the read cursor
+  // advanced before the next reader sees the row, one activation per
+  // generation - are properties of this queue instead.
+  //
+  // A queued unit must never await another queued unit: each one is a bounded
+  // store/ownership sequence, and the branch prompt it may lead to is
+  // scheduled on branchChain rather than held here.
+  let deliveryChain: Promise<void> = Promise.resolve();
+
+  function enqueueDelivery<T>(unit: () => Promise<T>): Promise<T> {
+    const queued = deliveryChain.then(unit);
+    deliveryChain = queued.then(
+      () => {},
+      () => {},
+    );
+    return queued;
+  }
   const pendingMirror: MirrorItem[] = [];
   const mirrorCollection: MirrorCollectionState = {
     collectAnchor: null,
@@ -543,6 +655,8 @@ export default function (pi: ExtensionAPI) {
   // session generation.
   type ProcessingState = { sequences: string; through: number; triggered: number; pending: boolean; nextTurnQueued: boolean };
   let processing: ProcessingState | null = null;
+  let queuedProcessingContent: string | null = null;
+  let processingOpenedThisRun = false;
   let processedInitializedGeneration = -1;
   // One revision for BOTH selections: a model or effort change invalidates an
   // in-flight branch build exactly the same way.
@@ -561,6 +675,11 @@ export default function (pi: ExtensionAPI) {
   // extension plus its model_select event, because createBranch runs at wake
   // time with no context of its own. It is what "follow main" applies.
   let mainModel: { provider: string; id: string } | null = null;
+  // Main's own model registry, captured from the contexts Pi hands this
+  // extension the same way mainModel is. It is the ONLY read path to
+  // providers an extension registered at runtime (pi-devin-auth's "devin"),
+  // which the branch's isolated ModelRuntime cannot see on its own.
+  let mainModelRegistry: ModelRegistry | null = null;
 
   // Main's own current effort needs no such tracking: Pi answers it directly
   // on demand, including at wake time. It throws only when the extension
@@ -574,8 +693,9 @@ export default function (pi: ExtensionAPI) {
     }
   }
 
-  function rememberMainModel(ctx?: { model?: { provider: string; id: string } }): void {
+  function rememberMainModel(ctx?: { model?: { provider: string; id: string }; modelRegistry?: ModelRegistry }): void {
     if (ctx?.model) mainModel = { provider: ctx.model.provider, id: ctx.model.id };
+    if (ctx?.modelRegistry) mainModelRegistry = ctx.modelRegistry;
   }
 
   function deliverBranchHealthNote(text: string): void {
@@ -625,10 +745,58 @@ export default function (pi: ExtensionAPI) {
   // and same user as main, so stored credentials keep their own semantics
   // (OAuth stays OAuth, an API key stays an API key) and nothing is ever
   // installed, converted, derived, or overwritten here.
+  // A provider that exists only because an extension registered it into
+  // main's runtime (pi-devin-auth's "devin", whose streamSimple is the custom
+  // gRPC path no static catalog can express) is invisible to an isolated
+  // branch runtime until its registration is copied across. The config object
+  // carries that streamSimple and oauth wiring by reference, so copying it
+  // reuses the provider's own registration rather than reimplementing its
+  // wire protocol; the copy is never persisted and stays scoped to this one
+  // runtime. One registration that fails to compose must not blind the rest,
+  // so each copy is isolated. A just-registered provider's auth check has not
+  // run yet, so the copied providers are refreshed here and every caller's
+  // hasConfiguredAuth verdict is real rather than the provisional entry
+  // registration leaves behind.
+  async function copyExtensionProviders(modelRuntime: ModelRuntime): Promise<void> {
+    if (!mainModelRegistry) return;
+    let providerIds: readonly string[];
+    try {
+      providerIds = mainModelRegistry.getRegisteredProviderIds();
+    } catch {
+      return;
+    }
+    const copied: string[] = [];
+    for (const providerId of providerIds) {
+      try {
+        const config = mainModelRegistry.getRegisteredProviderConfig(providerId);
+        if (config) {
+          modelRuntime.registerProvider(providerId, config);
+          copied.push(providerId);
+        }
+      } catch {
+        // A registration that fails to compose in the isolated runtime leaves
+        // that provider unavailable, exactly as if it were never copied.
+      }
+    }
+    if (copied.length === 0) return;
+    try {
+      await modelRuntime.refresh({ providers: copied, allowNetwork: false });
+    } catch {
+      // A failed availability refresh is answered by hasConfiguredAuth.
+    }
+  }
+
   async function resolveBranchModel(provider: string, modelId: string): Promise<BranchModelResolution> {
     const label = `${provider}/${modelId}`;
+    if (provider === "codex-native") {
+      return { ok: false, reason: `${label} belongs to the main native session; choose an ordinary Pi provider for supervision` };
+    }
     const modelRuntime = await ModelRuntime.create();
-    const model = modelRuntime.getModel(provider, modelId) as BranchModel | undefined;
+    let model = modelRuntime.getModel(provider, modelId) as BranchModel | undefined;
+    if (!model) {
+      await copyExtensionProviders(modelRuntime);
+      model = modelRuntime.getModel(provider, modelId) as BranchModel | undefined;
+    }
     if (!model) return { ok: false, reason: `${label} is unavailable to the isolated branch runtime` };
     if (!modelRuntime.hasConfiguredAuth(provider)) {
       return { ok: false, reason: `${label} has no configured credentials in the isolated branch runtime` };
@@ -644,25 +812,50 @@ export default function (pi: ExtensionAPI) {
     return resolved.selection;
   }
 
+  // "Follow main" is ONE rule, shared by every unpinned branch build and by
+  // the /supervision-model report, so the report describes exactly what the
+  // next build does. An ordinary Pi provider is applied as main's own model;
+  // when the isolated runtime cannot run it, the build passes no override at
+  // all (refusesBuild false). A native provider owns a persistent main
+  // thread, so the branch instead selects the same model through Pi's
+  // independent openai-codex provider, and when that model is unavailable the
+  // build refuses (refusesBuild true) rather than inheriting the native
+  // thread or silently restoring a recorded native selection.
+  async function followMainModel(main: { provider: string; id: string }): Promise<FollowMainResolution> {
+    const native = main.provider === "codex-native";
+    let resolved: BranchModelResolution;
+    try {
+      resolved = await resolveBranchModel(native ? "openai-codex" : main.provider, main.id);
+    } catch (error) {
+      resolved = { ok: false, reason: error instanceof Error ? error.message : String(error) };
+    }
+    if (resolved.ok) return resolved;
+    if (!native) return { ...resolved, refusesBuild: false };
+    return {
+      ok: false,
+      refusesBuild: true,
+      reason: `native main requires an independent Pi supervision model and ${resolved.reason}; the branch refuses to build until one is pinned with /supervision-model`,
+    };
+  }
+
   // The pin file's CURRENT state decides the model on every branch build,
   // create and reopen alike, and it overrides Pi's restore of whatever model
   // a reopened branch session recorded. With a pin, that model. With no pin,
-  // main's own model is applied EXPLICITLY - otherwise clearing the pin would
-  // report that the branch follows main while the reopened session quietly
-  // restored the model an earlier pin left behind. Only when main's model is
-  // genuinely unknown, or the isolated runtime cannot run it, does the build
+  // main's own model is applied EXPLICITLY through followMainModel -
+  // otherwise clearing the pin would report that the branch follows main
+  // while the reopened session quietly restored the model an earlier pin left
+  // behind. Only when main's model is genuinely unknown, or the follow rule
+  // says the isolated runtime cannot run an ordinary provider, does the build
   // fall back to passing no override at all, which is the pre-feature
-  // behavior; an unpinned branch is never refused over model choice alone.
+  // behavior.
   async function branchModelSelection(): Promise<PinnedBranchModel | undefined> {
     const pin = readModelPin();
     if (pin) return preparePinnedBranchModel(pin);
     if (!mainModel) return undefined;
-    try {
-      const resolved = await resolveBranchModel(mainModel.provider, mainModel.id);
-      return resolved.ok ? resolved.selection : undefined;
-    } catch {
-      return undefined;
-    }
+    const following = await followMainModel(mainModel);
+    if (following.ok) return following.selection;
+    if (following.refusesBuild) throw new Error(following.reason);
+    return undefined;
   }
 
   async function effectiveBranchModel(selected: BranchModel | undefined): Promise<BranchModel | undefined> {
@@ -696,8 +889,19 @@ export default function (pi: ExtensionAPI) {
     return model ? (clampThinkingLevel(model, chosen) as BranchEffort) : chosen;
   }
 
-  function generationOwnsLock(expectedGeneration: number): boolean {
-    return !shuttingDown && expectedGeneration === generation && lockOwnership() === "owned";
+  async function generationOwnsLock(expectedGeneration: number): Promise<boolean> {
+    if (shuttingDown || expectedGeneration !== generation) return false;
+    const ownership = await lockOwnership();
+    return !shuttingDown && expectedGeneration === generation && ownership === "owned";
+  }
+
+  // The synchronous counterpart, for the two places Pi's own API is
+  // synchronous: the bash spawn hook and the wake-offer handshake. It reads
+  // the same uncached authority and performs no activation side effect of its
+  // own, so it can gate a decision that cannot wait without granting one.
+  function generationOwnsLockSync(expectedGeneration: number): boolean {
+    if (shuttingDown || expectedGeneration !== generation) return false;
+    return lockOwnershipSync() === "owned";
   }
 
   function markLoaded(): void {
@@ -712,32 +916,29 @@ export default function (pi: ExtensionAPI) {
   // A replaced branch conversation must not leave its per-task leases behind
   // (the session-lock holder pid is still alive, so the sweep alone would
   // keep them). One bulk release per generation, at activation.
-  function releaseBranchLeases(expectedGeneration: number): boolean {
-    if (!generationOwnsLock(expectedGeneration)) return false;
-    try {
-      const result = spawnSync("bash", [leaseScript, "release-actor", "--actor", "branch"], {
-        cwd: fmRoot,
-        encoding: "utf8",
-        env: { ...scriptEnv, FM_SUPERVISION_ACTOR: "branch" },
-      });
-      return result.status === 0;
-    } catch {
-      return false;
-    }
+  async function releaseBranchLeases(expectedGeneration: number): Promise<boolean> {
+    if (!(await generationOwnsLock(expectedGeneration))) return false;
+    const result = await runCommandAsync("bash", [leaseScript, "release-actor", "--actor", "branch"], {
+      cwd: fmRoot,
+      env: { ...scriptEnv, FM_SUPERVISION_ACTOR: "branch" },
+    });
+    return result.status === 0;
   }
 
   // Lazy, per-action ownership evaluation (see the header). Returns true only
   // when this session owns the fleet lock right now; the first true evaluation
   // of a generation also writes the diagnostic marker and clears stray branch
   // leases from a prior generation.
-  function actingAsOwner(expectedGeneration = generation): boolean {
-    if (!generationOwnsLock(expectedGeneration)) return false;
+  async function actingAsOwner(expectedGeneration = generation): Promise<boolean> {
+    if (!(await generationOwnsLock(expectedGeneration))) return false;
     if (activatedGeneration !== expectedGeneration) {
-      if (!releaseBranchLeases(expectedGeneration)) return false;
-      if (!generationOwnsLock(expectedGeneration)) return false;
-      if (!activateEligibleRowsOwner(state, wakeGrantScript, process.pid, String(expectedGeneration))) return false;
-      if (!generationOwnsLock(expectedGeneration)) {
-        deactivateEligibleRowsOwner(state, wakeGrantScript, process.pid, String(expectedGeneration));
+      if (!(await releaseBranchLeases(expectedGeneration))) return false;
+      if (!(await generationOwnsLock(expectedGeneration))) return false;
+      if (!(await activateEligibleRowsOwner(state, wakeGrantScript, process.pid, String(expectedGeneration)))) {
+        return false;
+      }
+      if (!(await generationOwnsLock(expectedGeneration))) {
+        await deactivateEligibleRowsOwner(state, wakeGrantScript, process.pid, String(expectedGeneration));
         return false;
       }
       markLoaded();
@@ -746,22 +947,17 @@ export default function (pi: ExtensionAPI) {
     return generationOwnsLock(expectedGeneration);
   }
 
-  function runOutcomeScript(args: string[]): { ok: boolean; stdout: string; detail: string } {
-    try {
-      const result = spawnSync("bash", [outcomeScript, ...args], {
-        cwd: fmRoot,
-        encoding: "utf8",
-        env: scriptEnv,
-      });
-      if (result.status === 0) return { ok: true, stdout: (result.stdout || "").trim(), detail: "" };
-      return {
-        ok: false,
-        stdout: "",
-        detail: `fm-branch-outcome.sh exited ${result.status ?? "none"}: ${(result.stderr || "").trim()}`,
-      };
-    } catch (error) {
-      return { ok: false, stdout: "", detail: error instanceof Error ? error.message : String(error) };
-    }
+  async function runOutcomeScript(args: string[]): Promise<{ ok: boolean; stdout: string; detail: string }> {
+    const result = await runCommandAsync("bash", [outcomeScript, ...args], {
+      cwd: fmRoot,
+      env: scriptEnv,
+    });
+    if (result.status === 0) return { ok: true, stdout: (result.stdout || "").trim(), detail: "" };
+    return {
+      ok: false,
+      stdout: "",
+      detail: `fm-branch-outcome.sh exited ${result.status ?? "none"}: ${(result.stderr || "").trim()}`,
+    };
   }
 
   // A captain outcome is delivered by a durable, rendered session entry, not
@@ -800,7 +996,7 @@ export default function (pi: ExtensionAPI) {
     const message = {
       customType: "fm-branch-merge",
       content: `${MERGE_NOTE_BOAT} ${row.task}: ${row.summary}`,
-      display: !(row.task === "fleet" && row.silent),
+      display: !row.silent,
     };
     if (mainStreaming) pi.sendMessage(message, { deliverAs: "nextTurn" });
     else pi.sendMessage(message, {});
@@ -808,21 +1004,31 @@ export default function (pi: ExtensionAPI) {
 
   // Captain rows that are read (their visible entry exists) but not yet
   // acknowledged as processed by main, in sequence order. null means the store
-  // could not be read safely, never "nothing".
-  function readUnprocessedOutcomes(expectedGeneration: number): OutcomeRow[] | null {
-    if (!generationOwnsLock(expectedGeneration)) return null;
-    const listed = runOutcomeScript(["unprocessed"]);
+  // could not be read safely, never "nothing". A listed line that breaks the
+  // store's contract, its age included, is reported to main as a visible note
+  // and every row stays unprocessed until the store is healthy again.
+  async function readUnprocessedOutcomes(expectedGeneration: number): Promise<UnprocessedOutcome[] | null> {
+    if (!(await generationOwnsLock(expectedGeneration))) return null;
+    const listed = await runOutcomeScript(["unprocessed"]);
     if (!listed.ok) return null;
-    const rows: OutcomeRow[] = [];
+    const rows: UnprocessedOutcome[] = [];
     for (const line of listed.stdout.split("\n")) {
       if (!line) continue;
-      let row: OutcomeRow | null = null;
+      let row: UnprocessedOutcome | null = null;
       try {
-        row = parseOutcomeRow(JSON.parse(line));
+        const parsed = JSON.parse(line);
+        const outcome = parseOutcomeRow(parsed);
+        const recordedAgo = outcome?.verdict === "captain" ? (parsed as { recordedAgo?: unknown }).recordedAgo : undefined;
+        if (outcome && typeof recordedAgo === "string" && /^[0-9]+[mhd]$/.test(recordedAgo)) row = { ...outcome, recordedAgo };
       } catch {
         row = null;
       }
-      if (!row || row.verdict !== "captain") return null;
+      if (!row) {
+        deliverBranchHealthNote(
+          `Supervision branch could not present unprocessed captain outcomes: the outcome store listed a row that breaks its contract (${line.slice(0, 200)}). Nothing was marked processed; they are presented again once the store is healthy.`,
+        );
+        return null;
+      }
       rows.push(row);
     }
     return rows;
@@ -832,33 +1038,61 @@ export default function (pi: ExtensionAPI) {
   // failure direction applies: a request that cannot be typed is still
   // delivered as plain text, because an untyped request main can still act on
   // beats an outcome that is never processed.
-  function processingRequestInput(rows: OutcomeRow[]): string {
+  async function processingRequestInput(rows: UnprocessedOutcome[]): Promise<string> {
     const through = rows[rows.length - 1].seq;
-    const listed = rows.map((row) => `[seq ${row.seq}] ${row.task}: ${row.summary}`).join("\n");
+    const listed = rows
+      .map((row) => `[seq ${row.seq}, recorded ${row.recordedAgo} ago] ${row.task}: ${row.summary}`)
+      .join("\n");
     const body = `${PROCESSING_INSTRUCTION.replace("{N}", String(through))}\n\n${listed}`;
     try {
-      return encodeFirstmateOperationalInput("branch-outcome", body);
+      return await encodeFirstmateOperationalInputWith(runCommandAsync, "branch-outcome", body);
     } catch {
       return body;
     }
   }
 
-  // Present every unprocessed captain outcome to main as ONE sequence-keyed
-  // processing request. The first PROCESSING_TRIGGERED_ATTEMPTS presentations
+  // Present the oldest bounded batch of unprocessed captain outcomes to main
+  // as one sequence-keyed processing request. After its acknowledgement the
+  // next run boundary presents the next batch. The first PROCESSING_TRIGGERED_ATTEMPTS presentations
   // of a given sequence set open a turn of their own (queued as a follow-up
   // while main is busy); after that the request rides the captain's next
   // prompt instead, once per run, and a session replacement starts the
   // triggered budget over. Nothing here advances the processed marker: only
   // fm_branch_processed does, keyed to the sequence main acknowledges.
-  function presentUnprocessedOutcomes(expectedGeneration: number): boolean {
-    const rows = readUnprocessedOutcomes(expectedGeneration);
+  async function presentUnprocessedOutcomes(expectedGeneration: number): Promise<boolean> {
+    const rows = await readUnprocessedOutcomes(expectedGeneration);
     if (rows === null) return false;
     if (rows.length === 0) {
       processing = null;
       return true;
     }
+    // Away posture: main is parked, so no processing turn opens. The rows stay
+    // unprocessed in the store (their visible entries already exist), the
+    // volatile presentation state is dropped so the first presentation after
+    // the record is gone - the run boundary of the captain's return message,
+    // or session start - starts with a fresh triggered budget and hands them
+    // to main exactly as after any other gap.
+    if (afkPostureRecordPresent(state)) {
+      processing = null;
+      return true;
+    }
     const through = rows[rows.length - 1].seq;
     const sequences = rows.map((row) => row.seq).join(",");
+    if (processing?.pending) return true;
+    // Encoding the request body shells out, so it is done before the volatile
+    // processing state is touched: the queue keeps another delivery out, but
+    // main's own agent_start still runs during that await and clears
+    // nextTurnQueued, and a decision recorded before the await could be acted
+    // on after it.
+    const content = await processingRequestInput(rows);
+    if (!(await generationOwnsLock(expectedGeneration))) return false;
+    // The record is re-read immediately before the request would open: a
+    // record that appeared during the encoding await cancels this request
+    // rather than delivering it to a main that has just been parked.
+    if (afkPostureRecordPresent(state)) {
+      processing = null;
+      return true;
+    }
     if (processing?.pending) return true;
     if (!processing || processing.sequences !== sequences) {
       processing = { sequences, through, triggered: 0, pending: false, nextTurnQueued: false };
@@ -866,10 +1100,11 @@ export default function (pi: ExtensionAPI) {
     // A presentation already sent is consumed by the run it joins or opens;
     // until that run settles, sending a widened or identical copy would hand
     // overlapping requests to the same run.
-    const message = { customType: PROCESSING_MESSAGE_TYPE, content: processingRequestInput(rows), display: false };
+    const message = { customType: PROCESSING_MESSAGE_TYPE, content, display: false };
     if (processing.triggered < PROCESSING_TRIGGERED_ATTEMPTS) {
       processing.triggered += 1;
       processing.pending = true;
+      queuedProcessingContent = content;
       pi.sendMessage(message, { triggerTurn: true, deliverAs: "followUp" });
     } else if (!processing.nextTurnQueued) {
       processing.nextTurnQueued = true;
@@ -886,17 +1121,18 @@ export default function (pi: ExtensionAPI) {
   // one processing request; callers that run inside a main turn (turn_end)
   // leave presentation to the run boundary (agent_settled) instead, so one
   // multi-tool run never receives duplicate requests.
-  function reconcileUnreadOutcomes(expectedGeneration: number, present = true): boolean {
-    if (!generationOwnsLock(expectedGeneration)) return false;
-    // One-time migration per generation: a home whose outcomes were all
-    // delivered before the processed marker existed treats them as processed
-    // rather than re-presenting its whole history. Runs before any new row
-    // can be read below, so nothing delivered from here on is ever skipped.
+  async function reconcileUnreadOutcomes(expectedGeneration: number, present = true): Promise<boolean> {
+    if (!(await generationOwnsLock(expectedGeneration))) return false;
+    // Once per generation: validate the store's markers and rebuild its
+    // bounded indexes before any row is read below. It never adopts delivered
+    // rows as processed, so an outcome main never acknowledged, including one
+    // a supervision-host drain presented before a switch to Pi, is presented
+    // again dated and check-first.
     if (processedInitializedGeneration !== expectedGeneration) {
-      if (!runOutcomeScript(["processed-init"]).ok) return false;
+      if (!(await runOutcomeScript(["processed-init"])).ok) return false;
       processedInitializedGeneration = expectedGeneration;
     }
-    const unread = runOutcomeScript(["unread"]);
+    const unread = await runOutcomeScript(["unread"]);
     if (!unread.ok) return false;
     if (unread.stdout) {
       if (!currentMainSession) return false;
@@ -907,18 +1143,44 @@ export default function (pi: ExtensionAPI) {
         } catch {
           row = null;
         }
-        if (!row || !generationOwnsLock(expectedGeneration)) return false;
+        if (!row) return false;
+        // The last cancellation point of this row: everything from here to
+        // its mark-read is synchronous delivery plus the awaited script that
+        // records it, with no second ownership test in between. That is
+        // deliberate. Delivering and then declining to advance the cursor
+        // because the session was replaced mid-write would leave the row
+        // unread and deliver it a second time; the cursor records that the
+        // row WAS delivered, which stays true across a replacement.
+        if (!(await generationOwnsLock(expectedGeneration))) return false;
+        // KNOWN PRE-EXISTING LIMITATION, unchanged by moving this work off Pi's
+        // render thread and tracked as
+        // fm-pi-routine-delivery-idempotency-followup-r1: if the mark-read
+        // below fails after a ROUTINE note was already delivered, the row stays
+        // unread and the next reconciliation sends that note a second time,
+        // because a routine note is a plain message with no sequence-keyed
+        // record to recognize. A captain row cannot duplicate that way -
+        // ensureVisibleCaptainOutcome finds its own earlier entry by store
+        // sequence. Closing the routine gap needs a durable, idempotent
+        // representation for routine delivery, which changes the delivery
+        // contract rather than this ordering, so it is deliberately not done
+        // here.
         if (row.verdict === "captain") {
           if (!ensureVisibleCaptainOutcome(row)) return false;
         } else {
           deliverRoutineOutcome(row);
         }
-        if (!generationOwnsLock(expectedGeneration)) return false;
-        if (!runOutcomeScript(["mark-read", "--through", String(row.seq)]).ok) return false;
+        if (!(await runOutcomeScript(["mark-read", "--through", String(row.seq)])).ok) return false;
       }
     }
     if (!present) return true;
     return presentUnprocessedOutcomes(expectedGeneration);
+  }
+
+  function wakeScopeRefusal(task: string): string {
+    if (!wakeTaskScope || wakeTaskScope.tasks.has(task)) return "";
+    const named = [...wakeTaskScope.tasks].sort().join(", ");
+    const rows = wakeTaskScope.rows.join(", ");
+    return `report refused: the wake being handled (row ${rows}) names ${named}, not ${task}; report only that task, never fleet or a task from memory`;
   }
 
   function createReportTool(toolGeneration: number): ToolDefinition {
@@ -926,7 +1188,7 @@ export default function (pi: ExtensionAPI) {
       name: "fm_branch_report",
       label: "Report supervision outcome",
       description:
-        "Record the outcome of one handled fleet event: write it durably to the outcome store, then merge it into the captain-facing main conversation. verdict captain persists an exact visible entry and opens one sequence-keyed processing turn on main that stays open until main acknowledges it; routine notes render unless silent marks a no-change heartbeat.",
+        "Record the outcome of one handled fleet event: write it durably to the outcome store, then merge it into the captain-facing main conversation. verdict captain persists an exact visible entry and opens one sequence-keyed processing turn on main that stays open until main acknowledges it; routine notes render unless silent marks an eligible no-change outcome.",
       parameters: Type.Object({
         task: Type.String({ description: "The task id the event belongs to (or 'fleet' for fleet-wide events)" }),
         verdict: Type.Union([Type.Literal("routine"), Type.Literal("captain")], {
@@ -939,7 +1201,7 @@ export default function (pi: ExtensionAPI) {
         }),
         wake: Type.Optional(Type.String({ description: "The wake reason line this outcome answers" })),
         silent: Type.Optional(Type.Boolean({
-          description: "True only when a fleet-wide heartbeat review found literally nothing worth reporting; omit or use false whenever any action was taken or any routine result is worth a note",
+          description: "True only for an eligible routine no-change outcome; captain outcomes are never silent, and actions, state changes, or new results stay rendered",
         })),
       }),
       execute: async (_toolCallId, params) => {
@@ -948,44 +1210,61 @@ export default function (pi: ExtensionAPI) {
         const summary = String((params as { summary: unknown }).summary || "").trim();
         const wake = String((params as { wake?: unknown }).wake ?? "").trim();
         const silent = (params as { silent?: unknown }).silent === true;
-        if (!task || !summary || (verdictRaw !== "routine" && verdictRaw !== "captain") || (silent && (task !== "fleet" || verdictRaw !== "routine"))) {
+        if (!task || !summary || (verdictRaw !== "routine" && verdictRaw !== "captain")) {
           return {
             content: [{ type: "text", text: "invalid report: task, verdict (routine|captain), and summary are required" }],
             details: undefined,
             isError: true,
           };
         }
+        if (silent && verdictRaw !== "routine") {
+          return {
+            content: [{ type: "text", text: "invalid report: --silent true requires the routine verdict" }],
+            details: undefined,
+            isError: true,
+          };
+        }
         const verdict = verdictRaw as Verdict;
+        const scopeRefusal = wakeScopeRefusal(task);
+        if (scopeRefusal) {
+          return { content: [{ type: "text", text: scopeRefusal }], details: undefined, isError: true };
+        }
         const appendArgs = ["append", "--task", task, "--verdict", verdict, "--summary", summary, "--silent", String(silent)];
         if (wake) appendArgs.push("--wake", wake);
-        if (!actingAsOwner(toolGeneration)) {
+        // Ownership, the durable append, and the delivery it authorizes are
+        // ONE unit of the delivery queue: store-before-visible-delivery and
+        // this report's place in sequence order are exactly what another
+        // outcome or turn boundary arriving mid-append must not break into.
+        return enqueueDelivery(async () => {
+          if (!(await actingAsOwner(toolGeneration))) {
+            return {
+              content: [{ type: "text", text: "report refused: supervision session was replaced or lost lock ownership" }],
+              details: undefined,
+              isError: true,
+            };
+          }
+          const appended = await runOutcomeScript(appendArgs);
+          if (!appended.ok) {
+            return {
+              content: [{ type: "text", text: `outcome store append failed (nothing merged): ${appended.detail}` }],
+              details: undefined,
+              isError: true,
+            };
+          }
+          durableReportRevision += 1;
+          const seq = Number(appended.stdout);
+          if (!Number.isSafeInteger(seq) || seq < 1 || !(await reconcileUnreadOutcomes(toolGeneration))) {
+            return {
+              content: [{ type: "text", text: `recorded seq ${appended.stdout}, but visible delivery or cursor advancement failed` }],
+              details: undefined,
+              isError: true,
+            };
+          }
           return {
-            content: [{ type: "text", text: "report refused: supervision session was replaced or lost lock ownership" }],
+            content: [{ type: "text", text: `recorded seq ${appended.stdout} and delivered [${verdict}] into main` }],
             details: undefined,
-            isError: true,
           };
-        }
-        const appended = runOutcomeScript(appendArgs);
-        if (!appended.ok) {
-          return {
-            content: [{ type: "text", text: `outcome store append failed (nothing merged): ${appended.detail}` }],
-            details: undefined,
-            isError: true,
-          };
-        }
-        durableReportRevision += 1;
-        const seq = Number(appended.stdout);
-        if (!Number.isSafeInteger(seq) || seq < 1 || !reconcileUnreadOutcomes(toolGeneration)) {
-          return {
-            content: [{ type: "text", text: `recorded seq ${appended.stdout}, but visible delivery or cursor advancement failed` }],
-            details: undefined,
-            isError: true,
-          };
-        }
-        return {
-          content: [{ type: "text", text: `recorded seq ${appended.stdout} and delivered [${verdict}] into main` }],
-          details: undefined,
-        };
+        });
       },
     };
   }
@@ -1002,9 +1281,8 @@ export default function (pi: ExtensionAPI) {
     // captain's current choices authoritative on all of them.
     const pinned = await branchModelSelection();
     const effort = branchEffortSelection(pinned?.model);
-    const prompt = spawnSync("bash", [promptScript], {
+    const prompt = await runCommandAsync("bash", [promptScript], {
       cwd: fmRoot,
-      encoding: "utf8",
       env: scriptEnv,
       maxBuffer: 4 * 1024 * 1024,
     });
@@ -1013,7 +1291,7 @@ export default function (pi: ExtensionAPI) {
         `fm-branch-prompt.sh did not produce a usable branch prompt (status=${prompt.status ?? "none"}): ${(prompt.stderr || "").trim()}`,
       );
     }
-    if (!actingAsOwner(branchGeneration)) throw new Error("supervision session was replaced or lost lock ownership");
+    if (!(await actingAsOwner(branchGeneration))) throw new Error("supervision session was replaced or lost lock ownership");
     mkdirSync(sessionsDir, { recursive: true });
     let sessionManager: SessionManager | null = null;
     // Only this main session's own branch conversation is continued. The
@@ -1063,11 +1341,14 @@ export default function (pi: ExtensionAPI) {
       ],
     });
     await loader.reload();
-    if (!actingAsOwner(branchGeneration)) throw new Error("supervision session was replaced or lost lock ownership");
+    if (!(await actingAsOwner(branchGeneration))) throw new Error("supervision session was replaced or lost lock ownership");
     const leaseHolderPid = ownedLockPid;
     const bashTool = createBashToolDefinition(fmRoot, {
       spawnHook: (context) => {
-        if (!actingAsOwner(branchGeneration)) {
+        // Activation has always already happened by the time the branch can
+        // run a shell command, so an unactivated generation is refused here
+        // rather than quietly granted.
+        if (activatedGeneration !== branchGeneration || !generationOwnsLockSync(branchGeneration)) {
           throw new Error("bash refused: supervision session was replaced or lost lock ownership");
         }
         return {
@@ -1102,7 +1383,7 @@ ${context.command}
       ...(pinned ? { model: pinned.model, modelRuntime: pinned.modelRuntime } : {}),
       ...(effort === undefined ? {} : { thinkingLevel: effort }),
     });
-    if (!actingAsOwner(branchGeneration)) {
+    if (!(await actingAsOwner(branchGeneration))) {
       try {
         created.session.dispose();
       } catch {}
@@ -1120,7 +1401,7 @@ ${context.command}
   }
 
   async function ensureBranch(expectedGeneration: number, recoveryProbe = false): Promise<BranchSession> {
-    if (!actingAsOwner(expectedGeneration)) throw new Error("supervision session was replaced or lost lock ownership");
+    if (!(await actingAsOwner(expectedGeneration))) throw new Error("supervision session was replaced or lost lock ownership");
     if (branchBroken && !(recoveryProbe && providerRecovery?.probeInFlight)) throw new Error(branchBroken);
     if (branch) return branch;
     while (true) {
@@ -1133,7 +1414,7 @@ ${context.command}
           } catch {}
           continue;
         }
-        if (!actingAsOwner(expectedGeneration)) {
+        if (!(await actingAsOwner(expectedGeneration))) {
           try {
             created.session.dispose();
           } catch {}
@@ -1156,38 +1437,75 @@ ${context.command}
   }
 
   async function flushMirror(session: AgentSession, expectedGeneration: number): Promise<void> {
-    if (!actingAsOwner(expectedGeneration)) throw new Error("supervision session no longer owns the fleet lock");
+    if (!(await actingAsOwner(expectedGeneration))) throw new Error("supervision session no longer owns the fleet lock");
     while (pendingMirror.length > 0) {
       const item = pendingMirror[0];
-      if (!actingAsOwner(expectedGeneration)) throw new Error("supervision session no longer owns the fleet lock");
+      if (!(await actingAsOwner(expectedGeneration))) throw new Error("supervision session no longer owns the fleet lock");
       await session.sendCustomMessage(
         { customType: "fm-main-mirror", content: `[${item.tag}] ${item.text}`, display: false },
         {},
       );
-      if (!actingAsOwner(expectedGeneration)) throw new Error("supervision session was replaced during mirror delivery");
+      if (!(await actingAsOwner(expectedGeneration))) throw new Error("supervision session was replaced during mirror delivery");
       pendingMirror.shift();
     }
     if (mirrorCollection.pendingCursor) {
-      if (!actingAsOwner(expectedGeneration)) throw new Error("supervision session no longer owns the fleet lock");
+      if (!(await actingAsOwner(expectedGeneration))) throw new Error("supervision session no longer owns the fleet lock");
       writeMirrorCursor(mirrorCollection.pendingCursor);
       mirrorCollection.pendingCursor = null;
     }
   }
 
-  function enqueueWake(message: string, acceptedGeneration: number, recoveryProbe = false): Promise<void> {
+  // The away posture at the tail of a wake: the record's own read-back (the
+  // captain's words verbatim, the spend cap, expected return, and reach line)
+  // carried byte-for-byte, trailing blank lines included, plus the standing
+  // rule for acting under it. Read per wake so the byte-stable prefix never
+  // carries posture; a read-back that cannot be rendered still names the
+  // posture, because the record's presence is the fact the guarded scripts
+  // enforce either way.
+  async function awayPostureTail(): Promise<string> {
+    let readback = "";
+    try {
+      const rendered = await runCommandAsync("bash", [afkContractScript, "readback"], { cwd: fmRoot, env: scriptEnv });
+      if (rendered.status === 0) readback = rendered.stdout || "";
+    } catch {
+      readback = "";
+    }
+    return awayPostureTailFor(readback);
+  }
+
+  function enqueueWake(message: string, acceptedGeneration: number, recoveryProbe = false, acceptedAwayOnly = false): Promise<void> {
     const acceptedSelectionRevision = branchSelectionRevision;
     const delivery = branchChain
       .then(async () => {
         if (shuttingDown || acceptedGeneration !== generation) {
           throw new Error("supervision session was replaced before handling the accepted wake");
         }
-        if (!actingAsOwner(acceptedGeneration)) throw new Error("supervision session no longer owns the fleet lock");
+        // The ownership and reconcile checks the dispatch handler could not
+        // make synchronously (see the accept contract above). Both must pass
+        // before this wake reaches a branch, exactly as they did when they
+        // ran ahead of accept().
+        if (!(await enqueueDelivery(() => actingAsOwner(acceptedGeneration)))) {
+          throw new Error("supervision session no longer owns the fleet lock");
+        }
+        if (!(await enqueueDelivery(() => reconcileUnreadOutcomes(acceptedGeneration)))) {
+          if (acceptedGeneration === generation) {
+            branchBroken = "could not reconcile unread supervision outcomes into main";
+          }
+          throw new Error("could not reconcile unread supervision outcomes into main");
+        }
         const branchForWake = await ensureBranch(acceptedGeneration, recoveryProbe);
         const { session, sessionManager } = branchForWake;
         await flushMirror(session, acceptedGeneration);
-        if (!actingAsOwner(acceptedGeneration)) throw new Error("supervision session no longer owns the fleet lock");
+        if (!(await actingAsOwner(acceptedGeneration))) throw new Error("supervision session no longer owns the fleet lock");
         const heartbeat = /^heartbeat($|:)/.test(message);
-        const scope = scopeForUnreadWake(state, heartbeat);
+        // The posture is read here, at the tail of this wake, never earlier
+        // and never into the prompt prefix.
+        // Accepted confused-agent-grade residual (bin/fm-lease-lib.sh role-
+        // partition paragraph): the record is validated then may be archived
+        // mid-operation; every relocated action revalidates at its own gate;
+        // rows are store-first and the durable queue keeps them.
+        const afk = afkPostureRecordPresent(state);
+        const scope = scopeForUnreadWake(state, heartbeat, afk);
         // A newly-arrived main-owned (check-kind) row never bounces this
         // whole recheck back to main - scopeForUnreadWake excludes it from
         // eligibleSeqs rather than vetoing the scan, in a heartbeat review as
@@ -1199,11 +1517,16 @@ ${context.command}
         // scopeForUnreadWake itself marks corrupted (the queue or its
         // metadata could not be read safely, or an unresolvable task-local
         // row) still falls back to main.
-        if (scope.status === "empty" || (!scope.corrupted && scope.eligibleSeqs.length === 0)) return;
+        if (scope.status === "empty" || (!scope.corrupted && scope.eligibleSeqs.length === 0)) {
+          if (acceptedAwayOnly) {
+            throw new Error("accepted away-only wake is no longer branch-eligible");
+          }
+          return;
+        }
         if (scope.corrupted) {
           throw new Error("the unread wake queue could not be read safely");
         }
-        const grant = writeEligibleRowsSnapshot(
+        const grant = await writeEligibleRowsSnapshot(
           state,
           scope.eligibleSeqs,
           wakeGrantScript,
@@ -1215,9 +1538,20 @@ ${context.command}
         // the drain; that residual is accepted by the confused-agent-grade boundary.
         const reportRevisionBeforePrompt = durableReportRevision;
         const entryOffset = sessionManager.getEntries().length;
-        await session.prompt(
-          `FIRSTMATE SUPERVISION WAKE: ${message}\n\nHandle this per your operating procedure and finish with fm_branch_report.`,
-        );
+        // A claimed check row names no task, so a prompt carrying one is not
+        // scoped by task (only possible in the away posture).
+        wakeTaskScope = heartbeat || scope.checkSeqs.length > 0 || scope.heartbeatSeqs.length > 0
+          ? null
+          : { rows: [...scope.eligibleSeqs], tasks: new Set(scope.eligibleTasks) };
+        // Same residual: archive during snapshot publish or read-back still
+        // lets this prompt proceed; the guarded scripts revalidate, and the
+        // durable queue keeps every row (bin/fm-lease-lib.sh role-partition).
+        const postureTail = afk ? await awayPostureTail() : "";
+        try {
+          await session.prompt(branchWakePrompt(message, "fm_branch_report", postureTail));
+        } finally {
+          wakeTaskScope = null;
+        }
         const providerError = settledPromptProviderError(sessionManager, entryOffset);
         if (providerError) {
           const detail = `supervision branch provider failed after construction: ${providerError}`;
@@ -1233,12 +1567,12 @@ ${context.command}
           throw new Error("supervision branch prompt settled but produced no durable outcome for its claimed wake rows");
         }
         recordDurableBranchReport(branchForWake.generation, branchForWake.selectionRevision);
-        if (!releaseEligibleRowsSnapshot(state, wakeGrantScript, String(acceptedGeneration))) {
+        if (!(await releaseEligibleRowsSnapshot(state, wakeGrantScript, String(acceptedGeneration)))) {
           throw new Error("could not release the branch's settled wake-row grant");
         }
       })
-      .catch((error: unknown) => {
-        releaseEligibleRowsSnapshot(state, wakeGrantScript, String(acceptedGeneration));
+      .catch(async (error: unknown) => {
+        await releaseEligibleRowsSnapshot(state, wakeGrantScript, String(acceptedGeneration));
         throw error;
       })
       .finally(() => {
@@ -1286,7 +1620,7 @@ ${context.command}
     const flushSession = branch.session;
     branchChain = branchChain
       .then(async () => {
-        if (!actingAsOwner(flushGeneration)) return;
+        if (!(await actingAsOwner(flushGeneration))) return;
         await flushMirror(flushSession, flushGeneration);
       })
       .catch(() => {
@@ -1295,15 +1629,24 @@ ${context.command}
       });
   }
 
+  // accept() must be called SYNCHRONOUSLY: the watcher reads offer.accepted
+  // the moment emit returns (lib/fm-branch-dispatch.ts owns that handshake).
+  // Ownership is therefore still read synchronously here, because a session
+  // that does not own the fleet lock must never ACCEPT a wake (see this
+  // file's header) - accepting and then rejecting would reach main by the
+  // same fallback, but it is not the same promise. What moves into the
+  // settlement is only the work that cannot be made cheap: the activation
+  // side effects and the unread reconcile, both of which now run as the
+  // settlement's first steps and reject to the watcher's main path if they
+  // fail, exactly as a refused offer would.
   pi.events?.on?.(FM_BRANCH_DISPATCH_EVENT, (data) => {
     const offer = data as BranchDispatchOffer;
     if (!offer || typeof offer.accept !== "function") return;
-    // Check eligibility before ownership activation so an out-of-scope wake
+    // Check eligibility before the ownership read so an out-of-scope wake
     // gets neither branch routing nor branch-owned state/lease cleanup side
     // effects.
     if (!offerEligible(offer)) return;
-    if (!actingAsOwner()) return; // cold start pre-lock, secondary session, or shutdown
-    if (afkActive()) return; // the away daemon owns supervision while afk
+    if (!generationOwnsLockSync(generation)) return; // cold start pre-lock, secondary session, or shutdown
     const recoveryProbe = Boolean(
       branchBroken &&
       providerRecovery &&
@@ -1311,31 +1654,36 @@ ${context.command}
       Date.now() >= providerRecovery.retryNotBefore
     );
     if (branchBroken && !recoveryProbe) return; // main owns every wake inside the cooldown window
-    if (!reconcileUnreadOutcomes(generation)) {
-      branchBroken = "could not reconcile unread supervision outcomes into main";
-      return;
-    }
     if (!collectCurrentMainDialog()) return;
     if (recoveryProbe && providerRecovery) providerRecovery.probeInFlight = true;
-    offer.accept(enqueueWake(offer.message, generation, recoveryProbe));
+    offer.accept(enqueueWake(offer.message, generation, recoveryProbe, offer.awayOnly === true));
   });
 
-  pi.on?.("before_agent_start", (event, ctx) => {
+  // Pi awaits every extension event handler, so an awaited ownership read
+  // here delays only Pi's own next step - it never stops the TUI the way the
+  // synchronous read it replaces did. The generation is captured before that
+  // await so a session replaced while it runs cannot be staged into.
+  pi.on?.("before_agent_start", async (event, ctx) => {
     rememberMainModel(ctx);
     currentMainSession = ctx?.sessionManager ?? null;
-    if (!actingAsOwner() || !currentMainSession || !collectCurrentMainDialog()) return;
+    const promptGeneration = generation;
+    if (!(await enqueueDelivery(() => actingAsOwner(promptGeneration)))) return;
+    if (promptGeneration !== generation || !currentMainSession || !collectCurrentMainDialog()) return;
 
     // This event is Pi's authoritative complete current prompt. At this point
     // SessionManager still contains only the preceding dialog, so relying on
     // getEntries() here loses the captain request that the next wake may answer.
     // Stage it verbatim and remember the future persisted index for turn_end's
     // duplicate suppression. Operational extension injections are not dialog.
-    const prompt = event.prompt.trim();
-    if (!prompt || isOperationalUserText(prompt)) return;
+    const prompt = event.prompt;
+    processingOpenedThisRun = queuedProcessingContent !== null && prompt === queuedProcessingContent;
+    if (processingOpenedThisRun) queuedProcessingContent = null;
+    const trimmed = prompt.trim();
+    if (!trimmed || isOperationalUserText(trimmed)) return;
     const file = currentMainSession.getSessionFile() ?? "";
     const index = mirrorCollection.collectAnchor?.index ?? currentMainSession.getEntries().length;
-    pendingMirror.push({ tag: "captain", text: prompt });
-    mirrorCollection.stagedCaptain = { file, index, text: prompt };
+    pendingMirror.push({ tag: "captain", text: trimmed });
+    mirrorCollection.stagedCaptain = { file, index, text: trimmed };
   });
 
   pi.on?.("agent_start", () => {
@@ -1343,6 +1691,15 @@ ${context.command}
     // Pi delivers a queued nextTurn copy with the prompt that starts this run,
     // so a fresh copy may be queued again once this run settles unacknowledged.
     if (processing) processing.nextTurnQueued = false;
+  });
+  pi.on?.("context", (event, ctx) => {
+    if (!afkPostureRecordPresent(state)) return;
+    const messages = event.messages ?? [];
+    const kept = messages.filter((message) => !isProcessingCustomMessage(message));
+    if (kept.length === messages.length) return;
+    processing = null;
+    if (processingOpenedThisRun) ctx?.abort?.();
+    return { messages: kept };
   });
   pi.on?.("agent_end", () => {
     mainStreaming = false;
@@ -1353,11 +1710,16 @@ ${context.command}
   // own), so any sequence still unprocessed here was answered by something
   // other than its acknowledgement - an unrelated reply, an empty reply, or a
   // reply that only paraphrased it - and is presented again.
-  pi.on?.("agent_settled", () => {
+  pi.on?.("agent_settled", async () => {
     mainStreaming = false;
+    queuedProcessingContent = null;
+    processingOpenedThisRun = false;
     if (processing) processing.pending = false;
-    if (!actingAsOwner()) return;
-    presentUnprocessedOutcomes(generation);
+    const settledGeneration = generation;
+    await enqueueDelivery(async () => {
+      if (!(await actingAsOwner(settledGeneration))) return;
+      await presentUnprocessedOutcomes(settledGeneration);
+    });
   });
 
   // before_agent_start stages Pi's authoritative in-flight prompt before
@@ -1366,11 +1728,19 @@ ${context.command}
   // the serialized chain before that wake's branch prompt. turn_end remains
   // the idle-path mirror flush. The durable cursor advances only in
   // flushMirror after the complete pending batch reaches the branch.
-  pi.on?.("turn_end", (_event, ctx) => {
+  pi.on?.("turn_end", async (_event, ctx) => {
     rememberMainModel(ctx);
     currentMainSession = ctx.sessionManager;
-    if (!actingAsOwner()) return;
-    if (!reconcileUnreadOutcomes(generation, false)) {
+    const turnGeneration = generation;
+    const reconciled = await enqueueDelivery(async () => {
+      if (!(await actingAsOwner(turnGeneration))) return "not-owner";
+      return (await reconcileUnreadOutcomes(turnGeneration, false)) ? "reconciled" : "failed";
+    });
+    // A verdict about a generation that has since been replaced says nothing
+    // about the new one, so it neither breaks the branch nor flushes a mirror.
+    if (turnGeneration !== generation) return;
+    if (reconciled === "not-owner") return;
+    if (reconciled === "failed") {
       branchBroken = "could not reconcile unread supervision outcomes into main";
       return;
     }
@@ -1392,9 +1762,12 @@ ${context.command}
   // supervision prompt. The mirror re-anchors with it, so the fresh branch
   // receives the dialog of the main session it is supervising from that
   // session's start.
-  pi.on?.("session_start", (_event, ctx) => {
+  pi.on?.("session_start", async (_event, ctx) => {
     rememberMainModel(ctx);
     currentMainSession = ctx?.sessionManager ?? null;
+    // Every field this new generation depends on is set before the first
+    // await, so anything already queued for the previous generation is
+    // cancelled by its own recheck rather than racing this one.
     shuttingDown = false;
     branchBroken = "";
     consecutiveProviderErrors = 0;
@@ -1404,7 +1777,12 @@ ${context.command}
     mirrorCollection.pendingCursor = null;
     mirrorCollection.stagedCaptain = null;
     mirrorCollection.reanchor = true;
-    if (actingAsOwner(generation) && !reconcileUnreadOutcomes(generation)) {
+    const startedGeneration = generation;
+    const failed = await enqueueDelivery(
+      async () =>
+        (await actingAsOwner(startedGeneration)) && !(await reconcileUnreadOutcomes(startedGeneration)),
+    );
+    if (failed && startedGeneration === generation) {
       branchBroken = "could not reconcile unread supervision outcomes into main";
     }
   });
@@ -1435,8 +1813,11 @@ ${context.command}
     releaseBranchForSelectionChange();
   });
 
-  pi.on?.("session_shutdown", () => {
-    deactivateEligibleRowsOwner(state, wakeGrantScript, process.pid, String(generation));
+  pi.on?.("session_shutdown", async () => {
+    // Quiesce first, then release the grant for the generation that is
+    // closing: setting shuttingDown before the await is what stops anything
+    // new from being accepted while the release runs.
+    const closingGeneration = generation;
     shuttingDown = true;
     generation += 1;
     processing = null;
@@ -1453,6 +1834,7 @@ ${context.command}
       }
       branch = null;
     }
+    await deactivateEligibleRowsOwner(state, wakeGrantScript, process.pid, String(closingGeneration));
   });
 
   // Pi keeps /model and its own thinking selector for the captain's own
@@ -1475,9 +1857,10 @@ ${context.command}
       let available: string[];
       try {
         const modelRuntime = await ModelRuntime.create();
+        await copyExtensionProviders(modelRuntime);
         available = ctx.modelRegistry
           .getAvailable()
-          .filter((model) => modelRuntime.getModel(model.provider, model.id) && modelRuntime.hasConfiguredAuth(model.provider))
+          .filter((model) => model.provider !== "codex-native" && modelRuntime.getModel(model.provider, model.id) && modelRuntime.hasConfiguredAuth(model.provider))
           .map(modelLabel);
       } catch (error) {
         ctx.ui.notify(
@@ -1521,23 +1904,22 @@ ${context.command}
         modelReport = { message: `Supervision branch model: ${picked}.`, warning: false };
       } else {
         // Clearing the pin only follows main if main's model can actually be
-        // applied to the branch; say what will really happen rather than
-        // reporting a state that did not take effect.
-        try {
-          const following = mainModel ? await resolveBranchModel(mainModel.provider, mainModel.id) : null;
-          if (following?.ok) branchModel = following.selection.model;
-          modelReport = following?.ok
-            ? {
-                message: `Supervision branch follows main's model (${modelLabel(following.selection.model)}).`,
-                warning: false,
-              }
-            : {
-                message: `Supervision branch pin cleared, but main's model could not be applied (${following ? following.reason : "main's model is not known yet"}); the branch keeps the model its own session recorded until that conversation is replaced.`,
-                warning: true,
-              };
-        } catch (error) {
+        // applied to the branch; the same followMainModel rule the next build
+        // runs says what will really happen rather than reporting a state
+        // that did not take effect.
+        const following = mainModel ? await followMainModel(mainModel) : null;
+        if (following?.ok) {
+          branchModel = following.selection.model;
           modelReport = {
-            message: `Supervision branch pin cleared, but main's model could not be applied (${error instanceof Error ? error.message : String(error)}); the branch keeps the model its own session recorded until that conversation is replaced.`,
+            message: `Supervision branch follows main's model (${modelLabel(following.selection.model)}).`,
+            warning: false,
+          };
+        } else {
+          const consequence = following?.refusesBuild
+            ? ""
+            : "; the branch keeps the model its own session recorded until that conversation is replaced";
+          modelReport = {
+            message: `Supervision branch pin cleared, but main's model could not be applied (${following ? following.reason : "main's model is not known yet"})${consequence}.`,
             warning: true,
           };
         }
@@ -1793,7 +2175,42 @@ ${context.command}
     return shell;
   };
 
-  pi.registerTool?.({
+  // Pi's stock call header (formatToolCallWithArgs) is not a public export.
+  // Before Pi 0.99 it is the bold title alone. Since Pi 0.99 a collapsed call
+  // is `title key=json` on the title line, cut at 100 characters, and an
+  // expanded call puts one muted `key: value` line under the title. Calm-off
+  // rendering has to match the installed Pi or the stock comparison fails.
+  // Keep this in step with that function.
+  const [stockMajor = 0, stockMinor = 0] = VERSION.split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const stockCallHeaderShowsArgs = stockMajor > 0 || stockMinor >= 99;
+  const stockCollapsedArgsChars = 100;
+  const stockToolCallHeader = (
+    title: string,
+    args: unknown,
+    theme: Parameters<NonNullable<ToolDefinition["renderCall"]>>[1],
+    expanded: boolean,
+  ): string => {
+    const header = theme.fg("toolTitle", theme.bold(title));
+    if (!stockCallHeaderShowsArgs || args == null) return header;
+    const entries = typeof args === "object" && !Array.isArray(args)
+      ? Object.entries(args)
+      : [["args", args] as [string, unknown]];
+    if (entries.length === 0) return header;
+    if (expanded) {
+      const lines = entries.map(([key, value]) => {
+        const text = typeof value === "string" ? value : (JSON.stringify(value, null, 2) ?? String(value));
+        return `  ${key}: ${text.replace(/\t/g, "   ").replace(/\r/g, "").split("\n").join("\n    ")}`;
+      });
+      return `${header}\n${theme.fg("muted", lines.join("\n"))}`;
+    }
+    const pairs = entries.map(([key, value]) => `${key}=${JSON.stringify(value) ?? String(value)}`).join(" ");
+    const preview = pairs.length > stockCollapsedArgsChars
+      ? `${pairs.slice(0, stockCollapsedArgsChars - 3)}...`
+      : pairs;
+    return `${header} ${theme.fg("muted", preview)}`;
+  };
+
+  registerFirstmateTool(pi, {
     name: "fm_branch_outcomes",
     label: "Read supervision branch outcomes",
     description:
@@ -1803,11 +2220,11 @@ ${context.command}
       recent: Type.Optional(Type.Number({ description: "How many most-recent outcomes to read (default 20)" })),
     }),
     renderShell: "self",
-    renderCall: (_args, theme, context) => {
+    renderCall: (args, theme, context) => {
       if (calmPresentation.stockExportRendering) throw new Error("Use Pi stock export rendering");
       if (calmHides("assistant-tool-call")) return new Container();
       const shellState = context.state as OutcomesToolShellState;
-      shellState.call = new Text(theme.fg("toolTitle", theme.bold("fm_branch_outcomes")), 0, 0);
+      shellState.call = new Text(stockToolCallHeader("fm_branch_outcomes", args, theme, context.expanded), 0, 0);
       return refreshOutcomesToolShell(shellState, theme, context);
     },
     renderResult: (result, options, theme, context) => {
@@ -1835,7 +2252,7 @@ ${context.command}
     execute: async (_toolCallId, params) => {
       const recentRaw = (params as { recent?: unknown }).recent;
       const recent = typeof recentRaw === "number" && recentRaw >= 1 ? String(Math.floor(recentRaw)) : "20";
-      const listed = runOutcomeScript(["list", "--recent", recent]);
+      const listed = await enqueueDelivery(() => runOutcomeScript(["list", "--recent", recent]));
       if (!listed.ok) {
         return {
           content: [{ type: "text", text: `could not read the outcome store: ${listed.detail}` }],
@@ -1855,7 +2272,7 @@ ${context.command}
   // cursor, never backwards), and refused outside lock ownership, so neither a
   // paraphrase, an empty reply, nor a stale generation can mark an outcome
   // processed.
-  pi.registerTool?.({
+  registerFirstmateTool(pi, {
     name: "fm_branch_processed",
     label: "Acknowledge processed supervision outcomes",
     description:
@@ -1865,11 +2282,11 @@ ${context.command}
       through: Type.Number({ description: "The highest outcome sequence number this conversation has processed" }),
     }),
     renderShell: "self",
-    renderCall: (_args, theme, context) => {
+    renderCall: (args, theme, context) => {
       if (calmPresentation.stockExportRendering) throw new Error("Use Pi stock export rendering");
       if (calmHides("assistant-tool-call")) return new Container();
       const shellState = context.state as OutcomesToolShellState;
-      shellState.call = new Text(theme.fg("toolTitle", theme.bold("fm_branch_processed")), 0, 0);
+      shellState.call = new Text(stockToolCallHeader("fm_branch_processed", args, theme, context.expanded), 0, 0);
       return refreshOutcomesToolShell(shellState, theme, context);
     },
     renderResult: (result, _options, theme, context) => {
@@ -1894,39 +2311,45 @@ ${context.command}
           isError: true,
         };
       }
-      if (!actingAsOwner()) {
+      // One queued unit, for the same reason the report tool is one: the
+      // acknowledgement must not be interleaved with a delivery that is still
+      // advancing the read cursor it is measured against.
+      const acknowledgedGeneration = generation;
+      return enqueueDelivery(async () => {
+        if (!(await actingAsOwner(acknowledgedGeneration))) {
+          return {
+            content: [{ type: "text", text: "acknowledgement refused: this session does not own the fleet lock" }],
+            details: undefined,
+            isError: true,
+          };
+        }
+        if (!processing || through > processing.through) {
+          return {
+            content: [{ type: "text", text: `acknowledgement refused: seq ${through} was not listed in the active processing request` }],
+            details: undefined,
+            isError: true,
+          };
+        }
+        const marked = await runOutcomeScript(["mark-processed", "--through", String(through)]);
+        if (!marked.ok) {
+          return {
+            content: [{ type: "text", text: `acknowledgement refused: ${marked.detail}` }],
+            details: undefined,
+            isError: true,
+          };
+        }
+        const remaining = await readUnprocessedOutcomes(acknowledgedGeneration);
+        if (remaining !== null && remaining.length === 0) processing = null;
+        const open = remaining === null
+          ? "the remaining outcomes could not be read"
+          : remaining.length === 0
+            ? "no captain outcome remains unprocessed"
+            : `${remaining.length} newer captain outcome(s) remain unprocessed (seq ${remaining.map((row) => row.seq).join(", ")}) and will be presented again`;
         return {
-          content: [{ type: "text", text: "acknowledgement refused: this session does not own the fleet lock" }],
+          content: [{ type: "text", text: `processed through seq ${through}; ${open}` }],
           details: undefined,
-          isError: true,
         };
-      }
-      if (!processing || through > processing.through) {
-        return {
-          content: [{ type: "text", text: `acknowledgement refused: seq ${through} was not listed in the active processing request` }],
-          details: undefined,
-          isError: true,
-        };
-      }
-      const marked = runOutcomeScript(["mark-processed", "--through", String(through)]);
-      if (!marked.ok) {
-        return {
-          content: [{ type: "text", text: `acknowledgement refused: ${marked.detail}` }],
-          details: undefined,
-          isError: true,
-        };
-      }
-      const remaining = readUnprocessedOutcomes(generation);
-      if (remaining !== null && remaining.length === 0) processing = null;
-      const open = remaining === null
-        ? "the remaining outcomes could not be read"
-        : remaining.length === 0
-          ? "no captain outcome remains unprocessed"
-          : `${remaining.length} newer captain outcome(s) remain unprocessed (seq ${remaining.map((row) => row.seq).join(", ")}) and will be presented again`;
-      return {
-        content: [{ type: "text", text: `processed through seq ${through}; ${open}` }],
-        details: undefined,
-      };
+      });
     },
   });
 
@@ -1945,7 +2368,7 @@ ${context.command}
   });
 
   // Pi only calls this renderer for a message with display: true, which every
-  // routine note uses except an explicitly silent fleet heartbeat.
+  // routine note uses except an explicitly silent no-change outcome.
   pi.registerMessageRenderer?.("fm-branch-merge", (message, _options, theme) => {
     const note = textOfContent(message.content);
     const hasGlyph = note.startsWith(MERGE_NOTE_BOAT);

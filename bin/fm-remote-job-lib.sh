@@ -36,9 +36,9 @@
 # interactive commands behind its wait window.
 # fm_remote_job_command_preemptible names the read-only long-poll class
 # (fm-remote-delta-read.sh, the reply-log delta read). The worker preempts a
-# running preemptible job as soon as a non-preemptible job is queued for the
-# same home and publishes exit 76 with emptied stdout and stderr, distinct from
-# the poll's exit 75 elapsed-window-with-no-data result. The delta read is
+# running preemptible job on its next queue pass after a non-preemptible job is
+# queued for the same home and publishes exit 76 with emptied stdout and
+# stderr, distinct from the poll's exit 75 elapsed-window-with-no-data result. The delta read is
 # non-destructive and cursor-anchored, so the caller's normal re-arm re-reads
 # the same data and a preempted poll loses nothing.
 #
@@ -54,6 +54,18 @@
 # that dies without delivering a signal still cancels the abandoned job.
 # Abandoned .stage.* staging litter older than
 # FM_REMOTE_JOB_STAGE_REAP_SECONDS is reaped by the worker's stale sweep.
+#
+# Result consumers and active-command monitors sample every 0.25 seconds by
+# default; the dispatcher's post-activity burst still samples every 0.05 seconds.
+# FM_REMOTE_JOB_ACTIVE_POLL_SECONDS overrides the active/result interval; an
+# explicitly supplied FM_REMOTE_JOB_POLL_SECONDS remains the legacy fallback
+# for both intervals. Resolve the active default before filling the dispatcher
+# default, and retain it when the library is sourced again.
+# Once-per-second cancellation, preemption, and disconnect checks can overshoot
+# their due time by one sampling interval plus work/scheduling time, as can the
+# active command's timeout check. Completion and result collection can each add
+# one interval. Sleeps stay ordinary child processes: existing signal handlers
+# and the separate cancellation/preemption TERM-to-KILL grace are unchanged.
 #
 # The worker accepts only a tracked, non-symlink executable named fm-*.sh below
 # its configured FM_ROOT/bin. Every child receives env -i with the composed
@@ -88,6 +100,7 @@ FM_REMOTE_JOB_MAX_BYTES=${FM_REMOTE_JOB_MAX_BYTES:-1048576}
 FM_REMOTE_JOB_QUEUE_TIMEOUT=${FM_REMOTE_JOB_QUEUE_TIMEOUT:-360}
 FM_REMOTE_JOB_TIMEOUT=${FM_REMOTE_JOB_TIMEOUT:-360}
 FM_REMOTE_JOB_WAIT_GRACE=${FM_REMOTE_JOB_WAIT_GRACE:-30}
+FM_REMOTE_JOB_ACTIVE_POLL_SECONDS=${FM_REMOTE_JOB_ACTIVE_POLL_SECONDS:-${FM_REMOTE_JOB_POLL_SECONDS:-0.25}}
 FM_REMOTE_JOB_POLL_SECONDS=${FM_REMOTE_JOB_POLL_SECONDS:-0.05}
 FM_REMOTE_JOB_REAP_SECONDS=${FM_REMOTE_JOB_REAP_SECONDS:-3600}
 FM_REMOTE_JOB_STAGE_REAP_SECONDS=${FM_REMOTE_JOB_STAGE_REAP_SECONDS:-600}
@@ -733,7 +746,7 @@ fm_remote_job_wait() { # <account-home> <id>; honors FM_REMOTE_JOB_DISCONNECT_PR
         return 1
       fi
     fi
-    sleep "$FM_REMOTE_JOB_POLL_SECONDS"
+    sleep "$FM_REMOTE_JOB_ACTIVE_POLL_SECONDS"
   done
 }
 
@@ -758,7 +771,7 @@ fm_remote_job_reap() { # <account-home> <id>; only removes an exact completed re
 fm_remote_job_path_mtime() { # <path>
   # The platform override controls worker shape in isolated tests, not the host
   # kernel's stat syntax.
-  if [ "$(uname -s 2>/dev/null || true)" = Darwin ]; then stat -f %m "$1" 2>/dev/null; else stat -c %Y "$1" 2>/dev/null; fi
+  if [ "$(uname -s 2>/dev/null || true)" = Darwin ]; then /usr/bin/stat -f %m "$1" 2>/dev/null; else stat -c %Y "$1" 2>/dev/null; fi
 }
 
 fm_remote_job_stage_owner_alive() { # <stage-dir>

@@ -6,9 +6,11 @@
 # registered secondmate home. Local homes are treehouse worktrees or standalone
 # clones; remote routes update their configured code root on that host and then
 # fast-forward the persistent home to that root. FAST-FORWARD ONLY, exactly like
-# fm-fleet-sync.sh: never force, never create a merge commit, never stash;
-# advance a target only when it is a clean fast-forward, otherwise skip and
-# report. A tracked-files fast-forward never touches the gitignored operational
+# fm-fleet-sync.sh: never force, never create a merge commit, never stash.
+# A secondmate divergence whose complete local tree result is already present at
+# the target is reconciled with reset --keep; every other unsafe target is
+# skipped and reported, with divergence recorded durably by fm-ff-lib.sh.
+# A tracked-files update never touches the gitignored operational
 # dirs (data/, state/, config/, projects/, .no-mistakes/), so a secondmate's
 # in-flight work is never disrupted. Worktrees of this repo share one object
 # store, so a single fetch refreshes them all; standalone-clone homes are
@@ -25,22 +27,40 @@
 # plus a parseable summary telling the caller what to do next:
 #   - one status line per target (updated/already current/skipped)
 #   - reread-firstmate: yes|no    (did the running firstmate's instructions change)
-#   - restart-secondmates: fm-<id>...|none (advanced live secondmates whose
-#     AGENTS.md or .agents/skills/ changed AND whose recorded runtime can prove a
-#     restart, so their agents must be replaced to actually reload)
-#   - nudge-secondmates: fm-<id>...|none   (the residual: advanced live
-#     secondmates that changed instructions but cannot be restarted provably, so
-#     the older re-read steer is all that is honest for them; a legacy remote
-#     advance that cannot report its instruction diff also lands here because
-#     the unknown surface cannot safely authorize a restart)
+#   - restart-secondmates: fm-<id>...|none (every live secondmate this pass left
+#     on origin's tip - advanced OR already there - whose recorded runtime can
+#     prove a restart)
+#   - nudge-secondmates: fm-<id>...|none   (the residual: live secondmates on
+#     that same tip whose runtime CANNOT prove a restart, so the older re-read
+#     steer is all that is honest for them)
 #
-# The two sets are disjoint. Normally both require a CHANGED INSTRUCTION SURFACE,
-# which is stricter than this command's older "any advance" nudge and matches what
-# the session-start sweep has always used; the one compatibility exception is the
-# legacy remote unknown above. Restart is stricter again: a bin/-only advance
-# reloads itself on the next call and never costs a conversation
-# (bin/fm-ff-lib.sh's ff_instr_needs_reload), and bin/fm-secondmate-restart-lib.sh
-# owns the capability half.
+# The two sets are disjoint, and restart is UNCONDITIONAL on a successful update
+# of that home. It is deliberately not gated on the git diff: replacing the agent
+# is the only thing that re-resolves the launch-time wiring - turn-end hooks,
+# harness flags, per-harness feature switches - which a running agent froze when
+# it started and which no changed_instr list describes. An unchanged tracked
+# surface therefore is NOT evidence that the running agent is already on the
+# current behavior, so an ALREADY-CURRENT home restarts too.
+#
+# Only two things keep a live mate out of the restart set, and neither is papered
+# over as a reload:
+#   - its home was SKIPPED (dirty, uniquely diverged, offline, unsafe). It is not
+#     on the new bytes, nothing here forces, stashes, or discards it, and it gets
+#     no action at all. A divergence remains in the durable reconciliation record
+#     that this or a later bootstrap/update pass surfaces.
+#   - its runtime cannot prove the old agent stopped and a replacement came up
+#     (bin/fm-secondmate-restart-lib.sh owns that test), so it falls to the
+#     honest re-read steer and is reported as a nudge, never as a reload.
+# A positively dead or missing endpoint has no agent to replace and is left to
+# the ordinary startup recovery.
+#
+# A fast-forward that lands changes bytes under bin/ in place, which desyncs
+# the trust binding of any locally armed fm-procevent-when watch whose action
+# executable lives in the updated repo; left alone, the watch's next fire
+# would be wrongly refused. After each home's own update (primary and every
+# local secondmate), this script best-effort runs that home's own
+# fm-procevent-when.sh rebind-all to republish those bindings against the new
+# bytes; a failure there is swallowed rather than failing the update.
 #
 # Usage: fm-update.sh [--help]
 set -eu
@@ -69,31 +89,34 @@ fi
 
 reread_firstmate="no"
 ff_target "$FM_ROOT" "firstmate" origin no no
-if [ "$FF_STATUS" = "updated" ] && [ -n "$FF_INSTR" ]; then
-  reread_firstmate="yes"
+if [ "$FF_STATUS" = "updated" ]; then
+  if [ -n "$FF_INSTR" ]; then
+    reread_firstmate="yes"
+  fi
+  # A fast-forward changes bin/'s bytes out from under any locally armed
+  # fm-procevent-when watch's trust binding, with no tampering involved; left
+  # alone, the very next fire is refused and the watch dies silently. Refresh
+  # every such watch now, right after the update that broke it. FM_ROOT_OVERRIDE
+  # is passed explicitly rather than relying on the script's own location: this
+  # process's own FM_ROOT is the repo that was just updated, which is not
+  # always where this very script file happens to live (FM_ROOT_OVERRIDE, as
+  # this test suite uses to point fm-update.sh at a fixture checkout).
+  FM_HOME="$FM_HOME" FM_ROOT_OVERRIDE="$FM_ROOT" "$SCRIPT_DIR/fm-procevent-when.sh" rebind-all || true
 fi
 
 # --- secondmates -----------------------------------------------------------
-# An advanced live secondmate is reached only when its INSTRUCTION SURFACE moved
-# (nudge_requires_instr is "yes" on every sweep below), the same threshold the
-# session-start sweep uses: an advance that touched only README.md, docs/, or the
-# installer-facing skills/ changes nothing the agent is running on.
-#
-# Of those, the ones whose AGENTS.md or .agents/skills/ changed need a restart
-# rather than a steer, because a running agent holds both frozen from launch and
-# no harness offers a reload. The rest keep the re-read nudge.
+# Every live secondmate this pass leaves on origin's tip is restarted, whether it
+# advanced or was already there. The header above owns why the git diff does not
+# gate that, and which two conditions - a skipped home, an unprovable runtime -
+# are the only ways a live mate stays out of the restart set.
 
+# FF_NUDGE_WINDOWS and FF_SEEN_HOMES are the sweep's own accumulators and are
+# reset here per its contract; the instruction-gated nudge set is the session-start
+# sweep's threshold, not this command's, so only the two sets below are read.
 FF_NUDGE_WINDOWS=""
 FF_SEEN_HOMES=""
 FF_RESTART_WINDOWS=""
-
-remove_secondmate_action() {  # <id>
-  local id=$1 selector next=""
-  for selector in $FF_NUDGE_WINDOWS; do
-    [ "$selector" = "fm-$id" ] || next="$next $selector"
-  done
-  FF_NUDGE_WINDOWS=$next
-}
+FF_STEER_WINDOWS=""
 
 secondmate_agent_may_be_alive() {  # <id>
   local id=$1 meta="$STATE/$1.meta" remote_host state=unreadable
@@ -111,17 +134,41 @@ secondmate_agent_may_be_alive() {  # <id>
   esac
 }
 
-# Classify one advanced local secondmate. bin/fm-ff-lib.sh calls this for each
-# home that advanced with a changed instruction surface and a live endpoint.
-fm_ff_after_instruction_update() {  # <id> <home> <window> <instr>
-  local id=$1 instr=$4
-  if ! secondmate_agent_may_be_alive "$id"; then
-    remove_secondmate_action "$id"
-    return 0
+selector_claimed() {  # <selector>
+  case " $FF_RESTART_WINDOWS $FF_STEER_WINDOWS " in
+    *" $1 "*) return 0 ;;
+  esac
+  return 1
+}
+
+# Route one secondmate whose home this pass left on the target commit. Restart is
+# the outcome unless its runtime cannot prove one, in which case it keeps the
+# re-read steer and is reported as a nudge rather than as a reload. A stopped
+# endpoint has no agent to replace and is left to startup recovery.
+claim_settled_secondmate() {  # <id>
+  local id=$1
+  selector_claimed "fm-$id" && return 0
+  secondmate_agent_may_be_alive "$id" || return 0
+  if fm_secondmate_restart_capable "$STATE/$id.meta"; then
+    FF_RESTART_WINDOWS="$FF_RESTART_WINDOWS fm-$id"
+  else
+    FF_STEER_WINDOWS="$FF_STEER_WINDOWS fm-$id"
   fi
-  ff_instr_needs_reload "$instr" || return 0
-  fm_secondmate_restart_capable "$STATE/$id.meta" || return 0
-  FF_RESTART_WINDOWS="$FF_RESTART_WINDOWS fm-$id"
+}
+
+# bin/fm-ff-lib.sh calls this for each local home it left AT the base with a live
+# endpoint - status "updated" or "current" alike. A skipped home never gets here.
+fm_ff_after_secondmate_settled() {  # <id> <home> <window> <status> <instr>
+  # Same bin/-changed-out-from-under-a-watch problem as the primary home
+  # above, for a local secondmate's own worktree; "current" means bin/ did
+  # not move there this pass, so there is nothing to rebind. Run the
+  # secondmate's OWN copy of the script, explicitly overriding FM_ROOT to its
+  # own worktree rather than letting an outer FM_ROOT_OVERRIDE (this process's
+  # own, if the caller set one) leak into the child and misscope it.
+  if [ "${4:-}" = "updated" ] && [ -x "$2/bin/fm-procevent-when.sh" ]; then
+    FM_HOME="$2" FM_ROOT_OVERRIDE="$2" "$2/bin/fm-procevent-when.sh" rebind-all || true
+  fi
+  claim_settled_secondmate "$1"
 }
 
 # Live direct reports first: state/<id>.meta with kind=secondmate carries the
@@ -148,38 +195,35 @@ if [ -f "$SECONDMATES_MD" ]; then
         case "$remote_result" in
           synced:*)
             remote_detail=${remote_result#synced: }
-            # The host reports its advance as "<commit> instr=<paths>". A host
-            # whose Firstmate copy predates that suffix reports the commit alone,
-            # which is UNKNOWN rather than "nothing changed" and therefore earns
-            # the safe re-read steer rather than an unprovable restart.
+            # The host reports its advance as "<commit> instr=<paths>"; a host
+            # whose Firstmate copy predates that suffix reports the commit alone.
+            # The suffix is now reporting detail only: the routing below no longer
+            # reads it, so an older host's silence can no longer downgrade a
+            # restartable mate to a steer.
             case "$remote_detail" in
               *' instr='*)
                 remote_instr=${remote_detail##* instr=}
                 remote_commit=${remote_detail%% instr=*}
-                remote_instr_known=1
                 ;;
-              *) remote_instr=""; remote_commit=$remote_detail; remote_instr_known=0 ;;
+              *) remote_instr=""; remote_commit=$remote_detail ;;
             esac
             if [ -n "$remote_instr" ]; then
               echo "remote secondmate $id: updated on $SECONDMATE_REGISTRY_HOST ($remote_commit, instructions changed: $remote_instr)"
             else
               echo "remote secondmate $id: updated on $SECONDMATE_REGISTRY_HOST ($remote_commit)"
             fi
-            if [ -f "$STATE/$id.meta" ] && grep -qx 'kind=secondmate' "$STATE/$id.meta" \
-              && secondmate_agent_may_be_alive "$id"; then
-              if [ "$remote_instr_known" -eq 0 ]; then
-                FF_NUDGE_WINDOWS="$FF_NUDGE_WINDOWS fm-$id"
-              elif [ -n "$remote_instr" ]; then
-                if ff_instr_needs_reload "$remote_instr" \
-                  && fm_secondmate_restart_capable "$STATE/$id.meta"; then
-                  FF_RESTART_WINDOWS="$FF_RESTART_WINDOWS fm-$id"
-                else
-                  FF_NUDGE_WINDOWS="$FF_NUDGE_WINDOWS fm-$id"
-                fi
-              fi
+            if [ -f "$STATE/$id.meta" ] && grep -qx 'kind=secondmate' "$STATE/$id.meta"; then
+              claim_settled_secondmate "$id"
             fi
             ;;
-          current:*) echo "remote secondmate $id: already current on $SECONDMATE_REGISTRY_HOST (${remote_result#current: })" ;;
+          current:*)
+            echo "remote secondmate $id: already current on $SECONDMATE_REGISTRY_HOST (${remote_result#current: })"
+            # Already on the target commit is a SUCCESSFUL update of that home,
+            # so it earns the same restart as one that had to advance.
+            if [ -f "$STATE/$id.meta" ] && grep -qx 'kind=secondmate' "$STATE/$id.meta"; then
+              claim_settled_secondmate "$id"
+            fi
+            ;;
           *) echo "remote secondmate $id: skipped on $SECONDMATE_REGISTRY_HOST: malformed update result" >&2 ;;
         esac
       else
@@ -193,18 +237,10 @@ fi
 
 # --- caller action summary -------------------------------------------------
 
-# The local sweep accumulates every advanced instruction-surface change into
-# FF_NUDGE_WINDOWS and the classifier above promotes the restartable ones, so the
-# nudge line is the residual. Keeping the sets disjoint is what stops a mate from
-# being restarted and then steered about the instructions it just relaunched on.
-nudge_residual=""
-for selector in $FF_NUDGE_WINDOWS; do
-  case " $FF_RESTART_WINDOWS " in
-    *" $selector "*) continue ;;
-  esac
-  nudge_residual="$nudge_residual $selector"
-done
+# claim_settled_secondmate puts each live settled mate in exactly one set, so the
+# two lines below are disjoint by construction: no mate is ever restarted and
+# then also steered about the instructions it just relaunched on.
 
 echo "reread-firstmate: $reread_firstmate"
 echo "restart-secondmates:${FF_RESTART_WINDOWS:- none}"
-echo "nudge-secondmates:${nudge_residual:- none}"
+echo "nudge-secondmates:${FF_STEER_WINDOWS:- none}"
