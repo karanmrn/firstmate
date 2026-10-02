@@ -531,6 +531,89 @@ run_teardown() {
     "$TEARDOWN" task-x1 "$@"
 }
 
+# Log every treehouse invocation. A shared-slot teardown must not call return.
+add_logging_treehouse() {
+  local case_dir=$1
+  : > "$case_dir/treehouse.log"
+  cat > "$case_dir/fakebin/treehouse" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "${FM_FAKE_TREEHOUSE_LOG:?}"
+exit 0
+SH
+  chmod +x "$case_dir/fakebin/treehouse"
+}
+
+# The neighboring window is a live codex pane. Other tmux calls stay no-ops.
+add_live_neighbor_tmux() {
+  local case_dir=$1
+  cat > "$case_dir/fakebin/tmux" <<'SH'
+#!/usr/bin/env bash
+if [ "${1:-}" = list-windows ]; then
+  printf '%s\n' fm-live-task
+  exit 0
+fi
+if [ "${1:-}" = display-message ]; then
+  fmt=
+  for arg in "$@"; do
+    fmt=$arg
+  done
+  case "$fmt" in
+    '#{pane_current_command}') printf '%s\n' codex ;;
+  esac
+  exit 0
+fi
+exit 0
+SH
+  chmod +x "$case_dir/fakebin/tmux"
+}
+
+write_neighbor_meta() {
+  local case_dir=$1 id=$2 worktree=$3
+  fm_write_meta "$case_dir/state/$id.meta" \
+    "window=firstmate:fm-$id" \
+    "endpoint_task_id=$id" \
+    "worktree=$worktree" \
+    "project=$case_dir/project" \
+    "kind=ship" \
+    "mode=no-mistakes" \
+    "spawn_gen=teardown-test-$id"
+}
+
+# Track the hook files teardown deletes on the way to returning a slot.
+commit_worktree_hooks() {
+  local case_dir=$1
+  local wt=$case_dir/wt
+  mkdir -p "$wt/.claude" "$wt/.opencode/plugins"
+  printf 'keep\n' > "$wt/.claude/settings.local.json"
+  printf 'keep\n' > "$wt/.fm-grok-turnend"
+  printf 'keep\n' > "$wt/.fm-kimi-turnend"
+  printf 'keep\n' > "$wt/.opencode/plugins/fm-turn-end.js"
+  git -C "$wt" add -- .claude .fm-grok-turnend .fm-kimi-turnend .opencode
+  git -C "$wt" -c user.email=t@t -c user.name=t commit -q -m "worker hooks"
+}
+
+push_wt_branch() {
+  local case_dir=$1 branch
+  branch=$(git -C "$case_dir/wt" rev-parse --abbrev-ref HEAD)
+  git -C "$case_dir/wt" push -q origin "$branch"
+  git -C "$case_dir/project" fetch -q origin
+}
+
+assert_shared_worktree_untouched() {
+  local case_dir=$1 branch=$2 head=$3
+  local wt=$case_dir/wt
+  [ "$(git -C "$wt" rev-parse --abbrev-ref HEAD)" = "$branch" ] \
+    || fail "shared worktree branch changed: $(git -C "$wt" rev-parse --abbrev-ref HEAD 2>/dev/null || echo missing)"
+  [ "$(git -C "$wt" rev-parse HEAD)" = "$head" ] \
+    || fail "shared worktree HEAD changed"
+  [ "$(cat "$wt/.claude/settings.local.json")" = keep ] \
+    || fail "shared worktree hook file was cleaned"
+  assert_present "$wt/.fm-grok-turnend" "shared worktree grok hook was cleaned"
+  assert_present "$wt/.fm-kimi-turnend" "shared worktree kimi hook was cleaned"
+  assert_present "$wt/.opencode/plugins/fm-turn-end.js" "shared worktree opencode hook was cleaned"
+  assert_no_grep 'return' "$case_dir/treehouse.log" "treehouse return ran against a shared slot"
+}
+
 # Seed a real backlog carrying task-x1 as In flight, so a teardown in this case
 # has a row to close. Uses the real tasks-axi (the fixture's default fakebin has
 # no tasks-axi stub, so PATH resolves the installed one).
@@ -2738,6 +2821,155 @@ EOF
   pass "the run abort and the leaked-process reap both complete before the destructive worktree return"
 }
 
+# Two task records can name one treehouse slot after a stale task's copy was
+# reused. Tearing the stale record down must not return, reset, or clean that
+# slot while the other record's endpoint is alive or the checkout branch is
+# no longer this task's fm/<id> branch. A dead record on this task's own
+# branch does not block return, and an unlanded checkout that still belongs
+# to this task is still refused.
+test_shared_slot_live_endpoint_keeps_worktree() {
+  local case_dir rc head pid wt
+  case_dir=$(make_case shared-slot-live)
+  write_meta "$case_dir" no-mistakes ship
+  commit_worktree_hooks "$case_dir"
+  push_wt_branch "$case_dir"
+  ln -s "$case_dir/wt" "$case_dir/wt-link"
+  write_neighbor_meta "$case_dir" live-task "$case_dir/wt-link"
+  add_logging_treehouse "$case_dir"
+  add_live_neighbor_tmux "$case_dir"
+  wt="$case_dir/wt"
+  head=$(git -C "$wt" rev-parse HEAD)
+
+  ( cd "$wt" && exec sleep 300 ) &
+  pid=$!
+  disown
+  sleep 0.2
+  kill -0 "$pid" 2>/dev/null || fail "shared-slot-live: setup sleeper did not start"
+
+  rc=0
+  FM_FAKE_TREEHOUSE_LOG="$case_dir/treehouse.log" \
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+
+  if ! kill -0 "$pid" 2>/dev/null; then
+    fail "shared-slot-live: teardown reaped a process rooted in the shared worktree"
+  fi
+  kill -KILL "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+
+  expect_code 0 "$rc" "shared-slot-live: stale-task cleanup should still succeed"$'\n'"$(cat "$case_dir/stderr")"
+  assert_shared_worktree_untouched "$case_dir" fm/task-x1 "$head"
+  assert_grep 'task live-task still records it' "$case_dir/stderr" \
+    "shared-slot-live: teardown did not report the conflicting task"
+  assert_absent "$case_dir/state/task-x1.meta" "shared-slot-live: stale task record was kept"
+  assert_present "$case_dir/state/live-task.meta" "shared-slot-live: live task record was removed"
+  pass "a live neighbor recording the same worktree blocks slot return, reset, and cleanup"
+}
+
+test_shared_slot_different_branch_keeps_worktree() {
+  local case_dir rc head
+  case_dir=$(make_case shared-slot-branch)
+  write_meta "$case_dir" no-mistakes ship
+  git -C "$case_dir/wt" checkout -q -b fm/live-task
+  commit_worktree_hooks "$case_dir"
+  push_wt_branch "$case_dir"
+  write_neighbor_meta "$case_dir" live-task "$case_dir/wt"
+  add_logging_treehouse "$case_dir"
+  head=$(git -C "$case_dir/wt" rev-parse HEAD)
+
+  rc=0
+  FM_FAKE_TREEHOUSE_LOG="$case_dir/treehouse.log" \
+  FM_FAKE_AXI_STATUS="$(parked_axi_status_toon fm/live-task "$head")" \
+  FM_FAKE_NM_ABORT_LOG="$case_dir/nm-abort.log" \
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+
+  expect_code 0 "$rc" "shared-slot-branch: stale-task cleanup should still succeed"$'\n'"$(cat "$case_dir/stderr")"
+  assert_shared_worktree_untouched "$case_dir" fm/live-task "$head"
+  assert_absent "$case_dir/nm-abort.log" \
+    "shared-slot-branch: teardown aborted the parked run on the neighbor's branch"
+  assert_grep 'task live-task still records it' "$case_dir/stderr" \
+    "shared-slot-branch: teardown did not report the conflicting task"
+  assert_absent "$case_dir/state/task-x1.meta" "shared-slot-branch: stale task record was kept"
+  assert_present "$case_dir/state/live-task.meta" "shared-slot-branch: neighbor task record was removed"
+  pass "a neighbor on a different branch blocks slot return even when its endpoint is dead"
+}
+
+test_shared_slot_dead_same_branch_still_returns() {
+  local case_dir rc wt
+  case_dir=$(make_case shared-slot-dead-same)
+  write_meta "$case_dir" no-mistakes ship
+  commit_worktree_hooks "$case_dir"
+  push_wt_branch "$case_dir"
+  write_neighbor_meta "$case_dir" old-task "$case_dir/wt"
+  add_logging_treehouse "$case_dir"
+  wt="$case_dir/wt"
+
+  rc=0
+  FM_FAKE_TREEHOUSE_LOG="$case_dir/treehouse.log" \
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+
+  expect_code 0 "$rc" "shared-slot-dead-same: teardown should still return its own branch"$'\n'"$(cat "$case_dir/stderr")"
+  [ "$(git -C "$wt" rev-parse --abbrev-ref HEAD)" = HEAD ] \
+    || fail "shared-slot-dead-same: own branch was not detached before return"
+  assert_absent "$wt/.claude/settings.local.json" \
+    "shared-slot-dead-same: own hook files were left in place"
+  assert_grep 'return' "$case_dir/treehouse.log" \
+    "shared-slot-dead-same: treehouse return did not run for a dead same-branch record"
+  assert_absent "$case_dir/state/task-x1.meta" "shared-slot-dead-same: stale task record was kept"
+  assert_present "$case_dir/state/old-task.meta" "shared-slot-dead-same: other dead record was removed"
+  pass "a dead record on this task's own branch does not block slot return"
+}
+
+test_shared_slot_unpushed_other_branch_still_cleans_stale_task() {
+  local case_dir rc head
+  case_dir=$(make_case shared-slot-unpushed-other)
+  write_meta "$case_dir" no-mistakes ship
+  git -C "$case_dir/wt" checkout -q -b fm/live-task
+  commit_worktree_hooks "$case_dir"
+  write_neighbor_meta "$case_dir" live-task "$case_dir/wt"
+  add_logging_treehouse "$case_dir"
+  head=$(git -C "$case_dir/wt" rev-parse HEAD)
+
+  rc=0
+  FM_FAKE_TREEHOUSE_LOG="$case_dir/treehouse.log" \
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+
+  expect_code 0 "$rc" "shared-slot-unpushed-other: neighbor's unpushed work must not trap the stale record"$'\n'"$(cat "$case_dir/stderr")"
+  assert_shared_worktree_untouched "$case_dir" fm/live-task "$head"
+  assert_no_grep 'REFUSED' "$case_dir/stderr" \
+    "shared-slot-unpushed-other: landed-work refusal blocked stale-task cleanup"
+  assert_grep 'task live-task still records it' "$case_dir/stderr" \
+    "shared-slot-unpushed-other: teardown did not report the conflicting task"
+  assert_absent "$case_dir/state/task-x1.meta" "shared-slot-unpushed-other: stale task record was kept"
+  pass "another task's unpushed branch does not block stale-record cleanup or get returned"
+}
+
+test_shared_slot_dead_same_branch_unpushed_still_refuses() {
+  local case_dir rc head
+  case_dir=$(make_case shared-slot-own-unpushed)
+  write_meta "$case_dir" no-mistakes ship
+  commit_worktree_hooks "$case_dir"
+  write_neighbor_meta "$case_dir" old-task "$case_dir/wt"
+  add_logging_treehouse "$case_dir"
+  head=$(git -C "$case_dir/wt" rev-parse HEAD)
+
+  rc=0
+  FM_FAKE_TREEHOUSE_LOG="$case_dir/treehouse.log" \
+    run_teardown "$case_dir" > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+
+  expect_code 1 "$rc" "shared-slot-own-unpushed: own unpushed work must still refuse"
+  assert_grep 'REFUSED' "$case_dir/stderr" \
+    "shared-slot-own-unpushed: landed-work refusal was dropped"
+  assert_shared_worktree_untouched "$case_dir" fm/task-x1 "$head"
+  assert_present "$case_dir/state/task-x1.meta" \
+    "shared-slot-own-unpushed: refusal removed the task record"
+  pass "a dead same-branch neighbor does not weaken the unlanded-work refusal"
+}
+
+test_shared_slot_live_endpoint_keeps_worktree
+test_shared_slot_different_branch_keeps_worktree
+test_shared_slot_dead_same_branch_still_returns
+test_shared_slot_unpushed_other_branch_still_cleans_stale_task
+test_shared_slot_dead_same_branch_unpushed_still_refuses
 test_local_only_fork_remote_allows
 test_teardown_closes_the_backlog_item_itself
 test_teardown_manual_backend_leaves_the_backlog_to_the_operator
