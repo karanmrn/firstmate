@@ -609,6 +609,20 @@ fm_backend_expected_label_of_selector() {  # <raw-target> <state-dir>
   return 0
 }
 
+# Source one adapter file into the current shell.
+# bash 3.2 treats a failing `.` as a special builtin and exits under set -e
+# before `|| return` can run, so bash uses `command .` to keep that failure
+# ordinary. zsh's `command .` does not source, so zsh keeps the plain builtin.
+fm_backend_dot() {  # <file>
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    # shellcheck source=/dev/null
+    . "$1"
+  else
+    # shellcheck source=/dev/null
+    command . "$1"
+  fi
+}
+
 # fm_backend_source: source the named backend's adapter file, once per shell.
 # Each adapter is an independently linted canonical root. The /dev/null source
 # boundaries keep runtime dispatch from importing all five adapter ASTs into
@@ -655,36 +669,31 @@ fm_backend_source() {  # <name>
   case "$name" in
     tmux)
       if [ -z "${_FM_BACKEND_TMUX_SOURCED:-}" ]; then
-        # shellcheck source=/dev/null
-        . "$adapter" || return 1
+        fm_backend_dot "$adapter" || return 1
         _FM_BACKEND_TMUX_SOURCED=1
       fi
       ;;
     herdr)
       if [ -z "${_FM_BACKEND_HERDR_SOURCED:-}" ]; then
-        # shellcheck source=/dev/null
-        . "$adapter" || return 1
+        fm_backend_dot "$adapter" || return 1
         _FM_BACKEND_HERDR_SOURCED=1
       fi
       ;;
     zellij)
       if [ -z "${_FM_BACKEND_ZELLIJ_SOURCED:-}" ]; then
-        # shellcheck source=/dev/null
-        . "$adapter" || return 1
+        fm_backend_dot "$adapter" || return 1
         _FM_BACKEND_ZELLIJ_SOURCED=1
       fi
       ;;
     orca)
       if [ -z "${_FM_BACKEND_ORCA_SOURCED:-}" ]; then
-        # shellcheck source=/dev/null
-        . "$adapter" || return 1
+        fm_backend_dot "$adapter" || return 1
         _FM_BACKEND_ORCA_SOURCED=1
       fi
       ;;
     cmux)
       if [ -z "${_FM_BACKEND_CMUX_SOURCED:-}" ]; then
-        # shellcheck source=/dev/null
-        . "$adapter" || return 1
+        fm_backend_dot "$adapter" || return 1
         _FM_BACKEND_CMUX_SOURCED=1
       fi
       ;;
