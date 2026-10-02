@@ -16,11 +16,24 @@ MARKER_UNSETS=(-u CLAUDECODE -u PI_CODING_AGENT -u FM_PI_HARNESS -u GROK_AGENT
 
 # --- detection --------------------------------------------------------------
 
+# A fake ps that reports a bash ancestor terminating at pid 1, so the ancestry
+# layer proves nothing and the marker layer alone answers. Without it the real
+# harness that launched the suite would outrank every marker under test.
+BLIND_PS_BIN=$(fm_fakebin "$TMP_ROOT/blind-ancestry")
+cat > "$BLIND_PS_BIN/ps" <<'SH'
+#!/usr/bin/env bash
+case "$*" in
+  *'ppid='*) printf '%s\n' 1 ;;
+  *) printf '%s\n' bash ;;
+esac
+SH
+chmod +x "$BLIND_PS_BIN/ps"
+
 # detect_with [VAR=value...]: run fm-harness.sh with every harness identity
-# marker cleared and only the given assignments set, so each case asserts
-# exactly the markers it names.
+# marker cleared, ancestry blinded, and only the given assignments set, so each
+# case asserts exactly the markers it names.
 detect_with() {
-  env "${MARKER_UNSETS[@]}" "$@" "$HARNESS"
+  env "${MARKER_UNSETS[@]}" PATH="$BLIND_PS_BIN:$PATH" "$@" "$HARNESS"
 }
 
 # Prime Agent sets PI_CODING_AGENT=true in its own process, so every Prime tool

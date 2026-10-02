@@ -236,6 +236,56 @@ SH
   pass "a tool's own update announcement is read from its output"
 }
 
+test_announced_update_already_installed_is_not_double_reported() {
+  local home first second out report
+  # One completed install: the newer copy sits on PATH behind the older
+  # self-installing copy, so PATH skew is already reported. The older copy
+  # keeps announcing the very release it has already been superseded by, and
+  # that announcement must not also be read as a still-available update.
+  home=$(make_home announce-installed)
+  first="$TMP_ROOT/announce-installed/old/bin"
+  second="$TMP_ROOT/announce-installed/new/bin"
+  mkdir -p "$first" "$second"
+  cat > "$first/no-mistakes-fixture" <<'SH'
+#!/usr/bin/env bash
+printf '1.46.0\n'
+printf 'A new version of no-mistakes is available: v1.46.0 -> v1.47.0\n' >&2
+SH
+  chmod 0755 "$first/no-mistakes-fixture"
+  make_copy "$second" "no-mistakes-fixture" '1.47.0'
+  write_config "$home" '{"tools":[{"name":"no-mistakes","command":"no-mistakes-fixture","announce_pattern":"A new version of no-mistakes is available: [^ ]+ -> [^ ]+"}]}'
+  out="$home/out.txt"
+  run_check "$home" "$(fixture_path "$first:$second")" "$out"
+  report=$(cat "$out")
+  assert_contains "$report" "no-mistakes update not in effect" "the already-installed newer copy was not reported as PATH skew"
+  assert_not_contains "$report" "update available" "an announcement naming an already-installed version was also reported as a still-available update"
+  pass "an announcement naming an already-installed version is not also reported as an available update"
+}
+
+test_announced_update_newer_than_installed_is_still_reported() {
+  local home first second out report
+  # Control: the announced version is genuinely newer than every installed
+  # copy, so it must still be reported as available alongside the skew.
+  home=$(make_home announce-not-installed)
+  first="$TMP_ROOT/announce-not-installed/old/bin"
+  second="$TMP_ROOT/announce-not-installed/new/bin"
+  mkdir -p "$first" "$second"
+  cat > "$first/no-mistakes-fixture" <<'SH'
+#!/usr/bin/env bash
+printf '1.46.0\n'
+printf 'A new version of no-mistakes is available: v1.46.0 -> v1.47.0\n' >&2
+SH
+  chmod 0755 "$first/no-mistakes-fixture"
+  make_copy "$second" "no-mistakes-fixture" '1.46.5'
+  write_config "$home" '{"tools":[{"name":"no-mistakes","command":"no-mistakes-fixture","announce_pattern":"A new version of no-mistakes is available: [^ ]+ -> [^ ]+"}]}'
+  out="$home/out.txt"
+  run_check "$home" "$(fixture_path "$first:$second")" "$out"
+  report=$(cat "$out")
+  assert_contains "$report" "no-mistakes update available: A new version of no-mistakes is available: v1.46.0 -> v1.47.0" "an announcement naming a version newer than every installed copy was not reported"
+  assert_contains "$report" "no-mistakes update not in effect" "the installed newer-than-resolved copy was not reported as PATH skew"
+  pass "an announcement naming a version newer than every installed copy is still reported as available"
+}
+
 test_announcement_is_read_from_a_second_command() {
   local home dir out report quiet_home
   # The real no-mistakes prints its version for --version but announces a new
@@ -685,15 +735,15 @@ test_findings_are_reported_once_until_they_change() {
 }
 
 test_an_overlong_report_says_it_was_cut() {
-  local home out report i tools=
+  local home out report i tools_json=
   # Many watched tools can outgrow one line. The report must say it was cut
   # rather than end mid-finding as if that were everything found.
   home=$(make_home long)
   for i in $(seq 1 30); do
-    [ -z "$tools" ] || tools="$tools,"
-    tools="$tools{\"name\":\"absent-tool-$i\",\"command\":\"fm-absent-fixture-$i\"}"
+    [ -z "$tools_json" ] || tools_json="$tools_json,"
+    tools_json="$tools_json{\"name\":\"absent-tool-$i\",\"command\":\"fm-absent-fixture-$i\"}"
   done
-  write_config "$home" "{\"tools\":[$tools]}"
+  write_config "$home" "{\"tools\":[$tools_json]}"
   out="$home/out.txt"
   run_check "$home" "$PATH" "$out"
   report=$(cat "$out")
@@ -703,7 +753,7 @@ test_an_overlong_report_says_it_was_cut() {
 }
 
 test_a_finding_past_the_cut_is_still_reported() {
-  local home stale fresh out report i tools=
+  local home stale fresh out report i tools_json=
   # Once a report is long enough to be cut, a new finding lands past the cut and
   # leaves the printed line unchanged. It still has to count as news, or the PATH
   # skew this check exists for would be suppressed for good on a busy home.
@@ -713,17 +763,17 @@ test_a_finding_past_the_cut_is_still_reported() {
   make_copy "$stale" "$TOOL" 'herdr 0.8.0'
   make_copy "$fresh" "$TOOL" 'herdr 0.8.2'
   for i in $(seq 1 30); do
-    [ -z "$tools" ] || tools="$tools,"
-    tools="$tools{\"name\":\"absent-tool-$i\",\"command\":\"fm-absent-fixture-$i\"}"
+    [ -z "$tools_json" ] || tools_json="$tools_json,"
+    tools_json="$tools_json{\"name\":\"absent-tool-$i\",\"command\":\"fm-absent-fixture-$i\"}"
   done
   out="$home/out.txt"
-  write_config "$home" "{\"tools\":[$tools]}"
+  write_config "$home" "{\"tools\":[$tools_json]}"
   run_check "$home" "$(fixture_path "$stale:$fresh")" "$out"
   assert_contains "$(cat "$out")" "[truncated]" "the first report was not long enough to be cut, so this case proves nothing"
 
   # The skew tool goes last, so its finding falls past the cut and the printed
   # line is byte identical to the one the first sweep already recorded.
-  write_config "$home" "{\"tools\":[$tools,{\"name\":\"herdr\",\"command\":\"$TOOL\"}]}"
+  write_config "$home" "{\"tools\":[$tools_json,{\"name\":\"herdr\",\"command\":\"$TOOL\"}]}"
   run_check "$home" "$(fixture_path "$stale:$fresh")" "$out"
   report=$(cat "$out")
   [ -n "$report" ] || fail "a finding past the cut produced no report at all, so it can never reach the watcher"
@@ -1012,6 +1062,8 @@ test_one_copy_reached_twice_is_probed_once
 test_unreadable_version_is_a_failure_not_a_pass
 test_missing_command_is_reported
 test_announced_update_is_reported_from_the_tool_itself
+test_announced_update_already_installed_is_not_double_reported
+test_announced_update_newer_than_installed_is_still_reported
 test_announcement_is_read_from_a_second_command
 test_unusable_announce_pattern_is_reported_not_read_as_silence
 test_one_broken_pattern_does_not_blind_the_rest_of_the_sweep
