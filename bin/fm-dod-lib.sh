@@ -436,10 +436,11 @@ EOF
 # Definition of done
 Delivery contract: mode=no-mistakes
 Ship branch: $branch
-The task is complete only when committed on your branch.
-When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
-Firstmate will then instruct you to run /no-mistakes to validate and ship a PR.
-That first \`done:\` is the handoff that starts the pipeline, which owns the push; it is not a request to push from this copy.
+Complete these steps in order, without stopping between them:
+1. Implement the task and commit it on your branch.
+2. Start \`no-mistakes axi run\` immediately after the commit. A commit is not the end of the task, so never stop or append \`done:\` here, and wait for no instruction from firstmate. The pipeline owns the push; do not push from this copy.
+3. Drive the run to its CI-ready PR as described below.
+4. Read the PR back and report done as described after the driving rules.
 
 EOF
       fm_nm_driving_block "$forge"
