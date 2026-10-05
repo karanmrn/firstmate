@@ -612,6 +612,19 @@ cmd_retire() {
   local name=${1-} sid captured=0 result
   when_name_valid "$name" || die "name must be path-safe and at most 59 characters: ${name-}"
   sid="when-$name"
+  # list prints the source id (when-<name>); accept it as the spec name rather
+  # than retiring a doubled when-when-<name> that matches no registered watch.
+  case "$name" in
+    when-*)
+      if [ -e "$(spec_file "$sid")" ]; then
+        :
+      elif [ -e "$(spec_file "$name")" ]; then
+        sid=$name
+      else
+        die "no watch registered as $name or $sid (run list for the registered names)"
+      fi
+      ;;
+  esac
   if [ -e "$(fired_file "$sid")" ]; then
     for result in "$(fm_procevent_inbox_dir "$STATE")/$sid".*.result; do
       [ -e "$result" ] && captured=1

@@ -106,6 +106,17 @@ assert_absent "$H/state/when/when-arm-test.trust" "retire removes the trust bind
 assert_absent "$H/state/procevent/when-arm-test.source" "retire drops the registration"
 out=$(when "$H" retire arm-test)
 assert_contains "$out" "retired: when-arm-test" "retire is idempotent"
+# retire accepts the listed source id as the spec name, and refuses a doubled
+# when-when-<name> that matches no watch.
+when "$H" arm arm-test --interval 0.1 --condition "$COND" "$TMP_ROOT/never" "$TMP_ROOT/arm-count" \
+  --action "$ACT" "$TMP_ROOT/arm-act" >/dev/null
+out=$(when "$H" retire when-arm-test)
+assert_contains "$out" "retired: when-arm-test" "retire accepts the listed source id"
+assert_absent "$H/state/when/when-arm-test.spec" "the listed id retires the real spec"
+if when "$H" retire when-nonexistent 2>"$TMP_ROOT/dbl.err"; then
+  fail "retire must refuse a prefixed name that matches no watch"
+fi
+assert_grep "no watch registered" "$TMP_ROOT/dbl.err" "the refusal names the problem"
 pass "arm binds, refuses duplicates, and retire cleans up"
 
 # --- concurrent arms publish exactly one complete registration ---------------
