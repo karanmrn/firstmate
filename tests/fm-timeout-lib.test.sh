@@ -327,7 +327,17 @@ test_run_timed_passes_a_natural_exit_through_a_fired_bound() {
   pass 'fm_run_timed passes a natural exit through when the bound fired after completion'
 }
 
+test_exec_timed_runs_under_stock_bash_3_2_with_nounset() {
+  # macOS /bin/bash 3.2 has no BASHPID; under set -u an unguarded read aborts.
+  [ -x /bin/bash ] || { pass 'no /bin/bash; bash 3.2 case skipped'; return 0; }
+  local out rc=0
+  out=$(PATH="$PERL_ONLY:/usr/bin:/bin" /bin/bash -c 'set -u; . "$1"; (fm_exec_timed 5 1 echo ran)' _ "$(dirname "${BASH_SOURCE[0]}")/../bin/fm-timeout-lib.sh" 2>&1) || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = ran ] || fail "fm_exec_timed broke under /bin/bash with set -u (rc=$rc out=$out)"
+  pass 'fm_exec_timed runs under /bin/bash with set -u (no BASHPID on 3.2)'
+}
+
 test_passes_the_command_status_and_output_through
+test_exec_timed_runs_under_stock_bash_3_2_with_nounset
 test_run_timed_reports_the_bound_when_the_wrapper_records_a_signal_death
 test_run_timed_passes_a_natural_exit_through_a_fired_bound
 test_term_ends_a_cooperative_command_at_the_bound
