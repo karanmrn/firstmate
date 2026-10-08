@@ -2425,7 +2425,11 @@ pr_poll_publish_release() {
 
 watcher_cleanup() {
   trap '' HUP INT TERM
-  local cleanup_status=0 owns_lock=0 transition=release-lock
+  local cleanup_status=0 owns_lock=0 transition=release-lock undelivered=
+  if [ "${FM_WATCH_HANDLING_SUCCESSOR:-0}" != 1 ] \
+    && [ "${FM_WATCH_DELIVERED_REASON:-}" != "check: rearm-resurface" ]; then
+    undelivered=$FM_RECOVERY_ARM_TOKEN
+  fi
   pr_poll_publish_release || cleanup_status=1
   pr_poll_control_release || cleanup_status=1
   if [ "$(cat "$WATCH_LOCK/pid" 2>/dev/null || true)" = "${WATCHER_PID:-}" ]; then
@@ -2440,7 +2444,7 @@ watcher_cleanup() {
   fm_custom_check_snapshot_cleanup
   if [ "$owns_lock" -eq 1 ] \
     && ! fm_recovery_transition "$WATCHER_DOWNTIME_MARKER" "$transition" "$WATCH_LOCK" \
-      downtime "$CLEANUP_LOCK_BOUND"; then
+      downtime "$CLEANUP_LOCK_BOUND" "$undelivered"; then
     echo "watcher: recovery state could not be persisted; retaining stale lock evidence" >&2
     cleanup_status=1
   fi

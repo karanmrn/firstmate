@@ -1665,6 +1665,96 @@ SH
   done
 }
 
+test_watcher_interrupted_announcement_recovers() {
+  local row shell stage signal dir state fakebin watcher i status out expected
+  for row in modern stock; do
+    shell=bash
+    [ "$row" != stock ] || shell=/bin/bash
+    [ -x "$shell" ] || [ "$shell" = bash ] || continue
+    for stage in atomic returned polling superseded handling restored; do
+      for signal in HUP TERM; do
+        dir=$(make_case "announcement-$row-$stage-$signal")
+        state="$dir/state"
+        fakebin="$dir/fakebin"
+        out="$dir/watch.out"
+        if [ "$stage" = restored ]; then
+          printf 'announced:downtime:announcement-generation\n' > "$state/.watcher-down"
+        elif [ "$stage" != polling ]; then
+          printf 'pending:downtime:announcement-generation\n' > "$state/.watcher-down"
+        fi
+        cat > "$dir/announcement-env.sh" <<'SH'
+printf() {
+  if { [ "$FM_ANNOUNCEMENT_STAGE" = returned ] || [ "$FM_ANNOUNCEMENT_STAGE" = restored ]; } && [ "$0" = "$FM_ANNOUNCEMENT_WATCH" ] \
+    && [ "$#" -eq 2 ] && [ "$2" = "$FM_HOME" ] && [ ! -e "$FM_HOME/announcement-ready" ]; then
+    if [ "$FM_ANNOUNCEMENT_STAGE" = restored ]; then
+      _fm_recovery_marker_restore_token_locked "$STATE/.watcher-down" announced:downtime:announcement-generation || exit 1
+    fi
+    builtin printf '%s\n' "$$" > "$FM_HOME/announcement-ready"
+    while [ ! -e "$FM_HOME/announcement-release" ]; do sleep 0.05; done
+  fi
+  builtin printf "$@"
+}
+SH
+        cat > "$fakebin/mv" <<'SH'
+#!/usr/bin/env bash
+/bin/mv "$@" || exit $?
+for target do :; done
+case "$FM_ANNOUNCEMENT_STAGE" in atomic|polling|superseded|handling) ;; *) exit 0 ;; esac
+if [ "$target" = "$FM_HOME/state/.watcher-down" ] \
+  && [ "$(cat "$target")" = announced:downtime:announcement-generation ] \
+  && [ ! -e "$FM_HOME/announcement-ready" ]; then
+  printf '%s\n' "$PPID" > "$FM_HOME/announcement-ready"
+  while [ ! -e "$FM_HOME/announcement-release" ]; do sleep 0.05; done
+fi
+SH
+        chmod +x "$fakebin/mv"
+        PATH="$fakebin:$PATH" FM_HOME="$dir" FM_STATE_OVERRIDE="$state" \
+          FM_POLL=1 FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
+          FM_WATCH_HANDLING_SUCCESSOR="$([ "$stage" != handling ] || printf 1)" \
+          FM_ANNOUNCEMENT_STAGE="$stage" FM_ANNOUNCEMENT_WATCH="$WATCH" \
+          BASH_ENV="$dir/announcement-env.sh" "$shell" "$WATCH" > "$out" 2>&1 &
+        watcher=$!
+        if [ "$stage" = polling ]; then
+          i=0
+          while [ "$i" -lt 100 ] && [ ! -e "$state/.last-watcher-beat" ]; do sleep 0.1; i=$((i + 1)); done
+          [ -e "$state/.last-watcher-beat" ] || fail "$row: announcement polling did not start"
+          printf 'pending:downtime:announcement-generation\n' > "$state/.watcher-down"
+        fi
+        i=0
+        while [ "$i" -lt 100 ] && [ ! -s "$dir/announcement-ready" ]; do sleep 0.1; i=$((i + 1)); done
+        [ -s "$dir/announcement-ready" ] || fail "$row/$stage: announcement barrier missed: $(cat "$out")"
+        [ "$(cat "$state/.watcher-down")" = announced:downtime:announcement-generation ] \
+          || fail "$row/$stage: barrier missed announcement publication"
+        expected=pending:downtime:announcement-generation
+        if [ "$stage" = superseded ]; then
+          expected=announced:downtime:another-generation
+          printf '%s\n' "$expected" > "$state/.watcher-down"
+        elif [ "$stage" = handling ] || [ "$stage" = restored ]; then
+          expected=announced:downtime:announcement-generation
+        fi
+        kill -"$signal" "$watcher" || fail "$row/$stage: could not stop announcement"
+        touch "$dir/announcement-release"
+        status=0
+        wait_for_exit "$watcher" 150 || status=$?
+        [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row/$stage: announcement watcher did not stop"
+        [ ! -e "$state/.watch.lock" ] || fail "$row/$stage: announcement cleanup retained singleton"
+        [ "$(cat "$state/.watcher-down")" = "$expected" ] || fail "$row/$stage: cleanup changed or lost announcement generation"
+        if [ "$stage" != superseded ] && [ "$stage" != handling ] && [ "$stage" != restored ]; then
+          FM_HOME="$dir" FM_STATE_OVERRIDE="$state" FM_POLL=1 FM_SIGNAL_GRACE=0 \
+            FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$shell" "$WATCH" > "$dir/next.out" 2>&1 &
+          watcher=$!
+          wait_for_exit "$watcher" 150 || fail "$row/$stage: next arm suppressed undelivered recovery"
+          grep -F 'check: rearm-resurface' "$dir/next.out" >/dev/null || fail "$row/$stage: next arm omitted recovery"
+          [ "$(cat "$state/.watcher-down")" = announced:downtime:announcement-generation ] \
+            || fail "$row/$stage: delivered recovery changed its generation"
+        fi
+        pass "$row/$stage: $signal preserves announcement ownership and recovery"
+      done
+    done
+  done
+}
+
+test_watcher_interrupted_announcement_recovers
 test_watcher_startup_signals_release_lock
 test_watcher_stop_signals_release_lock_on_supported_shells
 test_wait_deadline_reaps_a_stopped_child

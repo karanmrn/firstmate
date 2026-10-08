@@ -223,7 +223,9 @@ An ordinary watcher close attempts to publish downtime, and every durable queue 
 A handling successor closing to resurface recovery preserves the existing marker instead.
 If EXIT cleanup cannot acquire the downtime-marker lock within its bound, it retains the stale singleton for the next arm to publish the missing downtime before clearing that lock (see [Grace, beacon, and stop signals](#grace-beacon-and-stop-signals)).
 A downtime republication of a pending episode reuses its generation.
-A watcher close leaves an announced downtime episode announced, while a successful durable append opens a fresh pending generation so a live watcher can recover the new work.
+A watcher close leaves a delivered downtime announcement announced, while a successful durable append opens a fresh pending generation so a live watcher can recover the new work.
+If this watcher published an announcement but did not deliver its recovery wake, cleanup restores that exact generation to pending before releasing its singleton.
+This restoration also covers interruption during atomic publication and preserves other generations and handling successors.
 An announced handling episode becomes pending downtime on the same generation because its handling turn may have been interrupted.
 That handling republication gives a successor exactly one recovery presentation without orphaning the acknowledgement already printed for that generation.
 A watcher stopped so an arm can take its cycle over (`bin/fm-watch-arm.sh --take-over`) publishes downtime like any close, but the taking arm restores an acknowledged episode that stop reopened only when the taken-over arm's cycle-ledger row for that exact arm and watcher records the watcher ending by the take-over's TERM and no wake was appended in between.
