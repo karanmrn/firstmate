@@ -24,13 +24,13 @@
 #             invocation retains the always-zero compatibility contract below.
 #
 # Source routing (see docs/sessionstart-nudge.md for the per-harness names):
-#   startup, new            full digest - this process has not taken the helm
+#   startup, new            full digest - this session has not taken the helm
 #   clear, compact          `--reemit` digest only when this lock owner recorded
 #                           a completed full startup; otherwise a full digest,
 #                           so a startup killed mid-sweep is finished first
 #   resume, reload, fork    delegate to the nudge wrapper. Prior context is
 #                           restored on these, so re-running is redundant when
-#                           this process still holds the lock (the nudge stays
+#                           this session still owns the lock (the nudge stays
 #                           silent) and a plain instruction is enough when a new
 #                           process resumed an old session (the nudge fires).
 #

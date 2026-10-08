@@ -2,6 +2,10 @@
 # Run one bounded foreground watcher checkpoint for harnesses that should not
 # rely on background-task completion to wake the model.
 #
+# Native Codex requires verified home-lock ownership before either supervisor
+# starts. Refusal exits 1 without running it. bin/fm-session-lock-lib.sh owns
+# the identity contract.
+#
 # SUPERVISION HOST. A home opted in with config/supervision-host
 # (docs/configuration.md "Supervision host" owns the gate;
 # config/supervision-host-off opts out, and a Codex home without the file does not run the host) runs

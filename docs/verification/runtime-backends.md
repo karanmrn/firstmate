@@ -2442,9 +2442,8 @@ Observed output:
 ok - fm-isolated-regression/0.161.0 (Mac OS 27.0.1; arm64) dumb (fm-isolated-regression; 1): distinct native hook identities sharing one server preserve one lock owner
 ```
 
-`tests/fm-codex-session-lock.test.sh` covers the portable startup, lock, ownership, Stop, and checkpoint regression.
-`bin/fm-session-lock-lib.sh` owns the native identity trust contract.
-Codex 0.161.0 injects `CODEX_SESSION_ID` into shell tools and supplies the same root session identity in hook payloads.
-The vendor contract is in [`exec_env.rs`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/core/src/exec_env.rs) and [`hook_runtime.rs`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/core/src/hook_runtime.rs).
-An existing native PID-only lock has no recoverable thread identity and remains read-only until the owning process exits.
+`tests/fm-codex-session-lock.test.sh` covers portable startup, lock, ownership, Stop, and checkpoint behavior, including descendant threads with distinct `CODEX_THREAD_ID` and `CODEX_SESSION_ID`.
+That descendant case uses a fixture process table, while the installed-harness test above exercises separate root sessions and their native hooks.
+[`bin/fm-session-lock-lib.sh`](../../bin/fm-session-lock-lib.sh) owns the native identity trust contract and the legacy PID-only lock boundary.
+The dated vendor references are [`exec_env.rs`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/core/src/exec_env.rs) and [`hook_runtime.rs`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/core/src/hook_runtime.rs).
 This verification does not establish Desktop deployment or a hot patch of an active session.

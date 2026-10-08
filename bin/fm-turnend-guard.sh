@@ -67,7 +67,7 @@
 #   1. a live identity-matched watcher with a fresh beacon - or, in away mode, a
 #      live identity-matched daemon with a fresh beacon - allows immediately;
 #   2. an unhealthy session with a verified live session-lock owner it does not
-#      own under the shared ancestry-or-trusted-id verdict exits with a read-only
+#      own under bin/fm-session-lock-lib.sh's verdict exits with a read-only
 #      diagnostic instead of blocking a session that cannot repair supervision
 #      without stealing ownership;
 #   3. otherwise wait briefly (FM_CLAUDE_AUTOARM_SYNC_WAIT_MS, default 800ms)
@@ -253,12 +253,11 @@ block_stop() {
   exit 2
 }
 
-# Another verified live session owns the home lock under the shared
-# ancestry-or-trusted-id verdict. This session is read-only and cannot arm or
-# repair supervision without
-# stealing ownership, so blocking its Stop would create an impossible loop.
-# Report the ownership conflict as a diagnostic and let this turn end safely;
-# the owning session remains responsible for restoring the watcher.
+# Another verified live session owns the home lock under the verdict in
+# bin/fm-session-lock-lib.sh. This session is read-only and cannot repair
+# supervision without stealing ownership, so blocking its Stop would loop.
+# Report the ownership conflict as a diagnostic and let this turn end safely.
+# The owning session remains responsible for restoring the watcher.
 if { [ "$CLAUDE_MODE" -eq 1 ] || fm_session_lock_codex_native_ancestry; } && fm_session_lock_foreign_owner_live "$STATE"; then
   printf '{"systemMessage":"FIRSTMATE SUPERVISION IS OWNED BY ANOTHER LIVE SESSION: this read-only session cannot and should not arm or repair the watcher (lock owner pid %s). Allowing this turn to end safely; the owning session must restore supervision."}\n' \
     "$FM_SESSION_LOCK_FOREIGN_OWNER_PID"

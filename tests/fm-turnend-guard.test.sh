@@ -717,14 +717,17 @@ test_hook_silent_without_stdin() {
 }
 
 test_hook_runs_fast() {
-  local dir start elapsed_s
+  local dir start_ms end_ms elapsed_ms
   dir=$(make_primary_dir "$TMP_ROOT/hook-timing")
   : > "$dir/state/task1.meta"
-  start=$SECONDS
+  # Bash SECONDS can round a sub-three-second hook up to three seconds.
+  # Measure the same limit precisely with the monotonic clock instead.
+  start_ms=$(perl -MTime::HiRes=clock_gettime,CLOCK_MONOTONIC -e 'printf "%.0f\n", clock_gettime(CLOCK_MONOTONIC) * 1000')
   run_hook "$dir" false >/dev/null
-  elapsed_s=$((SECONDS - start))
-  [ "$elapsed_s" -lt 3 ] || fail "hook took ${elapsed_s}s, expected well under a second (generous 3s CI margin)"
-  pass "fm-turnend-guard: runs well under the generous timing margin (${elapsed_s}s)"
+  end_ms=$(perl -MTime::HiRes=clock_gettime,CLOCK_MONOTONIC -e 'printf "%.0f\n", clock_gettime(CLOCK_MONOTONIC) * 1000')
+  elapsed_ms=$((end_ms - start_ms))
+  [ "$elapsed_ms" -lt 3000 ] || fail "hook took ${elapsed_ms}ms, expected well under a second (generous 3000ms CI margin)"
+  pass "fm-turnend-guard: runs well under the generous timing margin (${elapsed_ms}ms)"
 }
 
 test_grok_adapter_forces_one_resume_when_unhealthy() {

@@ -6,13 +6,11 @@
 # bin/fm-lock.sh uses it to acquire and inspect state/.lock and its
 # state/.lock-session sidecar; bin/fm-claude-stop-autoarm.sh uses it to prove a
 # Stop hook fires inside the lock-owning primary session before it may arm or
-# rewake. Native Codex servers require their verified session identity because
-# one PID serves multiple threads. For other harnesses either signal suffices:
-# the recorded pid
-# is a member of this process's contiguous harness ancestry, or the trusted
-# Claude session id below matches the id recorded beside a live lock. Neither
-# signal ever fails open. For non-native harnesses no id, no sidecar, an untrusted id, or a different
-# recorded id leaves the ancestry verdict exactly as it was.
+# rewake. The native Codex trust contract below rejects PID-only ownership.
+# For other harnesses either signal suffices: the recorded pid belongs to this
+# process's contiguous harness ancestry, or the trusted Claude session id below
+# matches the id recorded beside a live lock. A missing or untrusted id, a
+# missing sidecar, or a different recorded id leaves that ancestry verdict unchanged.
 # This file is sourced by scripts and has no side effects on source.
 
 # Cursor process identity is NOT expressible as a command-name pattern and is
@@ -181,6 +179,13 @@ fm_harness_pid_alive() {
 # the root session identity (core/src/exec_env.rs and hook_runtime.rs).
 # Accept those runtime values only inside a verified native Codex ancestry.
 # An inherited value under another harness cannot authorize native ownership.
+# When present, CODEX_SESSION_ID and CODEX_THREAD_ID must both equal the trusted
+# root identity. A descendant thread cannot own its root session's lock.
+# Authenticated hooks without shell-tool variables use their payload identity.
+# Ownership also requires a matching codex-native: sidecar and a live lock PID.
+# A native PID-only lock cannot reveal its owner thread and stays read-only
+# until the recorded process dies. tests/fm-codex-session-lock.test.sh covers
+# these boundaries. The installed-hook evidence is in docs/verification/runtime-backends.md.
 fm_session_lock_codex_native_pid() {  # <pid>
   local comm args base argv0
   comm=$(ps -o comm= -p "$1" 2>/dev/null) || return 1
@@ -339,8 +344,8 @@ fm_session_lock_same_session() {  # <state> [<ancestry-pids>]
 # session, so "recorded pid dead" keeps meaning "session gone" instead of
 # wedging a home behind a live daemon whose session died. A replaced background
 # helper leaves a dead pid that its own session's next hook reclaims, because
-# the sidecar still names that session. Every other session records the
-# outermost pid of its contiguous run, exactly as before.
+# the sidecar still names that session. Other sessions record the outermost
+# pid of their contiguous run. Native Codex must first pass its trust gate above.
 fm_session_lock_anchor_pid() {
   local pids
   pids=$(fm_harness_ancestry_pids) || return 1
@@ -357,7 +362,8 @@ fm_session_lock_anchor_pid() {
 }
 
 # True when state dir $1 holds a session lock that this process's session owns:
-# the recorded pid is ANY harness ancestor of the current process, or the lock
+# native Codex uses the trust contract above. For other harnesses the recorded
+# pid is ANY harness ancestor of the current process, or the lock
 # was recorded by this same trusted Claude session and its recorded pid is still
 # a live harness. Membership is the honest ancestry test, because the lock owner
 # sits at an unknown depth in a contiguous Claude run - it is the outermost pid
@@ -390,9 +396,10 @@ EOF
   fm_harness_pid_alive "$lock_pid"
 }
 
-# True when state dir $1 records a live verified harness outside this process's
-# contiguous harness ancestry that was not recorded by this same trusted Claude
-# session. Sets FM_SESSION_LOCK_FOREIGN_OWNER_PID for a diagnostic caller.
+# True when state dir $1 records a live verified harness this session does not
+# own under the shared ownership verdict above. Native Codex can have a foreign
+# owner inside its shared ancestry. Sets FM_SESSION_LOCK_FOREIGN_OWNER_PID for
+# a diagnostic caller.
 # Malformed, missing, dead, and ancestry-uncertain locks are not foreign-owner
 # evidence.
 # shellcheck disable=SC2034 # Output global, read by the sourcing guard caller.
