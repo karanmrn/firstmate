@@ -382,6 +382,30 @@ test_pr_based_dod_draft_check_uses_gh_axi() {
   pass "PR-based DoD draft check uses gh-axi"
 }
 
+test_no_mistakes_starts_immediately_after_commit_for_each_forge() {
+  local forge out skip
+  for forge in none gerrit; do
+    skip=
+    [ "$forge" != gerrit ] || skip=' --skip push,pr,ci'
+    out=$(fm_dod_block no-mistakes dod-start-task fm/dod-start-task "$forge") \
+      || fail "$forge: DoD could not be rendered"
+    assert_contains "$out" "1. Implement the task and commit it on your branch.
+2. Start \`no-mistakes axi run$skip\` immediately after the commit." \
+      "$forge: emitted DoD did not number startup directly after committing"
+    assert_contains "$out" 'never stop or append `done:` here' \
+      "$forge: emitted DoD still permits stopping before validation"
+    if [ "$forge" = gerrit ]; then
+      assert_contains "$out" 'skip nothing else' "$forge: validation steps may be skipped"
+      assert_contains "$out" 'recover_custody' "$forge: branch recovery rule was lost"
+      assert_contains "$out" 'no-mistakes axi sync --recover' "$forge: recovery command was lost"
+      assert_contains "$out" 'custody_returned' "$forge: branch recovery confirmation was lost"
+      assert_contains "$out" 'gerrit-axi publish --squash' "$forge: squash publication rule was lost"
+    fi
+  done
+  pass "each emitted no-mistakes DoD starts validation immediately after commit"
+}
+
+test_no_mistakes_starts_immediately_after_commit_for_each_forge
 test_scout_done_is_not_gated
 test_unpushed_ship_done_is_refused
 test_no_mistakes_prevalidation_done_is_not_gated

@@ -2133,17 +2133,19 @@ fm_active_check_stop() {
   FM_ACTIVE_CHECK_PGID=
 }
 
-# Stop-signal dispositions, installed with the EXIT trap below. HUP and TERM
-# keep bash's native fatal-signal handling, which runs watcher_cleanup through
-# the EXIT trap and then exits on every supported bash. A trap body such as
-# 'exit 1' is not reliable for them: bash 5.2 runs a pending trap inside the
+# A trap body such as 'exit 1' is not reliable for HUP and TERM on bash 5.2,
+# which runs a pending trap inside the
 # parse of the next command substitution, the body then fails to parse ("trap:
 # line 2: unexpected EOF while looking for matching `)'", or nothing at all),
 # and the signal is consumed, so a stop request could leave this watcher
 # polling forever while its stopper waits (fixed upstream in bash 5.3). INT
 # keeps its trap because bash ignores a direct SIGINT while a child runs.
 watcher_stop_signals() {
-  trap - HUP TERM
+  if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    trap 'exit 1' HUP TERM
+  else
+    trap - HUP TERM
+  fi
   trap 'exit 1' INT
 }
 
@@ -2529,6 +2531,7 @@ pr_poll_publish_release() {
 }
 
 watcher_cleanup() {
+  trap '' HUP INT TERM
   local cleanup_status=0 owns_lock=0 transition=release-lock
   pr_poll_publish_release || cleanup_status=1
   pr_poll_control_release || cleanup_status=1

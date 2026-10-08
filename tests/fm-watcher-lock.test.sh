@@ -1546,6 +1546,58 @@ test_msys_pid_identity_uses_proc() {
   pass "MSYS process identity uses compatible /proc fields"
 }
 
+test_watcher_stop_signals_release_lock_on_supported_shells() {
+  local row shell signal dir state fakebin out watcher i status
+  for row in modern stock; do
+    shell=bash
+    [ "$row" != stock ] || shell=/bin/bash
+    [ -x "$shell" ] || [ "$shell" = bash ] || continue
+    for signal in HUP TERM; do
+      dir=$(make_case "watcher-stop-$row-$signal")
+      state="$dir/state"
+      fakebin="$dir/fakebin"
+      out="$dir/watch.out"
+      cat > "$fakebin/cat" <<'SH'
+#!/usr/bin/env bash
+if [ "${1:-}" = "$FM_HOME/state/.watch.lock/pid" ] && [ -e "$FM_HOME/duplicate-stop" ]; then
+  rm "$FM_HOME/duplicate-stop"
+  IFS= read -r pid < "$FM_HOME/watch.pid"
+  kill -"$FM_TEST_STOP_SIGNAL" "$pid"
+  printf 'sent\n' > "$FM_HOME/duplicate-sent"
+fi
+exec /bin/cat "$@"
+SH
+      chmod +x "$fakebin/cat"
+      PATH="$fakebin:$PATH" FM_HOME="$dir" FM_STATE_OVERRIDE="$state" \
+        FM_POLL=1 FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
+        FM_TEST_STOP_SIGNAL="$signal" \
+        "$shell" "$WATCH" > "$out" 2>&1 &
+      watcher=$!
+      i=0
+      while [ "$i" -lt 100 ] && [ ! -e "$state/.last-watcher-beat" ]; do
+        sleep 0.1
+        i=$((i + 1))
+      done
+      [ -e "$state/.last-watcher-beat" ] || fail "$row: watcher did not enter its poll loop: $(cat "$out")"
+      [ "$(cat "$state/.watch.lock/pid")" = "$watcher" ] || fail "$row: watcher did not own its lock"
+      printf '%s\n' "$watcher" > "$dir/watch.pid"
+      touch "$dir/duplicate-stop"
+      kill -"$signal" "$watcher" || fail "$row: could not send $signal to watcher"
+      status=0
+      wait_for_exit "$watcher" 150 || status=$?
+      [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row: $signal did not stop watcher ($status)"
+      [ ! -e "$state/.watch.lock" ] || fail "$row: $signal left a dead-pid watcher lock"
+      [ -s "$dir/duplicate-sent" ] || fail "$row: duplicate $signal was not delivered during cleanup"
+      case "$(cat "$state/.watcher-down" 2>/dev/null || true)" in
+        pending:downtime:*) ;;
+        *) fail "$row: $signal lost the durable downtime episode" ;;
+      esac
+      pass "$row: repeated $signal stops watcher and releases its lock with recovery evidence"
+    done
+  done
+}
+
+test_watcher_stop_signals_release_lock_on_supported_shells
 test_wait_deadline_reaps_a_stopped_child
 test_singleton_start
 test_pid_identity_is_locale_invariant

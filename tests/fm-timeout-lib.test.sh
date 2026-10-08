@@ -204,30 +204,35 @@ test_a_named_owner_that_is_gone_ends_the_command() {
 # fm_exec_timed - the watchdog then starts already reparented - is still
 # detected instead of leaving the command running to its bound.
 test_an_owner_that_dies_during_startup_ends_the_command() {
-  local dir watchdog started
-  dir="$TMP_ROOT/startup-owner"
-  mkdir -p "$dir"
-  # shellcheck disable=SC2016
-  PATH=$PERL_ONLY bash -c '
-    . "$1/bin/fm-timeout-lib.sh"
-    (
-      echo "$BASHPID" > "$2/watchdog"
-      while kill -0 "$$" 2>/dev/null; do sleep 0.05; done
-      fm_exec_timed 60 1 bash -c "exec sleep 300"
-    ) >/dev/null 2>&1 &
-    exit 0
-  ' _ "$ROOT" "$dir"
-  wait_for_file "$dir/watchdog"
-  watchdog=$(cat "$dir/watchdog")
-  started=$SECONDS
-  while kill -0 "$watchdog" 2>/dev/null; do
-    if [ "$((SECONDS - started))" -ge 15 ]; then
-      kill -KILL "$watchdog" 2>/dev/null || true
-      fail "a watchdog whose owner died during startup ran on toward its bound"
-    fi
-    sleep 0.02
+  local dir watchdog started shell row
+  for row in modern stock; do
+    shell=bash
+    [ "$row" != stock ] || shell=/bin/bash
+    [ -x "$shell" ] || [ "$shell" = bash ] || continue
+    dir="$TMP_ROOT/startup-owner-$row"
+    mkdir -p "$dir"
+    PATH=$PERL_ONLY "$shell" -c '
+      set -u
+      . "$1/bin/fm-timeout-lib.sh"
+      (
+        perl -e "print getppid(), qq(\n)" > "$2/watchdog"
+        while kill -0 "$$" 2>/dev/null; do sleep 0.05; done
+        fm_exec_timed 60 1 bash -c "exec sleep 300"
+      ) >/dev/null 2>&1 &
+      exit 0
+    ' _ "$ROOT" "$dir"
+    wait_for_file "$dir/watchdog"
+    watchdog=$(cat "$dir/watchdog")
+    started=$SECONDS
+    while kill -0 "$watchdog" 2>/dev/null; do
+      if [ "$((SECONDS - started))" -ge 15 ]; then
+        kill -TERM "$watchdog" 2>/dev/null || true
+        fail "$shell: a watchdog whose owner died during startup ran on toward its bound"
+      fi
+      sleep 0.02
+    done
+    pass "$shell: fm_exec_timed ends the command when its owner dies during watchdog startup"
   done
-  pass "fm_exec_timed ends the command when its owner dies during watchdog startup"
 }
 
 # perl is preferred whenever it exists, because only its watchdog can reap a
@@ -330,10 +335,21 @@ test_run_timed_passes_a_natural_exit_through_a_fired_bound() {
 test_exec_timed_runs_under_stock_bash_3_2_with_nounset() {
   # macOS /bin/bash 3.2 has no BASHPID; under set -u an unguarded read aborts.
   [ -x /bin/bash ] || { pass 'no /bin/bash; bash 3.2 case skipped'; return 0; }
-  local out rc=0
-  out=$(PATH="$PERL_ONLY:/usr/bin:/bin" /bin/bash -c 'set -u; . "$1"; (fm_exec_timed 5 1 echo ran)' _ "$(dirname "${BASH_SOURCE[0]}")/../bin/fm-timeout-lib.sh" 2>&1) || rc=$?
-  [ "$rc" -eq 0 ] && [ "$out" = ran ] || fail "fm_exec_timed broke under /bin/bash with set -u (rc=$rc out=$out)"
-  pass 'fm_exec_timed runs under /bin/bash with set -u (no BASHPID on 3.2)'
+  local out rc mode
+  for mode in subshell direct; do
+    rc=0
+    out=$(PATH="$PERL_ONLY:/usr/bin:/bin" /bin/bash -c '
+      set -u
+      . "$1"
+      if [ "$2" = subshell ]; then
+        (fm_exec_timed 5 1 echo ran)
+      else
+        fm_exec_timed 5 1 echo ran
+      fi
+    ' _ "$ROOT/bin/fm-timeout-lib.sh" "$mode" 2>&1) || rc=$?
+    [ "$rc" -eq 0 ] && [ "$out" = ran ] || fail "fm_exec_timed broke under /bin/bash with set -u ($mode rc=$rc out=$out)"
+    pass "fm_exec_timed runs in a $mode call under /bin/bash with set -u"
+  done
 }
 
 test_passes_the_command_status_and_output_through
