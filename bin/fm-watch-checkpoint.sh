@@ -63,6 +63,16 @@ case "$SECONDS_ARG" in
   0) echo "error: --seconds must be greater than zero" >&2; exit 2 ;;
 esac
 
+# A native app-server PID is shared across threads. Only its verified session
+# owner may start another checkpoint, even when its predecessor still has the
+# same server ancestor. CLI and detached watcher behavior stays unchanged.
+# shellcheck source=bin/fm-session-lock-lib.sh
+. "$SCRIPT_DIR/fm-session-lock-lib.sh"
+if fm_session_lock_codex_native_ancestry && ! fm_session_lock_owned_by_self "$STATE"; then
+  echo "error: native Codex session does not own the home lock; operate read-only until resolved" >&2
+  exit 1
+fi
+
 OUT=$(mktemp "${TMPDIR:-/tmp}/fm-watch-checkpoint.out.XXXXXX") || exit 1
 ERR=$(mktemp "${TMPDIR:-/tmp}/fm-watch-checkpoint.err.XXXXXX") || {
   rm -f "$OUT"
