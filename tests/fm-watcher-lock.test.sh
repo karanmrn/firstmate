@@ -1603,12 +1603,15 @@ test_watcher_startup_signals_release_lock() {
     shell=bash
     [ "$row" != stock ] || shell=/bin/bash
     [ -x "$shell" ] || [ "$shell" = bash ] || continue
-    for stage in acquisition recovery handlers; do
+    for stage in acquisition recovery handlers inherited; do
       for signal in HUP TERM; do
         dir=$(make_case "watcher-startup-$row-$stage-$signal")
         state="$dir/state"
         fakebin="$dir/fakebin"
         out="$dir/watch.out"
+        if [ "$stage" = inherited ]; then
+          printf 'announced:downtime:parent-generation\n' > "$state/.watcher-down"
+        fi
         cat > "$dir/startup-env.sh" <<'SH'
 trap() {
   builtin trap "$@"
@@ -1625,7 +1628,7 @@ SH
 /bin/ln "$@" || exit $?
 for target do :; done
 case "$FM_STARTUP_STAGE:$target" in
-  recovery:*/state/.watcher-down.lock|acquisition:*/state/.watch.lock)
+  recovery:*/state/.watcher-down.lock|acquisition:*/state/.watch.lock|inherited:*/state/.watch.lock)
     if [ ! -e "$FM_HOME/startup-ready" ]; then
       printf '%s\n' "$PPID" > "$FM_HOME/startup-ready"
       while [ ! -e "$FM_HOME/startup-release" ]; do sleep 0.05; done
@@ -1636,7 +1639,7 @@ SH
         chmod +x "$fakebin/ln"
         PATH="$fakebin:$PATH" FM_HOME="$dir" FM_STATE_OVERRIDE="$state" \
           FM_POLL=1 FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
-          FM_STARTUP_STAGE="$stage" BASH_ENV="$dir/startup-env.sh" \
+          FM_RECOVERY_ARM_TOKEN=announced:downtime:parent-generation FM_STARTUP_STAGE="$stage" BASH_ENV="$dir/startup-env.sh" \
           "$shell" "$WATCH" > "$out" 2>&1 &
         watcher=$!
         i=0
@@ -1653,7 +1656,10 @@ SH
         wait_for_exit "$watcher" 150 || status=$?
         [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row/$stage: $signal did not stop watcher ($status)"
         [ ! -e "$state/.watch.lock" ] || fail "$row/$stage: $signal left a dead-pid watcher lock"
-        if [ "$stage" != handlers ]; then
+        if [ "$stage" = inherited ]; then
+          [ "$(cat "$state/.watcher-down")" = announced:downtime:parent-generation ] \
+            || fail "$row: a new arm inherited its parent's announcement ownership"
+        elif [ "$stage" != handlers ]; then
           case "$(cat "$state/.watcher-down" 2>/dev/null || true)" in
             pending:downtime:*) ;;
             *) fail "$row/$stage: $signal lost the durable downtime episode" ;;
@@ -1754,6 +1760,64 @@ SH
   done
 }
 
+test_watcher_reply_reload_preserves_recovery() {
+  local row shell signal dir state corr lock watcher i status out
+  for row in modern stock; do
+    shell=bash
+    [ "$row" != stock ] || shell=/bin/bash
+    [ -x "$shell" ] || [ "$shell" = bash ] || continue
+    for signal in HUP TERM; do
+      dir=$(make_case "reply-reload-$row-$signal")
+      state="$dir/state"
+      out="$dir/watch.out"
+      corr=$(FM_HOME="$dir" FM_STATE_OVERRIDE="$state" "$shell" -c '
+        . "$1"
+        fm_pending_reply_create "$FM_HOME" "$FM_HOME/state" seed "awaiting an isolated report"
+      ' _ "$ROOT/bin/fm-pending-reply-lib.sh") || fail "could not create awaiting_report correlation"
+      lock="$state/.pending-reply-$corr.lock"
+      mkdir -p "$lock"
+      printf '%s\n' "$$" > "$lock/pid"
+      printf 'pending:downtime:reply-generation\n' > "$state/.watcher-down"
+      cat > "$dir/reply-env.sh" <<'SH'
+sleep() {
+  if [ "$0" = "$FM_REPLY_WATCH" ] && [ "${FM_LOCK_HELD_PID:-}" = "$FM_REPLY_LOCK_PID" ] \
+    && [ ! -e "$FM_HOME/reply-ready" ]; then
+    printf '%s\n' "$$" > "$FM_HOME/reply-ready"
+  fi
+  /bin/sleep "$@"
+}
+SH
+      FM_HOME="$dir" FM_STATE_OVERRIDE="$state" FM_POLL=1 FM_SIGNAL_GRACE=0 \
+        FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 FM_REPLY_LOCK_PID="$$" \
+        FM_REPLY_WATCH="$WATCH" BASH_ENV="$dir/reply-env.sh" "$shell" "$WATCH" > "$out" 2>&1 &
+      watcher=$!
+      i=0
+      while [ "$i" -lt 100 ] && [ ! -s "$dir/reply-ready" ]; do sleep 0.1; i=$((i + 1)); done
+      [ -s "$dir/reply-ready" ] || fail "$row: pending-reply correlation wait was not reached: $(cat "$out")"
+      [ "$(cat "$state/.watcher-down")" = announced:downtime:reply-generation ] \
+        || fail "$row: correlation wait missed the undelivered announcement"
+      kill -"$signal" "$watcher" || fail "$row: could not interrupt correlation wait"
+      status=0
+      wait_for_exit "$watcher" 150 || status=$?
+      [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row: correlation interruption did not stop watcher"
+      [ ! -e "$state/.watch.lock" ] || fail "$row: reply cleanup retained singleton"
+      [ "$(cat "$state/.watcher-down")" = pending:downtime:reply-generation ] \
+        || fail "$row: reply reload lost the undelivered generation"
+      [ "$(cat "$lock/pid")" = "$$" ] || fail "$row: cleanup released the correlation's foreign lock"
+      rm -rf "$lock"
+      FM_HOME="$dir" FM_STATE_OVERRIDE="$state" FM_POLL=1 FM_SIGNAL_GRACE=0 \
+        FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$shell" "$WATCH" > "$dir/next.out" 2>&1 &
+      watcher=$!
+      wait_for_exit "$watcher" 150 || fail "$row: next arm suppressed pending-reply recovery"
+      grep -F 'check: rearm-resurface' "$dir/next.out" >/dev/null || fail "$row: next arm omitted recovery"
+      [ "$(cat "$state/.watcher-down")" = announced:downtime:reply-generation ] \
+        || fail "$row: next arm changed the reply generation"
+      pass "$row: $signal during pending-reply reconciliation preserves next-arm recovery"
+    done
+  done
+}
+
+test_watcher_reply_reload_preserves_recovery
 test_watcher_interrupted_announcement_recovers
 test_watcher_startup_signals_release_lock
 test_watcher_stop_signals_release_lock_on_supported_shells

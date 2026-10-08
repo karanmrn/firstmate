@@ -2411,6 +2411,7 @@ evict_stalled_holder() {
 PR_POLL_CONTROL_LOCK=
 PR_POLL_PUBLISH_LOCK=
 WATCHER_RECOVERY_PENDING=0
+FM_RECOVERY_ARM_TOKEN=
 fm_current_pid WATCHER_PID || exit 1
 
 pr_poll_control_release() {

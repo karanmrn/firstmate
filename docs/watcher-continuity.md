@@ -226,6 +226,7 @@ A downtime republication of a pending episode reuses its generation.
 A watcher close leaves a delivered downtime announcement announced, while a successful durable append opens a fresh pending generation so a live watcher can recover the new work.
 If this watcher published an announcement but did not deliver its recovery wake, cleanup restores that exact generation to pending before releasing its singleton.
 This restoration also covers interruption during atomic publication and preserves other generations and handling successors.
+The watcher initializes announcement ownership when it starts, and same-shell library reloads preserve that ownership until delivery or cleanup.
 An announced handling episode becomes pending downtime on the same generation because its handling turn may have been interrupted.
 That handling republication gives a successor exactly one recovery presentation without orphaning the acknowledgement already printed for that generation.
 A watcher stopped so an arm can take its cycle over (`bin/fm-watch-arm.sh --take-over`) publishes downtime like any close, but the taking arm restores an acknowledged episode that stop reopened only when the taken-over arm's cycle-ledger row for that exact arm and watcher records the watcher ending by the take-over's TERM and no wake was appended in between.
