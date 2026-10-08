@@ -1279,6 +1279,10 @@ jq --arg p "$ios_pane" \
 tabs_before=$(grep -c '^tab create' "$HERDR_LOG" || true)
 # exec keeps $! the watcher itself rather than the function's subshell, so a
 # kill reaches the process that probes and writes into the fixture root.
+# This leg verifies liveness, routing, and one wake. The complete inheritance
+# surface is exercised above. Use its documented test-only declaration here
+# so those sequential transfers do not consume the fixed watcher budget.
+FM_INHERITABLE_CONFIG=crew-harness \
 FM_STATE_OVERRIDE="$WATCH_STATE" FM_SECONDMATE_LIVENESS_SECS=1 FM_POLL=1 \
   FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
   remote_env exec "$ROOT/bin/fm-watch.sh" \
@@ -1291,7 +1295,7 @@ while kill -0 "$watch_pid" 2>/dev/null && [ "$watch_wait" -lt 1500 ]; do
 done
 if kill -0 "$watch_pid" 2>/dev/null; then
   kill "$watch_pid" 2>/dev/null || true
-  fail "the watcher did not exit on its auto-relaunch wake within the bound"
+  fail "the watcher did not exit on its auto-relaunch wake within the bound"$'\n'"$(cat "$TMP_ROOT/watch-liveness.out" "$TMP_ROOT/watch-liveness.err" "$WATCH_STATE/.secondmate-relaunch-ios" 2>/dev/null)"
 fi
 wait "$watch_pid" \
   || fail "the liveness watcher leg exited non-zero: $(cat "$TMP_ROOT/watch-liveness.err")"
