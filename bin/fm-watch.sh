@@ -2142,7 +2142,8 @@ fm_active_check_stop() {
 # keeps its trap because bash ignores a direct SIGINT while a child runs.
 watcher_stop_signals() {
   if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
-    trap 'exit 1' HUP TERM
+    trap 'exit 129' HUP
+    trap 'exit 143' TERM
   else
     trap - HUP TERM
   fi
@@ -2159,14 +2160,16 @@ run_check_capture() {
   # Defer stop signals only until the check's process group is recorded for
   # watcher_cleanup. Keep command substitutions out of this window: bash 5.2
   # can drop a trap that is pending when one is parsed (watcher_stop_signals).
-  trap 'FM_CHECK_SIGNAL_PENDING=1' HUP INT TERM
+  trap 'FM_CHECK_SIGNAL_PENDING=129' HUP
+  trap 'FM_CHECK_SIGNAL_PENDING=143' TERM
+  trap 'FM_CHECK_SIGNAL_PENDING=1' INT
   set -m
   ( FM_CHECK_OWNED_GROUP=1 run_check_process "$@" ) > "$FM_CHECK_OUTPUT" 2>/dev/null &
   FM_ACTIVE_CHECK_PID=$!
   FM_ACTIVE_CHECK_PGID=$FM_ACTIVE_CHECK_PID
   set +m
   watcher_stop_signals
-  [ -z "$FM_CHECK_SIGNAL_PENDING" ] || exit 1
+  [ -z "$FM_CHECK_SIGNAL_PENDING" ] || exit "$FM_CHECK_SIGNAL_PENDING"
   pgid=$(ps -o pgid= -p "$FM_ACTIVE_CHECK_PID" 2>/dev/null | tr -d '[:space:]')
   if [ -n "$pgid" ] && [ "$pgid" != "$FM_ACTIVE_CHECK_PGID" ]; then
     fm_active_check_stop || true

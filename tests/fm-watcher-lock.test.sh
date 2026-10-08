@@ -1547,12 +1547,14 @@ test_msys_pid_identity_uses_proc() {
 }
 
 test_watcher_stop_signals_release_lock_on_supported_shells() {
-  local row shell signal dir state fakebin out watcher i status
+  local row shell signal dir state fakebin out watcher i status expected_status
   for row in modern stock; do
     shell=bash
     [ "$row" != stock ] || shell=/bin/bash
     [ -x "$shell" ] || [ "$shell" = bash ] || continue
     for signal in HUP TERM; do
+      expected_status=129
+      [ "$signal" != TERM ] || expected_status=143
       dir=$(make_case "watcher-stop-$row-$signal")
       state="$dir/state"
       fakebin="$dir/fakebin"
@@ -1585,7 +1587,7 @@ SH
       kill -"$signal" "$watcher" || fail "$row: could not send $signal to watcher"
       status=0
       wait_for_exit "$watcher" 150 || status=$?
-      [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row: $signal did not stop watcher ($status)"
+      [ "$status" -eq "$expected_status" ] || fail "$row: $signal did not stop watcher ($status)"
       [ ! -e "$state/.watch.lock" ] || fail "$row: $signal left a dead-pid watcher lock"
       [ -s "$dir/duplicate-sent" ] || fail "$row: duplicate $signal was not delivered during cleanup"
       case "$(cat "$state/.watcher-down" 2>/dev/null || true)" in
@@ -1598,13 +1600,15 @@ SH
 }
 
 test_watcher_startup_signals_release_lock() {
-  local row shell stage signal dir state fakebin out watcher i status
+  local row shell stage signal dir state fakebin out watcher i status expected_status
   for row in modern stock; do
     shell=bash
     [ "$row" != stock ] || shell=/bin/bash
     [ -x "$shell" ] || [ "$shell" = bash ] || continue
     for stage in acquisition recovery handlers inherited; do
       for signal in HUP TERM; do
+        expected_status=129
+        [ "$signal" != TERM ] || expected_status=143
         dir=$(make_case "watcher-startup-$row-$stage-$signal")
         state="$dir/state"
         fakebin="$dir/fakebin"
@@ -1654,7 +1658,7 @@ SH
         touch "$dir/startup-release"
         status=0
         wait_for_exit "$watcher" 150 || status=$?
-        [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row/$stage: $signal did not stop watcher ($status)"
+        [ "$status" -eq "$expected_status" ] || fail "$row/$stage: $signal did not stop watcher ($status)"
         [ ! -e "$state/.watch.lock" ] || fail "$row/$stage: $signal left a dead-pid watcher lock"
         if [ "$stage" = inherited ]; then
           [ "$(cat "$state/.watcher-down")" = announced:downtime:parent-generation ] \
@@ -1672,13 +1676,15 @@ SH
 }
 
 test_watcher_interrupted_announcement_recovers() {
-  local row shell stage signal dir state fakebin watcher i status out expected
+  local row shell stage signal dir state fakebin watcher i status out expected expected_status
   for row in modern stock; do
     shell=bash
     [ "$row" != stock ] || shell=/bin/bash
     [ -x "$shell" ] || [ "$shell" = bash ] || continue
     for stage in atomic returned polling superseded handling restored; do
       for signal in HUP TERM; do
+        expected_status=129
+        [ "$signal" != TERM ] || expected_status=143
         dir=$(make_case "announcement-$row-$stage-$signal")
         state="$dir/state"
         fakebin="$dir/fakebin"
@@ -1742,7 +1748,7 @@ SH
         touch "$dir/announcement-release"
         status=0
         wait_for_exit "$watcher" 150 || status=$?
-        [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row/$stage: announcement watcher did not stop"
+        [ "$status" -eq "$expected_status" ] || fail "$row/$stage: announcement watcher did not stop"
         [ ! -e "$state/.watch.lock" ] || fail "$row/$stage: announcement cleanup retained singleton"
         [ "$(cat "$state/.watcher-down")" = "$expected" ] || fail "$row/$stage: cleanup changed or lost announcement generation"
         if [ "$stage" != superseded ] && [ "$stage" != handling ] && [ "$stage" != restored ]; then
@@ -1761,12 +1767,14 @@ SH
 }
 
 test_watcher_reply_reload_preserves_recovery() {
-  local row shell signal dir state corr lock watcher i status out
+  local row shell signal dir state corr lock watcher i status out expected_status
   for row in modern stock; do
     shell=bash
     [ "$row" != stock ] || shell=/bin/bash
     [ -x "$shell" ] || [ "$shell" = bash ] || continue
     for signal in HUP TERM; do
+      expected_status=129
+      [ "$signal" != TERM ] || expected_status=143
       dir=$(make_case "reply-reload-$row-$signal")
       state="$dir/state"
       out="$dir/watch.out"
@@ -1799,7 +1807,7 @@ SH
       kill -"$signal" "$watcher" || fail "$row: could not interrupt correlation wait"
       status=0
       wait_for_exit "$watcher" 150 || status=$?
-      [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row: correlation interruption did not stop watcher"
+      [ "$status" -eq "$expected_status" ] || fail "$row: correlation interruption did not stop watcher"
       [ ! -e "$state/.watch.lock" ] || fail "$row: reply cleanup retained singleton"
       [ "$(cat "$state/.watcher-down")" = pending:downtime:reply-generation ] \
         || fail "$row: reply reload lost the undelivered generation"
@@ -1817,6 +1825,108 @@ SH
   done
 }
 
+test_watcher_check_handoff_preserves_signal_status() {
+  local row shell stage signal dir state watcher status expected_status
+  for row in modern stock; do
+    shell=$(command -v bash)
+    [ "$row" != stock ] || shell=/bin/bash
+    for stage in deferred restored; do
+      for signal in HUP TERM; do
+        expected_status=129
+        [ "$signal" != TERM ] || expected_status=143
+        dir=$(make_case "check-handoff-$row-$stage-$signal")
+        state="$dir/state"
+        printf 'exit 0\n' > "$state/task.check.sh"
+        chmod 0700 "$state/task.check.sh"
+        FM_STATE_OVERRIDE="$state" "$ROOT/bin/fm-check-register.sh" task >/dev/null \
+          || fail "could not register handoff check"
+        cat > "$dir/handoff-env.sh" <<'SH'
+set() {
+  builtin set "$@"
+  if [ "$0" = "$FM_CHECK_WATCH" ] && [ "${1:-}" = -m ] && [ "$FM_CHECK_STAGE" = deferred ]; then
+    kill -"$FM_CHECK_SIGNAL" "$$"
+  fi
+}
+trap() {
+  builtin trap "$@"
+  if [ "$0" = "$FM_CHECK_WATCH" ] && [ "${2:-}" = INT ] && [ -n "${FM_ACTIVE_CHECK_PID:-}" ] && [ "$FM_CHECK_STAGE" = restored ]; then
+    kill -"$FM_CHECK_SIGNAL" "$$"
+  fi
+}
+SH
+        FM_HOME="$dir" FM_STATE_OVERRIDE="$state" FM_POLL=1 FM_CHECK_INTERVAL=0 FM_HEARTBEAT=999999 \
+          FM_CHECK_WATCH="$WATCH" FM_CHECK_STAGE="$stage" FM_CHECK_SIGNAL="$signal" \
+          BASH_ENV="$dir/handoff-env.sh" "$shell" "$WATCH" > "$dir/watch.out" 2>&1 &
+        watcher=$!
+        status=0
+        wait_for_exit "$watcher" 150 || status=$?
+        [ "$status" -eq "$expected_status" ] || fail "$row/$stage: $signal status was $status"
+        [ ! -e "$state/.watch.lock" ] || fail "$row/$stage: handoff retained watcher lock"
+        pass "$row/$stage: check handoff preserves $signal status and releases lock"
+      done
+    done
+  done
+}
+
+test_arm_signal_status_and_acknowledged_takeover() {
+  local row shell signal dir state owner watcher replacement i status expected_status
+  for row in modern stock; do
+    shell=$(command -v bash)
+    [ "$row" != stock ] || shell=/bin/bash
+    for signal in HUP TERM; do
+      expected_status=129
+      [ "$signal" != TERM ] || expected_status=143
+      dir=$(make_case "acknowledged-takeover-$row-$signal")
+      state="$dir/state"
+      ln -s "$shell" "$dir/fakebin/bash"
+      printf 'acked:downtime:takeover-generation\n' > "$state/.watcher-down"
+      : > "$state/.wake-queue"
+      PATH="$dir/fakebin:$PATH" FM_HOME="$dir" FM_STATE_OVERRIDE="$state" FM_POLL=1 \
+        FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
+        "$WATCH_ARM" > "$dir/owner.out" 2>&1 &
+      owner=$!
+      i=0
+      while [ "$i" -lt 100 ] && ! grep -q 'watcher: started' "$dir/owner.out"; do sleep 0.1; i=$((i + 1)); done
+      grep -q 'watcher: started' "$dir/owner.out" || fail "$row: owner arm did not start"
+      watcher=$(cat "$state/.watch.lock/pid")
+      if [ "$signal" = TERM ]; then
+        PATH="$dir/fakebin:$PATH" FM_HOME="$dir" FM_STATE_OVERRIDE="$state" FM_POLL=1 \
+          FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
+          "$WATCH_ARM" --take-over "$owner" > "$dir/takeover.out" 2>&1 &
+        replacement=$!
+      else
+        kill -HUP "$watcher" || fail "$row: could not stop owned watcher"
+      fi
+      status=0
+      wait_for_exit "$owner" 150 || status=$?
+      [ "$status" -eq "$expected_status" ] || fail "$row: owner returned $status for $signal"
+      awk -F '\t' -v arm="$owner" -v watcher="$watcher" -v rc="$expected_status" -v signal="$signal" '
+        $1 == "arm_pid=" arm && $2 == "watcher_pid=" watcher && $6 == "exit_code=" rc && $7 == "signal=" signal { found=1 }
+        END { exit !found }
+      ' "$state/.watch-cycle-exits.log" || fail "$row: owner ledger lost $signal identity"
+      if [ "$signal" = TERM ]; then
+        i=0
+        while [ "$i" -lt 100 ] && ! grep -q 'watcher: started' "$dir/takeover.out"; do sleep 0.1; i=$((i + 1)); done
+        grep -q 'watcher: started' "$dir/takeover.out" || fail "$row: takeover did not start a replacement"
+        sleep 2
+        is_live_non_zombie "$replacement" || fail "$row: takeover ended with a spurious wake"
+        [ "$(cat "$state/.watcher-down")" = acked:downtime:takeover-generation ] \
+          || fail "$row: takeover reopened acknowledged downtime"
+        [ ! -s "$state/.wake-queue" ] || fail "$row: takeover appended an unnecessary recovery"
+        ! grep -q 'check: rearm-resurface' "$dir/takeover.out" || fail "$row: takeover emitted unnecessary recovery"
+        kill -TERM "$replacement" || fail "$row: could not stop replacement arm"
+        status=0
+        wait_for_exit "$replacement" 150 || status=$?
+        [ "$status" -eq 143 ] || fail "$row: replacement arm did not retain TERM status"
+        [ ! -e "$state/.watch.lock" ] || fail "$row: replacement cleanup retained watcher lock"
+      fi
+      pass "$row: owner records $signal identity without losing its exit status"
+    done
+  done
+}
+
+test_watcher_check_handoff_preserves_signal_status
+test_arm_signal_status_and_acknowledged_takeover
 test_watcher_reply_reload_preserves_recovery
 test_watcher_interrupted_announcement_recovers
 test_watcher_startup_signals_release_lock
