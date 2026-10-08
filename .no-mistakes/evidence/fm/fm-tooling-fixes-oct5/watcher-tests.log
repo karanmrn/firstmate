@@ -1,0 +1,78 @@
+FM_TEST_BEGIN 2026-10-08T15:52:03Z tests/phase-watcher.test.sh family=unclassified expected_gate_skip=none
+ok - disposable watcher refuses inherited state outside its marked lab
+ok - modern/deferred: check handoff preserves HUP status and releases lock
+ok - modern/deferred: check handoff preserves TERM status and releases lock
+ok - modern/restored: check handoff preserves HUP status and releases lock
+ok - modern/restored: check handoff preserves TERM status and releases lock
+ok - stock/deferred: check handoff preserves HUP status and releases lock
+ok - stock/deferred: check handoff preserves TERM status and releases lock
+ok - stock/restored: check handoff preserves HUP status and releases lock
+ok - stock/restored: check handoff preserves TERM status and releases lock
+ok - modern: owner records HUP identity without losing its exit status
+ok - modern: owner records TERM identity without losing its exit status
+ok - stock: owner records HUP identity without losing its exit status
+ok - stock: owner records TERM identity without losing its exit status
+ok - modern: HUP during pending-reply reconciliation preserves next-arm recovery
+ok - modern: TERM during pending-reply reconciliation preserves next-arm recovery
+ok - stock: HUP during pending-reply reconciliation preserves next-arm recovery
+ok - stock: TERM during pending-reply reconciliation preserves next-arm recovery
+ok - modern/atomic: HUP preserves announcement ownership and recovery
+ok - modern/atomic: TERM preserves announcement ownership and recovery
+ok - modern/returned: HUP preserves announcement ownership and recovery
+ok - modern/returned: TERM preserves announcement ownership and recovery
+ok - modern/polling: HUP preserves announcement ownership and recovery
+ok - modern/polling: TERM preserves announcement ownership and recovery
+ok - modern/superseded: HUP preserves announcement ownership and recovery
+ok - modern/superseded: TERM preserves announcement ownership and recovery
+ok - modern/handling: HUP preserves announcement ownership and recovery
+ok - modern/handling: TERM preserves announcement ownership and recovery
+ok - modern/restored: HUP preserves announcement ownership and recovery
+ok - modern/restored: TERM preserves announcement ownership and recovery
+ok - stock/atomic: HUP preserves announcement ownership and recovery
+ok - stock/atomic: TERM preserves announcement ownership and recovery
+ok - stock/returned: HUP preserves announcement ownership and recovery
+ok - stock/returned: TERM preserves announcement ownership and recovery
+ok - stock/polling: HUP preserves announcement ownership and recovery
+ok - stock/polling: TERM preserves announcement ownership and recovery
+ok - stock/superseded: HUP preserves announcement ownership and recovery
+ok - stock/superseded: TERM preserves announcement ownership and recovery
+ok - stock/handling: HUP preserves announcement ownership and recovery
+ok - stock/handling: TERM preserves announcement ownership and recovery
+ok - stock/restored: HUP preserves announcement ownership and recovery
+ok - stock/restored: TERM preserves announcement ownership and recovery
+ok - modern: HUP during acquisition leaves no owned watcher lock
+ok - modern: TERM during acquisition leaves no owned watcher lock
+ok - modern: HUP during recovery leaves no owned watcher lock
+ok - modern: TERM during recovery leaves no owned watcher lock
+ok - modern: HUP during handlers leaves no owned watcher lock
+ok - modern: TERM during handlers leaves no owned watcher lock
+ok - modern: HUP during inherited leaves no owned watcher lock
+ok - modern: TERM during inherited leaves no owned watcher lock
+ok - stock: HUP during acquisition leaves no owned watcher lock
+ok - stock: TERM during acquisition leaves no owned watcher lock
+ok - stock: HUP during recovery leaves no owned watcher lock
+ok - stock: TERM during recovery leaves no owned watcher lock
+ok - stock: HUP during handlers leaves no owned watcher lock
+ok - stock: TERM during handlers leaves no owned watcher lock
+ok - stock: HUP during inherited leaves no owned watcher lock
+ok - stock: TERM during inherited leaves no owned watcher lock
+ok - modern: repeated HUP stops watcher and releases its lock with recovery evidence
+ok - modern: repeated TERM stops watcher and releases its lock with recovery evidence
+ok - stock: repeated HUP stops watcher and releases its lock with recovery evidence
+ok - stock: repeated TERM stops watcher and releases its lock with recovery evidence
+FM_TEST_END 2026-10-08T15:53:02Z tests/phase-watcher.test.sh exit=0 duration_ms=59413 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T15:53:03Z tests/phase-reload.test.sh family=unclassified expected_gate_skip=none
+ok - modern: pending capture survives every pending-reply reload caller
+ok - modern: absent capture survives every pending-reply reload caller
+ok - modern: invalid capture survives every pending-reply reload caller
+ok - modern: acked capture survives every pending-reply reload caller
+ok - stock: pending capture survives every pending-reply reload caller
+ok - stock: absent capture survives every pending-reply reload caller
+ok - stock: invalid capture survives every pending-reply reload caller
+ok - stock: acked capture survives every pending-reply reload caller
+FM_TEST_END 2026-10-08T15:53:26Z tests/phase-reload.test.sh exit=0 duration_ms=23005 gate_skip=false
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=82523
+FM_TEST_SUMMARY_FAMILY family=unclassified count=2 duration_ms=82418 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/phase-watcher.test.sh duration_ms=59413
+FM_TEST_SLOWEST rank=2 script=tests/phase-reload.test.sh duration_ms=23005
+fm-test-run: wrote timing artifact: /Users/karanmanoharan/.no-mistakes/evidence/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/watcher-timing.json

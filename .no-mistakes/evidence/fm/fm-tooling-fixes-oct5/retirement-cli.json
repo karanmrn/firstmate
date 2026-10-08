@@ -1,0 +1,154 @@
+[
+  {
+    "command": [
+      "bin/fm-procevent.sh",
+      "sweep-home"
+    ],
+    "status": 0,
+    "stdout": "retired: when-probe\nretired: when-when-probe\nswept: attempted=2\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-lab-home.sh",
+      "create",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab"
+    ],
+    "status": 0,
+    "stdout": "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "arm",
+      "probe",
+      "--interval",
+      "0.1",
+      "--condition",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/condition.sh",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/trigger",
+      "--action",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/action.sh",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/actions.log"
+    ],
+    "status": 0,
+    "stdout": "armed: when-probe\nstarts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile\nreminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "arm",
+      "when-probe",
+      "--interval",
+      "0.1",
+      "--condition",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/condition.sh",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/trigger",
+      "--action",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/action.sh",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/actions.log"
+    ],
+    "status": 0,
+    "stdout": "armed: when-when-probe\nstarts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile\nreminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent.sh",
+      "list"
+    ],
+    "status": 0,
+    "stdout": "SOURCE                       ADAPTER      OWNER      PENDING\nwhen-probe                   when         none       0\nwhen-when-probe              when         none       0\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "retire",
+      "when-probe"
+    ],
+    "status": 0,
+    "stdout": "retired: when-probe\nretired: when-probe\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "retire",
+      "when-probe"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "error: no watch registered as when-probe (run list for the registered names)\n"
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "retire",
+      "when-when-probe"
+    ],
+    "status": 0,
+    "stdout": "retired: when-when-probe\nretired: when-when-probe\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "retire",
+      "probe"
+    ],
+    "status": 0,
+    "stdout": "retired: when-probe\nretired: when-probe\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "retire",
+      "when-missing"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "error: no watch registered as when-missing (run list for the registered names)\n"
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "arm",
+      "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "--condition",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/condition.sh",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/trigger",
+      "--action",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/action.sh",
+      "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/actions.log"
+    ],
+    "status": 0,
+    "stdout": "armed: when-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nstarts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile\nreminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent-when.sh",
+      "retire",
+      "when-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    ],
+    "status": 0,
+    "stdout": "retired: when-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nretired: when-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-procevent.sh",
+      "reconcile"
+    ],
+    "status": 0,
+    "stdout": "reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0\n",
+    "stderr": ""
+  },
+  {
+    "result": "Trigger became true after retirement. Reconciliation started no retired action. All registrations are absent."
+  }
+]

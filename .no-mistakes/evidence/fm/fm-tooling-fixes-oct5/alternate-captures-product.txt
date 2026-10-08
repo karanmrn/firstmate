@@ -1,0 +1,279 @@
+
+SCENARIO absent
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.D3CqZk/.no-mistakes/worktrees/guard/bin
+
+reply-absent-modern-HUP/next.out
+check: rearm-resurface
+
+reply-absent-modern-HUP/state/.wake-queue
+1791475296	1	check	seeded	durable capture input
+
+reply-absent-modern-HUP/state/.watcher-down
+announced:downtime:92739.1791475297.HZ8STe
+
+reply-absent-modern-HUP/watch.out
+
+reply-absent-modern-TERM/next.out
+check: rearm-resurface
+
+reply-absent-modern-TERM/state/.wake-queue
+1791475298	1	check	seeded	durable capture input
+
+reply-absent-modern-TERM/state/.watcher-down
+announced:downtime:94235.1791475299.hXXZyz
+
+reply-absent-modern-TERM/watch.out
+
+reply-absent-stock-HUP/next.out
+check: rearm-resurface
+
+reply-absent-stock-HUP/state/.wake-queue
+1791475300	1	check	seeded	durable capture input
+
+reply-absent-stock-HUP/state/.watcher-down
+announced:downtime:96139.1791475300.B4eomy
+
+reply-absent-stock-HUP/watch.out
+
+reply-absent-stock-TERM/next.out
+check: rearm-resurface
+
+reply-absent-stock-TERM/state/.wake-queue
+1791475302	1	check	seeded	durable capture input
+
+reply-absent-stock-TERM/state/.watcher-down
+announced:downtime:97900.1791475302.tUNiwG
+
+reply-absent-stock-TERM/watch.out
+
+
+SCENARIO invalid
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.D3CqZk/.no-mistakes/worktrees/guard/bin
+
+reply-absent-modern-HUP/next.out
+check: rearm-resurface
+
+reply-absent-modern-HUP/state/.wake-queue
+1791475296	1	check	seeded	durable capture input
+
+reply-absent-modern-HUP/state/.watcher-down
+announced:downtime:92739.1791475297.HZ8STe
+
+reply-absent-modern-HUP/watch.out
+
+reply-absent-modern-TERM/next.out
+check: rearm-resurface
+
+reply-absent-modern-TERM/state/.wake-queue
+1791475298	1	check	seeded	durable capture input
+
+reply-absent-modern-TERM/state/.watcher-down
+announced:downtime:94235.1791475299.hXXZyz
+
+reply-absent-modern-TERM/watch.out
+
+reply-absent-stock-HUP/next.out
+check: rearm-resurface
+
+reply-absent-stock-HUP/state/.wake-queue
+1791475300	1	check	seeded	durable capture input
+
+reply-absent-stock-HUP/state/.watcher-down
+announced:downtime:96139.1791475300.B4eomy
+
+reply-absent-stock-HUP/watch.out
+
+reply-absent-stock-TERM/next.out
+check: rearm-resurface
+
+reply-absent-stock-TERM/state/.wake-queue
+1791475302	1	check	seeded	durable capture input
+
+reply-absent-stock-TERM/state/.watcher-down
+announced:downtime:97900.1791475302.tUNiwG
+
+reply-absent-stock-TERM/watch.out
+
+reply-invalid-modern-HUP/next.out
+check: rearm-resurface
+
+reply-invalid-modern-HUP/state/.wake-queue
+1791475304	1	check	seeded	durable capture input
+
+reply-invalid-modern-HUP/state/.watcher-down
+announced:downtime:98938.1791475304.OaIR8O
+
+reply-invalid-modern-HUP/watch.out
+
+reply-invalid-modern-TERM/next.out
+check: rearm-resurface
+
+reply-invalid-modern-TERM/state/.wake-queue
+1791475305	1	check	seeded	durable capture input
+
+reply-invalid-modern-TERM/state/.watcher-down
+announced:downtime:111.1791475306.UzyrjQ
+
+reply-invalid-modern-TERM/watch.out
+
+reply-invalid-stock-HUP/next.out
+check: rearm-resurface
+
+reply-invalid-stock-HUP/state/.wake-queue
+1791475307	1	check	seeded	durable capture input
+
+reply-invalid-stock-HUP/state/.watcher-down
+announced:downtime:1864.1791475308.i66WHp
+
+reply-invalid-stock-HUP/watch.out
+
+reply-invalid-stock-TERM/next.out
+check: rearm-resurface
+
+reply-invalid-stock-TERM/state/.wake-queue
+1791475309	1	check	seeded	durable capture input
+
+reply-invalid-stock-TERM/state/.watcher-down
+announced:downtime:2905.1791475310.Dy1Eeh
+
+reply-invalid-stock-TERM/watch.out
+
+
+SCENARIO acked
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.D3CqZk/.no-mistakes/worktrees/guard/bin
+
+reply-absent-modern-HUP/next.out
+check: rearm-resurface
+
+reply-absent-modern-HUP/state/.wake-queue
+1791475296	1	check	seeded	durable capture input
+
+reply-absent-modern-HUP/state/.watcher-down
+announced:downtime:92739.1791475297.HZ8STe
+
+reply-absent-modern-HUP/watch.out
+
+reply-absent-modern-TERM/next.out
+check: rearm-resurface
+
+reply-absent-modern-TERM/state/.wake-queue
+1791475298	1	check	seeded	durable capture input
+
+reply-absent-modern-TERM/state/.watcher-down
+announced:downtime:94235.1791475299.hXXZyz
+
+reply-absent-modern-TERM/watch.out
+
+reply-absent-stock-HUP/next.out
+check: rearm-resurface
+
+reply-absent-stock-HUP/state/.wake-queue
+1791475300	1	check	seeded	durable capture input
+
+reply-absent-stock-HUP/state/.watcher-down
+announced:downtime:96139.1791475300.B4eomy
+
+reply-absent-stock-HUP/watch.out
+
+reply-absent-stock-TERM/next.out
+check: rearm-resurface
+
+reply-absent-stock-TERM/state/.wake-queue
+1791475302	1	check	seeded	durable capture input
+
+reply-absent-stock-TERM/state/.watcher-down
+announced:downtime:97900.1791475302.tUNiwG
+
+reply-absent-stock-TERM/watch.out
+
+reply-acked-modern-HUP/next.out
+check: rearm-resurface
+
+reply-acked-modern-HUP/state/.wake-queue
+1791475311	1	check	seeded	durable capture input
+
+reply-acked-modern-HUP/state/.watcher-down
+announced:downtime:3939.1791475311.520NWZ
+
+reply-acked-modern-HUP/watch.out
+
+reply-acked-modern-TERM/next.out
+check: rearm-resurface
+
+reply-acked-modern-TERM/state/.wake-queue
+1791475312	1	check	seeded	durable capture input
+
+reply-acked-modern-TERM/state/.watcher-down
+announced:downtime:4856.1791475312.YVRHle
+
+reply-acked-modern-TERM/watch.out
+
+reply-acked-stock-HUP/next.out
+check: rearm-resurface
+
+reply-acked-stock-HUP/state/.wake-queue
+1791475313	1	check	seeded	durable capture input
+
+reply-acked-stock-HUP/state/.watcher-down
+announced:downtime:5710.1791475314.iPNwCz
+
+reply-acked-stock-HUP/watch.out
+
+reply-acked-stock-TERM/next.out
+check: rearm-resurface
+
+reply-acked-stock-TERM/state/.wake-queue
+1791475315	1	check	seeded	durable capture input
+
+reply-acked-stock-TERM/state/.watcher-down
+announced:downtime:7365.1791475315.C2jqvn
+
+reply-acked-stock-TERM/watch.out
+
+reply-invalid-modern-HUP/next.out
+check: rearm-resurface
+
+reply-invalid-modern-HUP/state/.wake-queue
+1791475304	1	check	seeded	durable capture input
+
+reply-invalid-modern-HUP/state/.watcher-down
+announced:downtime:98938.1791475304.OaIR8O
+
+reply-invalid-modern-HUP/watch.out
+
+reply-invalid-modern-TERM/next.out
+check: rearm-resurface
+
+reply-invalid-modern-TERM/state/.wake-queue
+1791475305	1	check	seeded	durable capture input
+
+reply-invalid-modern-TERM/state/.watcher-down
+announced:downtime:111.1791475306.UzyrjQ
+
+reply-invalid-modern-TERM/watch.out
+
+reply-invalid-stock-HUP/next.out
+check: rearm-resurface
+
+reply-invalid-stock-HUP/state/.wake-queue
+1791475307	1	check	seeded	durable capture input
+
+reply-invalid-stock-HUP/state/.watcher-down
+announced:downtime:1864.1791475308.i66WHp
+
+reply-invalid-stock-HUP/watch.out
+
+reply-invalid-stock-TERM/next.out
+check: rearm-resurface
+
+reply-invalid-stock-TERM/state/.wake-queue
+1791475309	1	check	seeded	durable capture input
+
+reply-invalid-stock-TERM/state/.watcher-down
+announced:downtime:2905.1791475310.Dy1Eeh
+
+reply-invalid-stock-TERM/watch.out
+

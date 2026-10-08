@@ -1,0 +1,1414 @@
+
+SCENARIO test_watcher_check_handoff_preserves_signal_status
+check-handoff-modern-deferred-HUP/state/.watcher-down
+pending:downtime:49750.1791474724.soiLx2
+
+check-handoff-modern-deferred-HUP/watch.out
+
+check-handoff-modern-deferred-TERM/state/.watcher-down
+pending:downtime:50636.1791474725.D8OMaA
+
+check-handoff-modern-deferred-TERM/watch.out
+
+check-handoff-modern-restored-HUP/state/.watcher-down
+pending:downtime:51586.1791474726.ZOhu5p
+
+check-handoff-modern-restored-HUP/watch.out
+
+check-handoff-modern-restored-TERM/state/.watcher-down
+pending:downtime:52646.1791474727.e08AOt
+
+check-handoff-modern-restored-TERM/watch.out
+
+check-handoff-stock-deferred-HUP/state/.watcher-down
+pending:downtime:53661.1791474728.cjxl9B
+
+check-handoff-stock-deferred-HUP/watch.out
+
+check-handoff-stock-deferred-TERM/state/.watcher-down
+pending:downtime:54736.1791474729.jazF6O
+
+check-handoff-stock-deferred-TERM/watch.out
+
+check-handoff-stock-restored-HUP/state/.watcher-down
+pending:downtime:55595.1791474730.Y0y8uN
+
+check-handoff-stock-restored-HUP/watch.out
+
+check-handoff-stock-restored-TERM/state/.watcher-down
+pending:downtime:56677.1791474731.KfclcX
+
+check-handoff-stock-restored-TERM/watch.out
+
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.6OUOMM/.no-mistakes/worktrees/guard/bin
+
+
+SCENARIO test_arm_signal_status_and_acknowledged_takeover
+acknowledged-takeover-modern-HUP/owner.out
+watcher: started pid=58018 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-modern-HUP/state/.wake-queue
+
+acknowledged-takeover-modern-HUP/state/.watch-cycle-exits.log
+arm_pid=57972	watcher_pid=58018	origin=started	started_at=1791474731	ended_at=1791474731	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:58018|identity:Thu Oct  8 16:52:11 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-HUP/state/.watcher-down
+pending:downtime:58018.1791474731.BVcjsq
+
+acknowledged-takeover-modern-TERM/owner.out
+watcher: started pid=59324 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-modern-TERM/state/.wake-queue
+
+acknowledged-takeover-modern-TERM/state/.watch-cycle-exits.log
+arm_pid=59276	watcher_pid=59324	origin=started	started_at=1791474732	ended_at=1791474732	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=0	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=60270	watcher_pid=59324	origin=attached	started_at=1791474732	ended_at=1791474733	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:61001
+arm_pid=60270	watcher_pid=61001	origin=started	started_at=1791474733	ended_at=1791474736	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=2	lock_before=pid:61001|identity:Thu Oct  8 16:52:13 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-TERM/state/.watcher-down
+pending:downtime:61001.1791474735.CxYF2d
+
+acknowledged-takeover-modern-TERM/takeover.out
+watcher: started pid=61001 (beacon fresh)
+
+acknowledged-takeover-stock-HUP/owner.out
+watcher: started pid=64145 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-stock-HUP/state/.wake-queue
+
+acknowledged-takeover-stock-HUP/state/.watch-cycle-exits.log
+arm_pid=64108	watcher_pid=64145	origin=started	started_at=1791474736	ended_at=1791474737	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:64145|identity:Thu Oct  8 16:52:16 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-HUP/state/.watcher-down
+pending:downtime:64145.1791474737.7KJvCc
+
+acknowledged-takeover-stock-TERM/owner.out
+watcher: started pid=65592 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-stock-TERM/state/.wake-queue
+
+acknowledged-takeover-stock-TERM/state/.watch-cycle-exits.log
+arm_pid=65573	watcher_pid=65592	origin=started	started_at=1791474737	ended_at=1791474738	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=66200	watcher_pid=65592	origin=attached	started_at=1791474737	ended_at=1791474738	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:67136
+arm_pid=66200	watcher_pid=67136	origin=started	started_at=1791474738	ended_at=1791474741	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=1	lock_before=pid:67136|identity:Thu Oct  8 16:52:18 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-TERM/state/.watcher-down
+pending:downtime:67136.1791474741.Y8RgUC
+
+acknowledged-takeover-stock-TERM/takeover.out
+watcher: started pid=67136 (beacon fresh)
+
+check-handoff-modern-deferred-HUP/state/.watcher-down
+pending:downtime:49750.1791474724.soiLx2
+
+check-handoff-modern-deferred-HUP/watch.out
+
+check-handoff-modern-deferred-TERM/state/.watcher-down
+pending:downtime:50636.1791474725.D8OMaA
+
+check-handoff-modern-deferred-TERM/watch.out
+
+check-handoff-modern-restored-HUP/state/.watcher-down
+pending:downtime:51586.1791474726.ZOhu5p
+
+check-handoff-modern-restored-HUP/watch.out
+
+check-handoff-modern-restored-TERM/state/.watcher-down
+pending:downtime:52646.1791474727.e08AOt
+
+check-handoff-modern-restored-TERM/watch.out
+
+check-handoff-stock-deferred-HUP/state/.watcher-down
+pending:downtime:53661.1791474728.cjxl9B
+
+check-handoff-stock-deferred-HUP/watch.out
+
+check-handoff-stock-deferred-TERM/state/.watcher-down
+pending:downtime:54736.1791474729.jazF6O
+
+check-handoff-stock-deferred-TERM/watch.out
+
+check-handoff-stock-restored-HUP/state/.watcher-down
+pending:downtime:55595.1791474730.Y0y8uN
+
+check-handoff-stock-restored-HUP/watch.out
+
+check-handoff-stock-restored-TERM/state/.watcher-down
+pending:downtime:56677.1791474731.KfclcX
+
+check-handoff-stock-restored-TERM/watch.out
+
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.6OUOMM/.no-mistakes/worktrees/guard/bin
+
+
+SCENARIO test_watcher_reply_reload_preserves_recovery
+acknowledged-takeover-modern-HUP/owner.out
+watcher: started pid=58018 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-modern-HUP/state/.wake-queue
+
+acknowledged-takeover-modern-HUP/state/.watch-cycle-exits.log
+arm_pid=57972	watcher_pid=58018	origin=started	started_at=1791474731	ended_at=1791474731	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:58018|identity:Thu Oct  8 16:52:11 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-HUP/state/.watcher-down
+pending:downtime:58018.1791474731.BVcjsq
+
+acknowledged-takeover-modern-TERM/owner.out
+watcher: started pid=59324 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-modern-TERM/state/.wake-queue
+
+acknowledged-takeover-modern-TERM/state/.watch-cycle-exits.log
+arm_pid=59276	watcher_pid=59324	origin=started	started_at=1791474732	ended_at=1791474732	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=0	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=60270	watcher_pid=59324	origin=attached	started_at=1791474732	ended_at=1791474733	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:61001
+arm_pid=60270	watcher_pid=61001	origin=started	started_at=1791474733	ended_at=1791474736	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=2	lock_before=pid:61001|identity:Thu Oct  8 16:52:13 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-TERM/state/.watcher-down
+pending:downtime:61001.1791474735.CxYF2d
+
+acknowledged-takeover-modern-TERM/takeover.out
+watcher: started pid=61001 (beacon fresh)
+
+acknowledged-takeover-stock-HUP/owner.out
+watcher: started pid=64145 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-stock-HUP/state/.wake-queue
+
+acknowledged-takeover-stock-HUP/state/.watch-cycle-exits.log
+arm_pid=64108	watcher_pid=64145	origin=started	started_at=1791474736	ended_at=1791474737	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:64145|identity:Thu Oct  8 16:52:16 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-HUP/state/.watcher-down
+pending:downtime:64145.1791474737.7KJvCc
+
+acknowledged-takeover-stock-TERM/owner.out
+watcher: started pid=65592 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-stock-TERM/state/.wake-queue
+
+acknowledged-takeover-stock-TERM/state/.watch-cycle-exits.log
+arm_pid=65573	watcher_pid=65592	origin=started	started_at=1791474737	ended_at=1791474738	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=66200	watcher_pid=65592	origin=attached	started_at=1791474737	ended_at=1791474738	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:67136
+arm_pid=66200	watcher_pid=67136	origin=started	started_at=1791474738	ended_at=1791474741	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=1	lock_before=pid:67136|identity:Thu Oct  8 16:52:18 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-TERM/state/.watcher-down
+pending:downtime:67136.1791474741.Y8RgUC
+
+acknowledged-takeover-stock-TERM/takeover.out
+watcher: started pid=67136 (beacon fresh)
+
+check-handoff-modern-deferred-HUP/state/.watcher-down
+pending:downtime:49750.1791474724.soiLx2
+
+check-handoff-modern-deferred-HUP/watch.out
+
+check-handoff-modern-deferred-TERM/state/.watcher-down
+pending:downtime:50636.1791474725.D8OMaA
+
+check-handoff-modern-deferred-TERM/watch.out
+
+check-handoff-modern-restored-HUP/state/.watcher-down
+pending:downtime:51586.1791474726.ZOhu5p
+
+check-handoff-modern-restored-HUP/watch.out
+
+check-handoff-modern-restored-TERM/state/.watcher-down
+pending:downtime:52646.1791474727.e08AOt
+
+check-handoff-modern-restored-TERM/watch.out
+
+check-handoff-stock-deferred-HUP/state/.watcher-down
+pending:downtime:53661.1791474728.cjxl9B
+
+check-handoff-stock-deferred-HUP/watch.out
+
+check-handoff-stock-deferred-TERM/state/.watcher-down
+pending:downtime:54736.1791474729.jazF6O
+
+check-handoff-stock-deferred-TERM/watch.out
+
+check-handoff-stock-restored-HUP/state/.watcher-down
+pending:downtime:55595.1791474730.Y0y8uN
+
+check-handoff-stock-restored-HUP/watch.out
+
+check-handoff-stock-restored-TERM/state/.watcher-down
+pending:downtime:56677.1791474731.KfclcX
+
+check-handoff-stock-restored-TERM/watch.out
+
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.6OUOMM/.no-mistakes/worktrees/guard/bin
+
+reply-reload-modern-HUP/next.out
+check: rearm-resurface
+
+reply-reload-modern-HUP/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-modern-HUP/watch.out
+
+reply-reload-modern-TERM/next.out
+check: rearm-resurface
+
+reply-reload-modern-TERM/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-modern-TERM/watch.out
+
+reply-reload-stock-HUP/next.out
+check: rearm-resurface
+
+reply-reload-stock-HUP/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-stock-HUP/watch.out
+
+reply-reload-stock-TERM/next.out
+check: rearm-resurface
+
+reply-reload-stock-TERM/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-stock-TERM/watch.out
+
+
+SCENARIO test_watcher_interrupted_announcement_recovers
+acknowledged-takeover-modern-HUP/owner.out
+watcher: started pid=58018 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-modern-HUP/state/.wake-queue
+
+acknowledged-takeover-modern-HUP/state/.watch-cycle-exits.log
+arm_pid=57972	watcher_pid=58018	origin=started	started_at=1791474731	ended_at=1791474731	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:58018|identity:Thu Oct  8 16:52:11 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-HUP/state/.watcher-down
+pending:downtime:58018.1791474731.BVcjsq
+
+acknowledged-takeover-modern-TERM/owner.out
+watcher: started pid=59324 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-modern-TERM/state/.wake-queue
+
+acknowledged-takeover-modern-TERM/state/.watch-cycle-exits.log
+arm_pid=59276	watcher_pid=59324	origin=started	started_at=1791474732	ended_at=1791474732	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=0	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=60270	watcher_pid=59324	origin=attached	started_at=1791474732	ended_at=1791474733	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:61001
+arm_pid=60270	watcher_pid=61001	origin=started	started_at=1791474733	ended_at=1791474736	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=2	lock_before=pid:61001|identity:Thu Oct  8 16:52:13 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-TERM/state/.watcher-down
+pending:downtime:61001.1791474735.CxYF2d
+
+acknowledged-takeover-modern-TERM/takeover.out
+watcher: started pid=61001 (beacon fresh)
+
+acknowledged-takeover-stock-HUP/owner.out
+watcher: started pid=64145 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-stock-HUP/state/.wake-queue
+
+acknowledged-takeover-stock-HUP/state/.watch-cycle-exits.log
+arm_pid=64108	watcher_pid=64145	origin=started	started_at=1791474736	ended_at=1791474737	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:64145|identity:Thu Oct  8 16:52:16 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-HUP/state/.watcher-down
+pending:downtime:64145.1791474737.7KJvCc
+
+acknowledged-takeover-stock-TERM/owner.out
+watcher: started pid=65592 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-stock-TERM/state/.wake-queue
+
+acknowledged-takeover-stock-TERM/state/.watch-cycle-exits.log
+arm_pid=65573	watcher_pid=65592	origin=started	started_at=1791474737	ended_at=1791474738	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=66200	watcher_pid=65592	origin=attached	started_at=1791474737	ended_at=1791474738	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:67136
+arm_pid=66200	watcher_pid=67136	origin=started	started_at=1791474738	ended_at=1791474741	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=1	lock_before=pid:67136|identity:Thu Oct  8 16:52:18 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-TERM/state/.watcher-down
+pending:downtime:67136.1791474741.Y8RgUC
+
+acknowledged-takeover-stock-TERM/takeover.out
+watcher: started pid=67136 (beacon fresh)
+
+announcement-modern-atomic-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-atomic-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-atomic-HUP/watch.out
+
+announcement-modern-atomic-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-atomic-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-atomic-TERM/watch.out
+
+announcement-modern-handling-HUP/state/.wake-queue.lock.owner.UjDka3/pid
+81880
+
+announcement-modern-handling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-handling-HUP/watch.out
+
+announcement-modern-handling-TERM/state/.wake-queue.lock.owner.R9GaE8/pid
+82061
+
+announcement-modern-handling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-handling-TERM/watch.out
+
+announcement-modern-polling-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-polling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-polling-HUP/watch.out
+
+announcement-modern-polling-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-polling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-polling-TERM/watch.out
+
+announcement-modern-restored-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-restored-HUP/watch.out
+
+announcement-modern-restored-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-restored-TERM/watch.out
+
+announcement-modern-returned-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-returned-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-returned-HUP/watch.out
+
+announcement-modern-returned-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-returned-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-returned-TERM/watch.out
+
+announcement-modern-superseded-HUP/state/.wake-queue.lock.owner.qVjwso/pid
+81412
+
+announcement-modern-superseded-HUP/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-modern-superseded-HUP/watch.out
+
+announcement-modern-superseded-TERM/state/.wake-queue.lock.owner.X4Ms2n/pid
+81639
+
+announcement-modern-superseded-TERM/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-modern-superseded-TERM/watch.out
+
+announcement-stock-atomic-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-atomic-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-atomic-HUP/watch.out
+
+announcement-stock-atomic-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-atomic-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-atomic-TERM/watch.out
+
+announcement-stock-handling-HUP/state/.wake-queue.lock.owner.01DHGj/pid
+87661
+
+announcement-stock-handling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-handling-HUP/watch.out
+
+announcement-stock-handling-TERM/state/.wake-queue.lock.owner.7u6osf/pid
+87868
+
+announcement-stock-handling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-handling-TERM/watch.out
+
+announcement-stock-polling-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-polling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-polling-HUP/watch.out
+
+announcement-stock-polling-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-polling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-polling-TERM/watch.out
+
+announcement-stock-restored-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-restored-HUP/watch.out
+
+announcement-stock-restored-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-restored-TERM/watch.out
+
+announcement-stock-returned-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-returned-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-returned-HUP/watch.out
+
+announcement-stock-returned-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-returned-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-returned-TERM/watch.out
+
+announcement-stock-superseded-HUP/state/.wake-queue.lock.owner.iEixjN/pid
+87126
+
+announcement-stock-superseded-HUP/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-stock-superseded-HUP/watch.out
+
+announcement-stock-superseded-TERM/state/.wake-queue.lock.owner.XHNxy5/pid
+87385
+
+announcement-stock-superseded-TERM/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-stock-superseded-TERM/watch.out
+
+check-handoff-modern-deferred-HUP/state/.watcher-down
+pending:downtime:49750.1791474724.soiLx2
+
+check-handoff-modern-deferred-HUP/watch.out
+
+check-handoff-modern-deferred-TERM/state/.watcher-down
+pending:downtime:50636.1791474725.D8OMaA
+
+check-handoff-modern-deferred-TERM/watch.out
+
+check-handoff-modern-restored-HUP/state/.watcher-down
+pending:downtime:51586.1791474726.ZOhu5p
+
+check-handoff-modern-restored-HUP/watch.out
+
+check-handoff-modern-restored-TERM/state/.watcher-down
+pending:downtime:52646.1791474727.e08AOt
+
+check-handoff-modern-restored-TERM/watch.out
+
+check-handoff-stock-deferred-HUP/state/.watcher-down
+pending:downtime:53661.1791474728.cjxl9B
+
+check-handoff-stock-deferred-HUP/watch.out
+
+check-handoff-stock-deferred-TERM/state/.watcher-down
+pending:downtime:54736.1791474729.jazF6O
+
+check-handoff-stock-deferred-TERM/watch.out
+
+check-handoff-stock-restored-HUP/state/.watcher-down
+pending:downtime:55595.1791474730.Y0y8uN
+
+check-handoff-stock-restored-HUP/watch.out
+
+check-handoff-stock-restored-TERM/state/.watcher-down
+pending:downtime:56677.1791474731.KfclcX
+
+check-handoff-stock-restored-TERM/watch.out
+
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.6OUOMM/.no-mistakes/worktrees/guard/bin
+
+reply-reload-modern-HUP/next.out
+check: rearm-resurface
+
+reply-reload-modern-HUP/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-modern-HUP/watch.out
+
+reply-reload-modern-TERM/next.out
+check: rearm-resurface
+
+reply-reload-modern-TERM/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-modern-TERM/watch.out
+
+reply-reload-stock-HUP/next.out
+check: rearm-resurface
+
+reply-reload-stock-HUP/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-stock-HUP/watch.out
+
+reply-reload-stock-TERM/next.out
+check: rearm-resurface
+
+reply-reload-stock-TERM/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-stock-TERM/watch.out
+
+
+SCENARIO test_watcher_startup_signals_release_lock
+acknowledged-takeover-modern-HUP/owner.out
+watcher: started pid=58018 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-modern-HUP/state/.wake-queue
+
+acknowledged-takeover-modern-HUP/state/.watch-cycle-exits.log
+arm_pid=57972	watcher_pid=58018	origin=started	started_at=1791474731	ended_at=1791474731	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:58018|identity:Thu Oct  8 16:52:11 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-HUP/state/.watcher-down
+pending:downtime:58018.1791474731.BVcjsq
+
+acknowledged-takeover-modern-TERM/owner.out
+watcher: started pid=59324 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-modern-TERM/state/.wake-queue
+
+acknowledged-takeover-modern-TERM/state/.watch-cycle-exits.log
+arm_pid=59276	watcher_pid=59324	origin=started	started_at=1791474732	ended_at=1791474732	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=0	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=60270	watcher_pid=59324	origin=attached	started_at=1791474732	ended_at=1791474733	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:61001
+arm_pid=60270	watcher_pid=61001	origin=started	started_at=1791474733	ended_at=1791474736	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=2	lock_before=pid:61001|identity:Thu Oct  8 16:52:13 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-TERM/state/.watcher-down
+pending:downtime:61001.1791474735.CxYF2d
+
+acknowledged-takeover-modern-TERM/takeover.out
+watcher: started pid=61001 (beacon fresh)
+
+acknowledged-takeover-stock-HUP/owner.out
+watcher: started pid=64145 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-stock-HUP/state/.wake-queue
+
+acknowledged-takeover-stock-HUP/state/.watch-cycle-exits.log
+arm_pid=64108	watcher_pid=64145	origin=started	started_at=1791474736	ended_at=1791474737	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:64145|identity:Thu Oct  8 16:52:16 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-HUP/state/.watcher-down
+pending:downtime:64145.1791474737.7KJvCc
+
+acknowledged-takeover-stock-TERM/owner.out
+watcher: started pid=65592 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-stock-TERM/state/.wake-queue
+
+acknowledged-takeover-stock-TERM/state/.watch-cycle-exits.log
+arm_pid=65573	watcher_pid=65592	origin=started	started_at=1791474737	ended_at=1791474738	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=66200	watcher_pid=65592	origin=attached	started_at=1791474737	ended_at=1791474738	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:67136
+arm_pid=66200	watcher_pid=67136	origin=started	started_at=1791474738	ended_at=1791474741	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=1	lock_before=pid:67136|identity:Thu Oct  8 16:52:18 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-TERM/state/.watcher-down
+pending:downtime:67136.1791474741.Y8RgUC
+
+acknowledged-takeover-stock-TERM/takeover.out
+watcher: started pid=67136 (beacon fresh)
+
+announcement-modern-atomic-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-atomic-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-atomic-HUP/watch.out
+
+announcement-modern-atomic-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-atomic-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-atomic-TERM/watch.out
+
+announcement-modern-handling-HUP/state/.wake-queue.lock.owner.UjDka3/pid
+81880
+
+announcement-modern-handling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-handling-HUP/watch.out
+
+announcement-modern-handling-TERM/state/.wake-queue.lock.owner.R9GaE8/pid
+82061
+
+announcement-modern-handling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-handling-TERM/watch.out
+
+announcement-modern-polling-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-polling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-polling-HUP/watch.out
+
+announcement-modern-polling-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-polling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-polling-TERM/watch.out
+
+announcement-modern-restored-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-restored-HUP/watch.out
+
+announcement-modern-restored-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-restored-TERM/watch.out
+
+announcement-modern-returned-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-returned-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-returned-HUP/watch.out
+
+announcement-modern-returned-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-returned-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-returned-TERM/watch.out
+
+announcement-modern-superseded-HUP/state/.wake-queue.lock.owner.qVjwso/pid
+81412
+
+announcement-modern-superseded-HUP/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-modern-superseded-HUP/watch.out
+
+announcement-modern-superseded-TERM/state/.wake-queue.lock.owner.X4Ms2n/pid
+81639
+
+announcement-modern-superseded-TERM/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-modern-superseded-TERM/watch.out
+
+announcement-stock-atomic-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-atomic-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-atomic-HUP/watch.out
+
+announcement-stock-atomic-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-atomic-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-atomic-TERM/watch.out
+
+announcement-stock-handling-HUP/state/.wake-queue.lock.owner.01DHGj/pid
+87661
+
+announcement-stock-handling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-handling-HUP/watch.out
+
+announcement-stock-handling-TERM/state/.wake-queue.lock.owner.7u6osf/pid
+87868
+
+announcement-stock-handling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-handling-TERM/watch.out
+
+announcement-stock-polling-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-polling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-polling-HUP/watch.out
+
+announcement-stock-polling-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-polling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-polling-TERM/watch.out
+
+announcement-stock-restored-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-restored-HUP/watch.out
+
+announcement-stock-restored-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-restored-TERM/watch.out
+
+announcement-stock-returned-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-returned-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-returned-HUP/watch.out
+
+announcement-stock-returned-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-returned-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-returned-TERM/watch.out
+
+announcement-stock-superseded-HUP/state/.wake-queue.lock.owner.iEixjN/pid
+87126
+
+announcement-stock-superseded-HUP/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-stock-superseded-HUP/watch.out
+
+announcement-stock-superseded-TERM/state/.wake-queue.lock.owner.XHNxy5/pid
+87385
+
+announcement-stock-superseded-TERM/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-stock-superseded-TERM/watch.out
+
+check-handoff-modern-deferred-HUP/state/.watcher-down
+pending:downtime:49750.1791474724.soiLx2
+
+check-handoff-modern-deferred-HUP/watch.out
+
+check-handoff-modern-deferred-TERM/state/.watcher-down
+pending:downtime:50636.1791474725.D8OMaA
+
+check-handoff-modern-deferred-TERM/watch.out
+
+check-handoff-modern-restored-HUP/state/.watcher-down
+pending:downtime:51586.1791474726.ZOhu5p
+
+check-handoff-modern-restored-HUP/watch.out
+
+check-handoff-modern-restored-TERM/state/.watcher-down
+pending:downtime:52646.1791474727.e08AOt
+
+check-handoff-modern-restored-TERM/watch.out
+
+check-handoff-stock-deferred-HUP/state/.watcher-down
+pending:downtime:53661.1791474728.cjxl9B
+
+check-handoff-stock-deferred-HUP/watch.out
+
+check-handoff-stock-deferred-TERM/state/.watcher-down
+pending:downtime:54736.1791474729.jazF6O
+
+check-handoff-stock-deferred-TERM/watch.out
+
+check-handoff-stock-restored-HUP/state/.watcher-down
+pending:downtime:55595.1791474730.Y0y8uN
+
+check-handoff-stock-restored-HUP/watch.out
+
+check-handoff-stock-restored-TERM/state/.watcher-down
+pending:downtime:56677.1791474731.KfclcX
+
+check-handoff-stock-restored-TERM/watch.out
+
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.6OUOMM/.no-mistakes/worktrees/guard/bin
+
+reply-reload-modern-HUP/next.out
+check: rearm-resurface
+
+reply-reload-modern-HUP/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-modern-HUP/watch.out
+
+reply-reload-modern-TERM/next.out
+check: rearm-resurface
+
+reply-reload-modern-TERM/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-modern-TERM/watch.out
+
+reply-reload-stock-HUP/next.out
+check: rearm-resurface
+
+reply-reload-stock-HUP/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-stock-HUP/watch.out
+
+reply-reload-stock-TERM/next.out
+check: rearm-resurface
+
+reply-reload-stock-TERM/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-stock-TERM/watch.out
+
+watcher-startup-modern-acquisition-HUP/state/.watcher-down
+pending:downtime:88640.1791474771.b0n79G
+
+watcher-startup-modern-acquisition-HUP/watch.out
+
+watcher-startup-modern-acquisition-TERM/state/.watcher-down
+pending:downtime:88774.1791474772.fk3XND
+
+watcher-startup-modern-acquisition-TERM/watch.out
+
+watcher-startup-modern-handlers-HUP/watch.out
+
+watcher-startup-modern-handlers-TERM/watch.out
+
+watcher-startup-modern-inherited-HUP/state/.watcher-down
+announced:downtime:parent-generation
+
+watcher-startup-modern-inherited-HUP/watch.out
+
+watcher-startup-modern-inherited-TERM/state/.watcher-down
+announced:downtime:parent-generation
+
+watcher-startup-modern-inherited-TERM/watch.out
+
+watcher-startup-modern-recovery-HUP/state/.wake-queue.lock.owner.aQ5y4r/pid
+88903
+
+watcher-startup-modern-recovery-HUP/state/.watcher-down
+pending:downtime:88903.1791474772.UctGJA
+
+watcher-startup-modern-recovery-HUP/watch.out
+
+watcher-startup-modern-recovery-TERM/state/.wake-queue.lock.owner.e9hVPA/pid
+89082
+
+watcher-startup-modern-recovery-TERM/state/.watcher-down
+pending:downtime:89082.1791474772.xZVz8d
+
+watcher-startup-modern-recovery-TERM/watch.out
+
+watcher-startup-stock-acquisition-HUP/state/.watcher-down
+pending:downtime:89684.1791474775.VmwwCE
+
+watcher-startup-stock-acquisition-HUP/watch.out
+
+watcher-startup-stock-acquisition-TERM/state/.watcher-down
+pending:downtime:89853.1791474775.Ff2eYs
+
+watcher-startup-stock-acquisition-TERM/watch.out
+
+watcher-startup-stock-handlers-HUP/watch.out
+
+watcher-startup-stock-handlers-TERM/watch.out
+
+watcher-startup-stock-inherited-HUP/state/.watcher-down
+announced:downtime:parent-generation
+
+watcher-startup-stock-inherited-HUP/watch.out
+
+watcher-startup-stock-inherited-TERM/state/.watcher-down
+announced:downtime:parent-generation
+
+watcher-startup-stock-inherited-TERM/watch.out
+
+watcher-startup-stock-recovery-HUP/state/.wake-queue.lock.owner.FkC2Cw/pid
+90010
+
+watcher-startup-stock-recovery-HUP/state/.watcher-down
+pending:downtime:90010.1791474776.sot0CW
+
+watcher-startup-stock-recovery-HUP/watch.out
+
+watcher-startup-stock-recovery-TERM/state/.wake-queue.lock.owner.rMJlxE/pid
+90212
+
+watcher-startup-stock-recovery-TERM/state/.watcher-down
+pending:downtime:90212.1791474777.YVCE0e
+
+watcher-startup-stock-recovery-TERM/watch.out
+
+
+SCENARIO test_watcher_stop_signals_release_lock_on_supported_shells
+acknowledged-takeover-modern-HUP/owner.out
+watcher: started pid=58018 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-modern-HUP/state/.wake-queue
+
+acknowledged-takeover-modern-HUP/state/.watch-cycle-exits.log
+arm_pid=57972	watcher_pid=58018	origin=started	started_at=1791474731	ended_at=1791474731	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:58018|identity:Thu Oct  8 16:52:11 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-HUP/state/.watcher-down
+pending:downtime:58018.1791474731.BVcjsq
+
+acknowledged-takeover-modern-TERM/owner.out
+watcher: started pid=59324 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-modern-TERM/state/.wake-queue
+
+acknowledged-takeover-modern-TERM/state/.watch-cycle-exits.log
+arm_pid=59276	watcher_pid=59324	origin=started	started_at=1791474732	ended_at=1791474732	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=0	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=60270	watcher_pid=59324	origin=attached	started_at=1791474732	ended_at=1791474733	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:59324|identity:Thu Oct  8 16:52:12 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:61001
+arm_pid=60270	watcher_pid=61001	origin=started	started_at=1791474733	ended_at=1791474736	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=2	lock_before=pid:61001|identity:Thu Oct  8 16:52:13 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-modern-TERM/state/.watcher-down
+pending:downtime:61001.1791474735.CxYF2d
+
+acknowledged-takeover-modern-TERM/takeover.out
+watcher: started pid=61001 (beacon fresh)
+
+acknowledged-takeover-stock-HUP/owner.out
+watcher: started pid=64145 (beacon fresh)
+watcher: FAILED - watcher cycle exited 129 without an actionable reason
+
+acknowledged-takeover-stock-HUP/state/.wake-queue
+
+acknowledged-takeover-stock-HUP/state/.watch-cycle-exits.log
+arm_pid=64108	watcher_pid=64145	origin=started	started_at=1791474736	ended_at=1791474737	exit_code=129	signal=HUP	reason=signal-exit	beacon_age=1	lock_before=pid:64145|identity:Thu Oct  8 16:52:16 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-HUP/state/.watcher-down
+pending:downtime:64145.1791474737.7KJvCc
+
+acknowledged-takeover-stock-TERM/owner.out
+watcher: started pid=65592 (beacon fresh)
+watcher: FAILED - watcher cycle exited 143 without an actionable reason
+
+acknowledged-takeover-stock-TERM/state/.wake-queue
+
+acknowledged-takeover-stock-TERM/state/.watch-cycle-exits.log
+arm_pid=65573	watcher_pid=65592	origin=started	started_at=1791474737	ended_at=1791474738	exit_code=143	signal=TERM	reason=signal-exit	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+arm_pid=66200	watcher_pid=65592	origin=attached	started_at=1791474737	ended_at=1791474738	exit_code=unknown	signal=unknown	reason=taken-over	beacon_age=1	lock_before=pid:65592|identity:Thu Oct  8 16:52:17 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=started:67136
+arm_pid=66200	watcher_pid=67136	origin=started	started_at=1791474738	ended_at=1791474741	exit_code=143	signal=TERM	reason=arm-interrupted	beacon_age=1	lock_before=pid:67136|identity:Thu Oct  8 16:52:18 2026     bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh	lock_after=pid:none|identity:none	successor=none
+
+acknowledged-takeover-stock-TERM/state/.watcher-down
+pending:downtime:67136.1791474741.Y8RgUC
+
+acknowledged-takeover-stock-TERM/takeover.out
+watcher: started pid=67136 (beacon fresh)
+
+announcement-modern-atomic-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-atomic-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-atomic-HUP/watch.out
+
+announcement-modern-atomic-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-atomic-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-atomic-TERM/watch.out
+
+announcement-modern-handling-HUP/state/.wake-queue.lock.owner.UjDka3/pid
+81880
+
+announcement-modern-handling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-handling-HUP/watch.out
+
+announcement-modern-handling-TERM/state/.wake-queue.lock.owner.R9GaE8/pid
+82061
+
+announcement-modern-handling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-handling-TERM/watch.out
+
+announcement-modern-polling-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-polling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-polling-HUP/watch.out
+
+announcement-modern-polling-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-polling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-polling-TERM/watch.out
+
+announcement-modern-restored-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-restored-HUP/watch.out
+
+announcement-modern-restored-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-restored-TERM/watch.out
+
+announcement-modern-returned-HUP/next.out
+check: rearm-resurface
+
+announcement-modern-returned-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-returned-HUP/watch.out
+
+announcement-modern-returned-TERM/next.out
+check: rearm-resurface
+
+announcement-modern-returned-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-modern-returned-TERM/watch.out
+
+announcement-modern-superseded-HUP/state/.wake-queue.lock.owner.qVjwso/pid
+81412
+
+announcement-modern-superseded-HUP/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-modern-superseded-HUP/watch.out
+
+announcement-modern-superseded-TERM/state/.wake-queue.lock.owner.X4Ms2n/pid
+81639
+
+announcement-modern-superseded-TERM/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-modern-superseded-TERM/watch.out
+
+announcement-stock-atomic-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-atomic-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-atomic-HUP/watch.out
+
+announcement-stock-atomic-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-atomic-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-atomic-TERM/watch.out
+
+announcement-stock-handling-HUP/state/.wake-queue.lock.owner.01DHGj/pid
+87661
+
+announcement-stock-handling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-handling-HUP/watch.out
+
+announcement-stock-handling-TERM/state/.wake-queue.lock.owner.7u6osf/pid
+87868
+
+announcement-stock-handling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-handling-TERM/watch.out
+
+announcement-stock-polling-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-polling-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-polling-HUP/watch.out
+
+announcement-stock-polling-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-polling-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-polling-TERM/watch.out
+
+announcement-stock-restored-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-restored-HUP/watch.out
+
+announcement-stock-restored-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-restored-TERM/watch.out
+
+announcement-stock-returned-HUP/next.out
+check: rearm-resurface
+
+announcement-stock-returned-HUP/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-returned-HUP/watch.out
+
+announcement-stock-returned-TERM/next.out
+check: rearm-resurface
+
+announcement-stock-returned-TERM/state/.watcher-down
+announced:downtime:announcement-generation
+
+announcement-stock-returned-TERM/watch.out
+
+announcement-stock-superseded-HUP/state/.wake-queue.lock.owner.iEixjN/pid
+87126
+
+announcement-stock-superseded-HUP/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-stock-superseded-HUP/watch.out
+
+announcement-stock-superseded-TERM/state/.wake-queue.lock.owner.XHNxy5/pid
+87385
+
+announcement-stock-superseded-TERM/state/.watcher-down
+announced:downtime:another-generation
+
+announcement-stock-superseded-TERM/watch.out
+
+check-handoff-modern-deferred-HUP/state/.watcher-down
+pending:downtime:49750.1791474724.soiLx2
+
+check-handoff-modern-deferred-HUP/watch.out
+
+check-handoff-modern-deferred-TERM/state/.watcher-down
+pending:downtime:50636.1791474725.D8OMaA
+
+check-handoff-modern-deferred-TERM/watch.out
+
+check-handoff-modern-restored-HUP/state/.watcher-down
+pending:downtime:51586.1791474726.ZOhu5p
+
+check-handoff-modern-restored-HUP/watch.out
+
+check-handoff-modern-restored-TERM/state/.watcher-down
+pending:downtime:52646.1791474727.e08AOt
+
+check-handoff-modern-restored-TERM/watch.out
+
+check-handoff-stock-deferred-HUP/state/.watcher-down
+pending:downtime:53661.1791474728.cjxl9B
+
+check-handoff-stock-deferred-HUP/watch.out
+
+check-handoff-stock-deferred-TERM/state/.watcher-down
+pending:downtime:54736.1791474729.jazF6O
+
+check-handoff-stock-deferred-TERM/watch.out
+
+check-handoff-stock-restored-HUP/state/.watcher-down
+pending:downtime:55595.1791474730.Y0y8uN
+
+check-handoff-stock-restored-HUP/watch.out
+
+check-handoff-stock-restored-TERM/state/.watcher-down
+pending:downtime:56677.1791474731.KfclcX
+
+check-handoff-stock-restored-TERM/watch.out
+
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.6OUOMM/.no-mistakes/worktrees/guard/bin
+
+reply-reload-modern-HUP/next.out
+check: rearm-resurface
+
+reply-reload-modern-HUP/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-modern-HUP/watch.out
+
+reply-reload-modern-TERM/next.out
+check: rearm-resurface
+
+reply-reload-modern-TERM/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-modern-TERM/watch.out
+
+reply-reload-stock-HUP/next.out
+check: rearm-resurface
+
+reply-reload-stock-HUP/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-stock-HUP/watch.out
+
+reply-reload-stock-TERM/next.out
+check: rearm-resurface
+
+reply-reload-stock-TERM/state/.watcher-down
+announced:downtime:reply-generation
+
+reply-reload-stock-TERM/watch.out
+
+watcher-startup-modern-acquisition-HUP/state/.watcher-down
+pending:downtime:88640.1791474771.b0n79G
+
+watcher-startup-modern-acquisition-HUP/watch.out
+
+watcher-startup-modern-acquisition-TERM/state/.watcher-down
+pending:downtime:88774.1791474772.fk3XND
+
+watcher-startup-modern-acquisition-TERM/watch.out
+
+watcher-startup-modern-handlers-HUP/watch.out
+
+watcher-startup-modern-handlers-TERM/watch.out
+
+watcher-startup-modern-inherited-HUP/state/.watcher-down
+announced:downtime:parent-generation
+
+watcher-startup-modern-inherited-HUP/watch.out
+
+watcher-startup-modern-inherited-TERM/state/.watcher-down
+announced:downtime:parent-generation
+
+watcher-startup-modern-inherited-TERM/watch.out
+
+watcher-startup-modern-recovery-HUP/state/.wake-queue.lock.owner.aQ5y4r/pid
+88903
+
+watcher-startup-modern-recovery-HUP/state/.watcher-down
+pending:downtime:88903.1791474772.UctGJA
+
+watcher-startup-modern-recovery-HUP/watch.out
+
+watcher-startup-modern-recovery-TERM/state/.wake-queue.lock.owner.e9hVPA/pid
+89082
+
+watcher-startup-modern-recovery-TERM/state/.watcher-down
+pending:downtime:89082.1791474772.xZVz8d
+
+watcher-startup-modern-recovery-TERM/watch.out
+
+watcher-startup-stock-acquisition-HUP/state/.watcher-down
+pending:downtime:89684.1791474775.VmwwCE
+
+watcher-startup-stock-acquisition-HUP/watch.out
+
+watcher-startup-stock-acquisition-TERM/state/.watcher-down
+pending:downtime:89853.1791474775.Ff2eYs
+
+watcher-startup-stock-acquisition-TERM/watch.out
+
+watcher-startup-stock-handlers-HUP/watch.out
+
+watcher-startup-stock-handlers-TERM/watch.out
+
+watcher-startup-stock-inherited-HUP/state/.watcher-down
+announced:downtime:parent-generation
+
+watcher-startup-stock-inherited-HUP/watch.out
+
+watcher-startup-stock-inherited-TERM/state/.watcher-down
+announced:downtime:parent-generation
+
+watcher-startup-stock-inherited-TERM/watch.out
+
+watcher-startup-stock-recovery-HUP/state/.wake-queue.lock.owner.FkC2Cw/pid
+90010
+
+watcher-startup-stock-recovery-HUP/state/.watcher-down
+pending:downtime:90010.1791474776.sot0CW
+
+watcher-startup-stock-recovery-HUP/watch.out
+
+watcher-startup-stock-recovery-TERM/state/.wake-queue.lock.owner.rMJlxE/pid
+90212
+
+watcher-startup-stock-recovery-TERM/state/.watcher-down
+pending:downtime:90212.1791474777.YVCE0e
+
+watcher-startup-stock-recovery-TERM/watch.out
+
+watcher-stop-modern-HUP/state/.wake-queue.lock.owner.aa4LRi/pid
+90917
+
+watcher-stop-modern-HUP/state/.watcher-down
+pending:downtime:90917.1791474780.w1DmY5
+
+watcher-stop-modern-HUP/watch.out
+
+watcher-stop-modern-TERM/state/.watcher-down
+pending:downtime:91311.1791474780.Fs8jpH
+
+watcher-stop-modern-TERM/watch.out
+
+watcher-stop-stock-HUP/state/.wake-queue.lock.owner.yztQV6/pid
+91782
+
+watcher-stop-stock-HUP/state/.watcher-down
+pending:downtime:91782.1791474781.E7FsXm
+
+watcher-stop-stock-HUP/watch.out
+
+watcher-stop-stock-TERM/state/.watcher-down
+pending:downtime:92191.1791474782.pTKWmF
+
+watcher-stop-stock-TERM/watch.out
+

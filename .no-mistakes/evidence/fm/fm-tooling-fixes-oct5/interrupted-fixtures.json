@@ -1,0 +1,264 @@
+[
+  {
+    "barrier": "startup-handler",
+    "shell": "/bin/bash 3.2",
+    "version": "baseline",
+    "suite_status": 143,
+    "fixture_removed": true,
+    "owned_before_TERM": {
+      "56460": [
+        56432,
+        "Ts",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/tests/phase-interrupt-startup-handler-baseline.test.sh"
+      ],
+      "56568": [
+        56460,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "56723": [
+        56568,
+        "S",
+        "(sleep)"
+      ]
+    },
+    "survivors_after_root_removal": {
+      "56568": [
+        1,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ]
+    },
+    "suite_output": "ok - disposable watcher refuses inherited state outside its marked lab\n"
+  },
+  {
+    "barrier": "startup-handler",
+    "shell": "/bin/bash 3.2",
+    "version": "current",
+    "suite_status": 143,
+    "fixture_removed": true,
+    "owned_before_TERM": {
+      "58714": [
+        56432,
+        "Ts",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/tests/phase-interrupt-startup-handler-current.test.sh"
+      ],
+      "58842": [
+        58714,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "59019": [
+        58842,
+        "S",
+        "(sleep)"
+      ]
+    },
+    "survivors_after_root_removal": {},
+    "suite_output": "ok - disposable watcher refuses inherited state outside its marked lab\n"
+  },
+  {
+    "barrier": "ln-shim",
+    "shell": "/bin/bash 3.2",
+    "version": "baseline",
+    "suite_status": 143,
+    "fixture_removed": true,
+    "owned_before_TERM": {
+      "59202": [
+        56432,
+        "Ts",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/tests/phase-interrupt-ln-shim-baseline.test.sh"
+      ],
+      "59343": [
+        59202,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "59501": [
+        59343,
+        "S",
+        "bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-baseline/fm-watcher-lock-tests.WLiiE9/watcher-startup-stock-acquisition-HUP/fakebin/ln -s /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-baseline/fm-watcher-lock-tests.WLiiE9/watcher-startup-stock-acquisition-HUP/state/.watch.lock.owner.COKOwc /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-baseline/fm-watcher-lock-tests.WLiiE9/watcher-startup-stock-acquisition-HUP/state/.watch.lock"
+      ],
+      "59617": [
+        59501,
+        "S",
+        "sleep 0.05"
+      ]
+    },
+    "survivors_after_root_removal": {
+      "59501": [
+        59343,
+        "S",
+        "bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-baseline/fm-watcher-lock-tests.WLiiE9/watcher-startup-stock-acquisition-HUP/fakebin/ln -s /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-baseline/fm-watcher-lock-tests.WLiiE9/watcher-startup-stock-acquisition-HUP/state/.watch.lock.owner.COKOwc /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-baseline/fm-watcher-lock-tests.WLiiE9/watcher-startup-stock-acquisition-HUP/state/.watch.lock"
+      ],
+      "59343": [
+        1,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ]
+    },
+    "suite_output": "ok - disposable watcher refuses inherited state outside its marked lab\n"
+  },
+  {
+    "barrier": "ln-shim",
+    "shell": "/bin/bash 3.2",
+    "version": "current",
+    "suite_status": 143,
+    "fixture_removed": true,
+    "owned_before_TERM": {
+      "61550": [
+        56432,
+        "Ts",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/tests/phase-interrupt-ln-shim-current.test.sh"
+      ],
+      "61628": [
+        61550,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "61713": [
+        61628,
+        "S",
+        "bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-current/fm-watcher-lock-tests.wSWyCU/watcher-startup-stock-acquisition-HUP/fakebin/ln -s /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-current/fm-watcher-lock-tests.wSWyCU/watcher-startup-stock-acquisition-HUP/state/.watch.lock.owner.Io4fSX /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-ln-shim-current/fm-watcher-lock-tests.wSWyCU/watcher-startup-stock-acquisition-HUP/state/.watch.lock"
+      ],
+      "61719": [
+        61713,
+        "S",
+        "(sleep)"
+      ]
+    },
+    "survivors_after_root_removal": {},
+    "suite_output": "ok - disposable watcher refuses inherited state outside its marked lab\n"
+  },
+  {
+    "barrier": "announcement-hook",
+    "shell": "/bin/bash 3.2",
+    "version": "baseline",
+    "suite_status": 143,
+    "fixture_removed": true,
+    "owned_before_TERM": {
+      "62083": [
+        56432,
+        "Ts",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/tests/phase-interrupt-announcement-hook-baseline.test.sh"
+      ],
+      "62218": [
+        62083,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "62698": [
+        62218,
+        "S",
+        "(sleep)"
+      ]
+    },
+    "survivors_after_root_removal": {
+      "62218": [
+        1,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ]
+    },
+    "suite_output": "ok - disposable watcher refuses inherited state outside its marked lab\n"
+  },
+  {
+    "barrier": "announcement-hook",
+    "shell": "/bin/bash 3.2",
+    "version": "current",
+    "suite_status": 143,
+    "fixture_removed": true,
+    "owned_before_TERM": {
+      "64288": [
+        56432,
+        "Ts",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/tests/phase-interrupt-announcement-hook-current.test.sh"
+      ],
+      "64385": [
+        64288,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "64749": [
+        64385,
+        "S",
+        "(sleep)"
+      ]
+    },
+    "survivors_after_root_removal": {},
+    "suite_output": "ok - disposable watcher refuses inherited state outside its marked lab\n"
+  },
+  {
+    "barrier": "mv-shim",
+    "shell": "/bin/bash 3.2",
+    "version": "baseline",
+    "suite_status": 143,
+    "fixture_removed": true,
+    "owned_before_TERM": {
+      "65370": [
+        56432,
+        "Ts",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/tests/phase-interrupt-mv-shim-baseline.test.sh"
+      ],
+      "65477": [
+        65370,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "65753": [
+        65477,
+        "S",
+        "bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-baseline/fm-watcher-lock-tests.K7fWrG/announcement-stock-atomic-HUP/fakebin/mv -f -- /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-baseline/fm-watcher-lock-tests.K7fWrG/announcement-stock-atomic-HUP/state/.watcher-down.tmp.8TTu5U /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-baseline/fm-watcher-lock-tests.K7fWrG/announcement-stock-atomic-HUP/state/.watcher-down"
+      ],
+      "65809": [
+        65753,
+        "S",
+        "(sleep)"
+      ]
+    },
+    "survivors_after_root_removal": {
+      "65477": [
+        1,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "65753": [
+        65477,
+        "S",
+        "bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-baseline/fm-watcher-lock-tests.K7fWrG/announcement-stock-atomic-HUP/fakebin/mv -f -- /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-baseline/fm-watcher-lock-tests.K7fWrG/announcement-stock-atomic-HUP/state/.watcher-down.tmp.8TTu5U /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-baseline/fm-watcher-lock-tests.K7fWrG/announcement-stock-atomic-HUP/state/.watcher-down"
+      ]
+    },
+    "suite_output": "ok - disposable watcher refuses inherited state outside its marked lab\n"
+  },
+  {
+    "barrier": "mv-shim",
+    "shell": "/bin/bash 3.2",
+    "version": "current",
+    "suite_status": 143,
+    "fixture_removed": true,
+    "owned_before_TERM": {
+      "68158": [
+        56432,
+        "Ts",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/tests/phase-interrupt-mv-shim-current.test.sh"
+      ],
+      "68223": [
+        68158,
+        "S",
+        "/bin/bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh"
+      ],
+      "68421": [
+        68223,
+        "S",
+        "bash /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-current/fm-watcher-lock-tests.YfDJ37/announcement-stock-atomic-HUP/fakebin/mv -f -- /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-current/fm-watcher-lock-tests.YfDJ37/announcement-stock-atomic-HUP/state/.watcher-down.tmp.Tg3mxg /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/interrupt-mv-shim-current/fm-watcher-lock-tests.YfDJ37/announcement-stock-atomic-HUP/state/.watcher-down"
+      ],
+      "68501": [
+        68421,
+        "S",
+        "sleep 0.05"
+      ]
+    },
+    "survivors_after_root_removal": {},
+    "suite_output": "ok - disposable watcher refuses inherited state outside its marked lab\n"
+  }
+]

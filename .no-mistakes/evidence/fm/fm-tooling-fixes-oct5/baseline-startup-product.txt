@@ -1,0 +1,10 @@
+
+SCENARIO baseline-startup-HUP
+lab-guard.out
+watcher: FAILED - refusing to arm from a disposable validation checkout: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/tmp/fm-watcher-lock-tests.guNG5x/.no-mistakes/worktrees/guard/bin
+
+watcher-startup-stock-acquisition-HUP/state/.watch.lock.owner.Zs82T7/pid
+51548
+
+watcher-startup-stock-acquisition-HUP/watch.out
+

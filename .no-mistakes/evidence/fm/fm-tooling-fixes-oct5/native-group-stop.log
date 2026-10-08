@@ -1,0 +1,4 @@
+baseline HUP status -1 lock retained False
+baseline TERM status -15 lock retained False
+current HUP status 129 lock retained False
+current TERM status 143 lock retained False

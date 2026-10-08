@@ -1,0 +1,99 @@
+FM_TEST_BEGIN 2026-10-08T15:51:11Z tests/fm-timeout-lib.test.sh family=pure-contract-unit expected_gate_skip=none
+ok - fm_exec_timed passes a command's status and output through unchanged
+ok - fm_exec_timed runs in a subshell call under /bin/bash with set -u
+ok - fm_exec_timed runs in a direct call under /bin/bash with set -u
+Terminated: 15             "$@"
+ok - fm_run_timed reports 124 when the bound TERMs a read whose wrapper recorded 143
+ok - fm_run_timed passes a natural exit through when the bound fired after completion
+ok - fm_exec_timed sends TERM at the bound and a cooperative command ends there
+ok - fm_exec_timed kills a TERM-ignoring command once the grace has passed
+ok - fm_exec_timed replaces the calling shell instead of wrapping it
+ok - fm_exec_timed reaps a descendant that would otherwise hold the output past the bound
+ok - fm_exec_timed forwards a TERM it receives to the bounded command
+ok - fm_exec_timed ends the command when its named owner is already gone
+ok - bash: fm_exec_timed ends the command when its owner dies during watchdog startup
+ok - /bin/bash: fm_exec_timed ends the command when its owner dies during watchdog startup
+ok - fm_exec_timed prefers its perl watchdog over timeout
+ok - fm_exec_timed refuses instead of running unbounded when no mechanism exists
+ok - fm_exec_timed rejects a zero, padded, non-numeric, or missing bound and a missing command
+tests/fm-timeout-lib.test.sh: line 28: 18418 Killed: 9                  ( . "$ROOT/bin/fm-timeout-lib.sh"; PATH=$path fm_exec_timed "$@" )
+ok - fm_exec_timed's GNU timeout fallback kills a TERM-ignoring command once the grace has passed
+ok - fm_timed_out accepts 124 and 137 and nothing else
+FM_TEST_END 2026-10-08T15:51:23Z tests/fm-timeout-lib.test.sh exit=0 duration_ms=11838 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T15:51:23Z tests/fm-procevent-when.test.sh family=standalone expected_gate_skip=none
+ok - arm binds, refuses duplicates, and retire cleans up
+ok - concurrent arms publish exactly one complete watch
+ok - a stable true fires the action exactly once and wakes with the outcome
+ok - a flapping condition never reaches the action
+ok - an action failure wakes with the captured error
+ok - a repeatedly erroring condition wakes firstmate instead of firing
+ok - an expired deadline wakes with never-true
+ok - a late true poll cannot fire after its deadline
+ok - action timeouts terminate the complete process group
+ok - command output staging stays within its byte bound
+ok - a restart after a claimed fire reports ambiguity instead of double-firing
+ok - a mutated spec is refused without executing anything
+ok - mutated action bytes are refused before claiming the fire
+ok - rebind-all refreshes an in-repo watch's trust binding after a self-update and leaves an out-of-repo one alone
+ok - rebind-all matches FM_ROOT through a symlinked checkout path
+ok - rebind-all reaches a watch whose run process was already polling when the self-update landed
+ok - the fire-time reload never observes rebind_one's spec/trust publish mid-rename
+all fm-procevent-when tests passed
+FM_TEST_END 2026-10-08T15:51:54Z tests/fm-procevent-when.test.sh exit=0 duration_ms=30466 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T15:51:54Z tests/fm-live-gate.test.sh family=standalone expected_gate_skip=none
+ok - a default-on guard runs wherever its tools are installed
+ok - an absent tool is a named capability skip, not a silent pass
+ok - a prompt-submitting guard stays off until it is asked for
+ok - a guard's own variable turns it on
+ok - a demanded run refuses to pass as a skip
+ok - FM_LIVE switches the whole family
+ok - global off wins over private opt-in and private off wins over global on
+ok - global off prevents all Prime tool activity and global on preserves the private Herdr opt-in
+ok - any entry point of a multi-mode guard turns it on
+ok - the shared gate carries the gate-refusal bypass into every live guard
+ok - a proceeding live run exports DISABLE_AUTOUPDATER=1
+ok - DISABLE_AUTOUPDATER rides fm-spawn's claude launch through to the harness pane
+ok - DISABLE_AUTOUPDATER is embedded in the launch so a daemon-built pane keeps it
+ok - all 41 live guards refuse together on FM_LIVE=0
+FM_TEST_END 2026-10-08T15:52:08Z tests/fm-live-gate.test.sh exit=0 duration_ms=14189 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T15:52:08Z tests/fm-remote-doctor.test.sh family=secondmate expected_gate_skip=none
+ok - a missing herdr CLI is a human gap that --fix never claims to close
+ok - an absent launch agent is a fixable gap and the read-only run changes nothing
+ok - --fix installs the dedicated fm-remote launch agent without touching default
+ok - --fix is idempotent once the host is ready
+ok - a loaded and running launch agent must match the complete owned contract
+ok - a failed reload leaves stale effective launch-agent state unready
+ok - a launch agent outside the Aqua session scope is rewritten in place
+ok - launchd failures are reported and delayed server readiness is awaited
+ok - a session served outside the Aqua login session is fixable and --fix retakes it through launchd
+ok - human gaps are reported with their operator step and never claimed as fixed
+ok - a bash Directory Services login shell is rendered with -l -c
+ok - custom Directory Services shell paths remain valid plist arguments
+ok - shell resolution bounds Directory Services and uses executable SHELL and POSIX fallbacks
+ok - repeated repair reuses one resolved login shell and remains a no-op
+ok - a non-darwin host skips launch agents and starts its herdr server directly
+ok - --fix creates only owned version-manager wrappers and never clobbers an operator file
+ok - doctor refreshes stale worker identity before probing tools
+ok - the entrypoint symlink is recreated when absent and never overwritten when operator-owned
+FM_TEST_END 2026-10-08T15:52:30Z tests/fm-remote-doctor.test.sh exit=0 duration_ms=22063 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T15:52:30Z tests/fm-remote-herdr-guard.test.sh family=secondmate expected_gate_skip=none
+ok - holder processes expose their environment to the owner library
+ok - an empty session is started inside the launch agent
+ok - launchd and worker markers require gui-domain launchctl proof
+ok - background, inherited-XPC, SSH-born, SSH-descended, and unprovable owners are taken over
+ok - a running session with no provable owner is taken over rather than trusted
+ok - a host without lsof cannot prove an Aqua birth, so the session is taken over
+ok - a foreign server that never releases the socket yields exit 1 so launchd retries
+ok - the guard starts as soon as the foreign server releases the socket
+ok - argument errors are refused before any herdr call
+FM_TEST_END 2026-10-08T15:52:35Z tests/fm-remote-herdr-guard.test.sh exit=0 duration_ms=4574 gate_skip=false
+FM_TEST_SUMMARY total=5 failed=0 skipped_gate=0 duration_ms=83347
+FM_TEST_SUMMARY_FAMILY family=pure-contract-unit count=1 duration_ms=11838 failed=0
+FM_TEST_SUMMARY_FAMILY family=secondmate count=2 duration_ms=26637 failed=0
+FM_TEST_SUMMARY_FAMILY family=standalone count=2 duration_ms=44655 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-procevent-when.test.sh duration_ms=30466
+FM_TEST_SLOWEST rank=2 script=tests/fm-remote-doctor.test.sh duration_ms=22063
+FM_TEST_SLOWEST rank=3 script=tests/fm-live-gate.test.sh duration_ms=14189
+FM_TEST_SLOWEST rank=4 script=tests/fm-timeout-lib.test.sh duration_ms=11838
+FM_TEST_SLOWEST rank=5 script=tests/fm-remote-herdr-guard.test.sh duration_ms=4574
+fm-test-run: wrote timing artifact: /Users/karanmanoharan/.no-mistakes/evidence/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/focused-timing.json

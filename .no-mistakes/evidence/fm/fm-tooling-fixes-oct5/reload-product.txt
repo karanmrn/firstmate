@@ -1,0 +1,408 @@
+
+SCENARIO reload-callers
+arm-reload-modern-absent-close_escalation-19644/reload.out
+
+arm-reload-modern-absent-close_escalation-19644/state/.wake-queue
+1791474787	1	check	capture	isolated capture input
+
+arm-reload-modern-absent-close_escalation-19644/state/.watcher-down
+pending:downtime:95580.1791474787.3xbpLC
+
+arm-reload-modern-absent-confirm_delivery-28630/reload.out
+
+arm-reload-modern-absent-confirm_delivery-28630/state/.wake-queue
+1791474785	1	check	capture	isolated capture input
+
+arm-reload-modern-absent-confirm_delivery-28630/state/.watcher-down
+pending:downtime:94166.1791474785.aLTYaR
+
+arm-reload-modern-absent-maybe_escalate-27631/reload.out
+
+arm-reload-modern-absent-maybe_escalate-27631/state/.wake-queue
+1791474787	1	check	capture	isolated capture input
+
+arm-reload-modern-absent-maybe_escalate-27631/state/.watcher-down
+pending:downtime:95827.1791474787.Z9JFVT
+
+arm-reload-modern-absent-reconcile_delivery-31820/reload.out
+
+arm-reload-modern-absent-reconcile_delivery-31820/state/.wake-queue
+1791474785	1	check	capture	isolated capture input
+
+arm-reload-modern-absent-reconcile_delivery-31820/state/.watcher-down
+pending:downtime:94463.1791474785.XQ25n9
+
+arm-reload-modern-absent-reset_known_undelivered-12577/reload.out
+
+arm-reload-modern-absent-reset_known_undelivered-12577/state/.wake-queue
+1791474785	1	check	capture	isolated capture input
+
+arm-reload-modern-absent-reset_known_undelivered-12577/state/.watcher-down
+pending:downtime:94716.1791474786.KODnPs
+
+arm-reload-modern-absent-send_recovery-43/reload.out
+
+arm-reload-modern-absent-send_recovery-43/state/.wake-queue
+1791474786	1	check	capture	isolated capture input
+
+arm-reload-modern-absent-send_recovery-43/state/.watcher-down
+pending:downtime:95221.1791474786.HaiSdK
+
+arm-reload-modern-absent-try_resolve-9557/reload.out
+
+arm-reload-modern-absent-try_resolve-9557/state/.wake-queue
+1791474786	1	check	capture	isolated capture input
+
+arm-reload-modern-absent-try_resolve-9557/state/.watcher-down
+pending:downtime:94969.1791474786.ogVqtr
+
+arm-reload-modern-acked-close_escalation-26469/reload.out
+
+arm-reload-modern-acked-close_escalation-26469/state/.wake-queue
+1791474792	1	check	capture	isolated capture input
+
+arm-reload-modern-acked-close_escalation-26469/state/.watcher-down
+pending:downtime:99606.1791474792.hY0s8G
+
+arm-reload-modern-acked-confirm_delivery-5811/reload.out
+
+arm-reload-modern-acked-confirm_delivery-5811/state/.wake-queue
+1791474790	1	check	capture	isolated capture input
+
+arm-reload-modern-acked-confirm_delivery-5811/state/.watcher-down
+pending:downtime:98216.1791474790.MS4qE6
+
+arm-reload-modern-acked-maybe_escalate-20453/reload.out
+
+arm-reload-modern-acked-maybe_escalate-20453/state/.wake-queue
+1791474792	1	check	capture	isolated capture input
+
+arm-reload-modern-acked-maybe_escalate-20453/state/.watcher-down
+pending:downtime:99850.1791474793.5e6Ifr
+
+arm-reload-modern-acked-reconcile_delivery-7658/reload.out
+
+arm-reload-modern-acked-reconcile_delivery-7658/state/.wake-queue
+1791474790	1	check	capture	isolated capture input
+
+arm-reload-modern-acked-reconcile_delivery-7658/state/.watcher-down
+pending:downtime:98492.1791474790.zLZeEa
+
+arm-reload-modern-acked-reset_known_undelivered-3774/reload.out
+
+arm-reload-modern-acked-reset_known_undelivered-3774/state/.wake-queue
+1791474791	1	check	capture	isolated capture input
+
+arm-reload-modern-acked-reset_known_undelivered-3774/state/.watcher-down
+pending:downtime:98738.1791474791.QcZufA
+
+arm-reload-modern-acked-send_recovery-6696/reload.out
+
+arm-reload-modern-acked-send_recovery-6696/state/.wake-queue
+1791474792	1	check	capture	isolated capture input
+
+arm-reload-modern-acked-send_recovery-6696/state/.watcher-down
+pending:downtime:99245.1791474792.BDSHTX
+
+arm-reload-modern-acked-try_resolve-354/reload.out
+
+arm-reload-modern-acked-try_resolve-354/state/.wake-queue
+1791474791	1	check	capture	isolated capture input
+
+arm-reload-modern-acked-try_resolve-354/state/.watcher-down
+pending:downtime:98989.1791474791.bQk4uB
+
+arm-reload-modern-invalid-close_escalation-6262/reload.out
+
+arm-reload-modern-invalid-close_escalation-6262/state/.wake-queue
+1791474789	1	check	capture	isolated capture input
+
+arm-reload-modern-invalid-close_escalation-6262/state/.watcher-down
+pending:downtime:97720.1791474789.i3XsQU
+
+arm-reload-modern-invalid-confirm_delivery-17679/reload.out
+
+arm-reload-modern-invalid-confirm_delivery-17679/state/.wake-queue
+1791474787	1	check	capture	isolated capture input
+
+arm-reload-modern-invalid-confirm_delivery-17679/state/.watcher-down
+pending:downtime:96073.1791474787.iSJPQ7
+
+arm-reload-modern-invalid-maybe_escalate-25626/reload.out
+
+arm-reload-modern-invalid-maybe_escalate-25626/state/.wake-queue
+1791474790	1	check	capture	isolated capture input
+
+arm-reload-modern-invalid-maybe_escalate-25626/state/.watcher-down
+pending:downtime:97967.1791474790.UWvdBL
+
+arm-reload-modern-invalid-reconcile_delivery-28059/reload.out
+
+arm-reload-modern-invalid-reconcile_delivery-28059/state/.wake-queue
+1791474788	1	check	capture	isolated capture input
+
+arm-reload-modern-invalid-reconcile_delivery-28059/state/.watcher-down
+pending:downtime:96355.1791474788.VlVJPE
+
+arm-reload-modern-invalid-reset_known_undelivered-7879/reload.out
+
+arm-reload-modern-invalid-reset_known_undelivered-7879/state/.wake-queue
+1791474788	1	check	capture	isolated capture input
+
+arm-reload-modern-invalid-reset_known_undelivered-7879/state/.watcher-down
+pending:downtime:96607.1791474788.k7KTv4
+
+arm-reload-modern-invalid-send_recovery-18528/reload.out
+
+arm-reload-modern-invalid-send_recovery-18528/state/.wake-queue
+1791474789	1	check	capture	isolated capture input
+
+arm-reload-modern-invalid-send_recovery-18528/state/.watcher-down
+pending:downtime:97227.1791474789.bjZ0dS
+
+arm-reload-modern-invalid-try_resolve-14784/reload.out
+
+arm-reload-modern-invalid-try_resolve-14784/state/.wake-queue
+1791474788	1	check	capture	isolated capture input
+
+arm-reload-modern-invalid-try_resolve-14784/state/.watcher-down
+pending:downtime:96871.1791474789.HoyAdh
+
+arm-reload-modern-pending-close_escalation-32625/reload.out
+
+arm-reload-modern-pending-close_escalation-32625/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-modern-pending-confirm_delivery-25222/reload.out
+
+arm-reload-modern-pending-confirm_delivery-25222/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-modern-pending-maybe_escalate-31161/reload.out
+
+arm-reload-modern-pending-maybe_escalate-31161/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-modern-pending-reconcile_delivery-26352/reload.out
+
+arm-reload-modern-pending-reconcile_delivery-26352/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-modern-pending-reset_known_undelivered-6992/reload.out
+
+arm-reload-modern-pending-reset_known_undelivered-6992/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-modern-pending-send_recovery-24304/reload.out
+
+arm-reload-modern-pending-send_recovery-24304/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-modern-pending-try_resolve-7172/reload.out
+
+arm-reload-modern-pending-try_resolve-7172/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-stock-absent-close_escalation-3582/reload.out
+
+arm-reload-stock-absent-close_escalation-3582/state/.wake-queue
+1791474798	1	check	capture	isolated capture input
+
+arm-reload-stock-absent-close_escalation-3582/state/.watcher-down
+pending:downtime:5953.1791474798.elQaxU
+
+arm-reload-stock-absent-confirm_delivery-14518/reload.out
+
+arm-reload-stock-absent-confirm_delivery-14518/state/.wake-queue
+1791474795	1	check	capture	isolated capture input
+
+arm-reload-stock-absent-confirm_delivery-14518/state/.watcher-down
+pending:downtime:2036.1791474795.VeXfx3
+
+arm-reload-stock-absent-maybe_escalate-30328/reload.out
+
+arm-reload-stock-absent-maybe_escalate-30328/state/.wake-queue
+1791474798	1	check	capture	isolated capture input
+
+arm-reload-stock-absent-maybe_escalate-30328/state/.watcher-down
+pending:downtime:6613.1791474799.tqa0he
+
+arm-reload-stock-absent-reconcile_delivery-782/reload.out
+
+arm-reload-stock-absent-reconcile_delivery-782/state/.wake-queue
+1791474796	1	check	capture	isolated capture input
+
+arm-reload-stock-absent-reconcile_delivery-782/state/.watcher-down
+pending:downtime:2739.1791474796.2s4tSZ
+
+arm-reload-stock-absent-reset_known_undelivered-15727/reload.out
+
+arm-reload-stock-absent-reset_known_undelivered-15727/state/.wake-queue
+1791474796	1	check	capture	isolated capture input
+
+arm-reload-stock-absent-reset_known_undelivered-15727/state/.watcher-down
+pending:downtime:3507.1791474796.koGEuA
+
+arm-reload-stock-absent-send_recovery-9287/reload.out
+
+arm-reload-stock-absent-send_recovery-9287/state/.wake-queue
+1791474797	1	check	capture	isolated capture input
+
+arm-reload-stock-absent-send_recovery-9287/state/.watcher-down
+pending:downtime:5048.1791474797.onygcT
+
+arm-reload-stock-absent-try_resolve-19678/reload.out
+
+arm-reload-stock-absent-try_resolve-19678/state/.wake-queue
+1791474797	1	check	capture	isolated capture input
+
+arm-reload-stock-absent-try_resolve-19678/state/.watcher-down
+pending:downtime:4292.1791474797.kBAC0G
+
+arm-reload-stock-acked-close_escalation-25591/reload.out
+
+arm-reload-stock-acked-close_escalation-25591/state/.wake-queue
+1791474805	1	check	capture	isolated capture input
+
+arm-reload-stock-acked-close_escalation-25591/state/.watcher-down
+pending:downtime:12213.1791474805.ZUtdsL
+
+arm-reload-stock-acked-confirm_delivery-8644/reload.out
+
+arm-reload-stock-acked-confirm_delivery-8644/state/.wake-queue
+1791474802	1	check	capture	isolated capture input
+
+arm-reload-stock-acked-confirm_delivery-8644/state/.watcher-down
+pending:downtime:10335.1791474802.UslzVz
+
+arm-reload-stock-acked-maybe_escalate-11362/reload.out
+
+arm-reload-stock-acked-maybe_escalate-11362/state/.wake-queue
+1791474805	1	check	capture	isolated capture input
+
+arm-reload-stock-acked-maybe_escalate-11362/state/.watcher-down
+pending:downtime:12581.1791474805.GRRR8o
+
+arm-reload-stock-acked-reconcile_delivery-20335/reload.out
+
+arm-reload-stock-acked-reconcile_delivery-20335/state/.wake-queue
+1791474803	1	check	capture	isolated capture input
+
+arm-reload-stock-acked-reconcile_delivery-20335/state/.watcher-down
+pending:downtime:10703.1791474803.w7IgDT
+
+arm-reload-stock-acked-reset_known_undelivered-22161/reload.out
+
+arm-reload-stock-acked-reset_known_undelivered-22161/state/.wake-queue
+1791474803	1	check	capture	isolated capture input
+
+arm-reload-stock-acked-reset_known_undelivered-22161/state/.watcher-down
+pending:downtime:11044.1791474803.kf32Va
+
+arm-reload-stock-acked-send_recovery-29584/reload.out
+
+arm-reload-stock-acked-send_recovery-29584/state/.wake-queue
+1791474804	1	check	capture	isolated capture input
+
+arm-reload-stock-acked-send_recovery-29584/state/.watcher-down
+pending:downtime:11628.1791474804.m7o7nE
+
+arm-reload-stock-acked-try_resolve-9698/reload.out
+
+arm-reload-stock-acked-try_resolve-9698/state/.wake-queue
+1791474804	1	check	capture	isolated capture input
+
+arm-reload-stock-acked-try_resolve-9698/state/.watcher-down
+pending:downtime:11338.1791474804.a9QslG
+
+arm-reload-stock-invalid-close_escalation-28442/reload.out
+
+arm-reload-stock-invalid-close_escalation-28442/state/.wake-queue
+1791474801	1	check	capture	isolated capture input
+
+arm-reload-stock-invalid-close_escalation-28442/state/.watcher-down
+pending:downtime:9780.1791474801.7ChWSF
+
+arm-reload-stock-invalid-confirm_delivery-12614/reload.out
+
+arm-reload-stock-invalid-confirm_delivery-12614/state/.wake-queue
+1791474799	1	check	capture	isolated capture input
+
+arm-reload-stock-invalid-confirm_delivery-12614/state/.watcher-down
+pending:downtime:7230.1791474799.8RdHux
+
+arm-reload-stock-invalid-maybe_escalate-9795/reload.out
+
+arm-reload-stock-invalid-maybe_escalate-9795/state/.wake-queue
+1791474802	1	check	capture	isolated capture input
+
+arm-reload-stock-invalid-maybe_escalate-9795/state/.watcher-down
+pending:downtime:10055.1791474802.FBl7Yr
+
+arm-reload-stock-invalid-reconcile_delivery-8219/reload.out
+
+arm-reload-stock-invalid-reconcile_delivery-8219/state/.wake-queue
+1791474799	1	check	capture	isolated capture input
+
+arm-reload-stock-invalid-reconcile_delivery-8219/state/.watcher-down
+pending:downtime:7878.1791474799.MVc9JW
+
+arm-reload-stock-invalid-reset_known_undelivered-19679/reload.out
+
+arm-reload-stock-invalid-reset_known_undelivered-19679/state/.wake-queue
+1791474800	1	check	capture	isolated capture input
+
+arm-reload-stock-invalid-reset_known_undelivered-19679/state/.watcher-down
+pending:downtime:8557.1791474800.8zQrSg
+
+arm-reload-stock-invalid-send_recovery-8334/reload.out
+
+arm-reload-stock-invalid-send_recovery-8334/state/.wake-queue
+1791474801	1	check	capture	isolated capture input
+
+arm-reload-stock-invalid-send_recovery-8334/state/.watcher-down
+pending:downtime:9385.1791474801.eWsJQc
+
+arm-reload-stock-invalid-try_resolve-10947/reload.out
+
+arm-reload-stock-invalid-try_resolve-10947/state/.wake-queue
+1791474800	1	check	capture	isolated capture input
+
+arm-reload-stock-invalid-try_resolve-10947/state/.watcher-down
+pending:downtime:9030.1791474800.9BM0XU
+
+arm-reload-stock-pending-close_escalation-18080/reload.out
+
+arm-reload-stock-pending-close_escalation-18080/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-stock-pending-confirm_delivery-30275/reload.out
+
+arm-reload-stock-pending-confirm_delivery-30275/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-stock-pending-maybe_escalate-11246/reload.out
+
+arm-reload-stock-pending-maybe_escalate-11246/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-stock-pending-reconcile_delivery-12712/reload.out
+
+arm-reload-stock-pending-reconcile_delivery-12712/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-stock-pending-reset_known_undelivered-4785/reload.out
+
+arm-reload-stock-pending-reset_known_undelivered-4785/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-stock-pending-send_recovery-159/reload.out
+
+arm-reload-stock-pending-send_recovery-159/state/.watcher-down
+pending:downtime:capture-generation
+
+arm-reload-stock-pending-try_resolve-13397/reload.out
+
+arm-reload-stock-pending-try_resolve-13397/state/.watcher-down
+pending:downtime:capture-generation
+

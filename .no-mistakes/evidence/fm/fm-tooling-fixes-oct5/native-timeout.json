@@ -1,0 +1,39 @@
+[
+  {
+    "command": [
+      "/bin/bash",
+      "--version"
+    ],
+    "status": 0,
+    "stdout": "GNU bash, version 3.2.57(1)-release (arm64-apple-darwin26)\nCopyright (C) 2007 Free Software Foundation, Inc.\n",
+    "stderr": ""
+  },
+  {
+    "source": ".test-phase/baseline-timeout.sh",
+    "mode": "direct",
+    "status": 127,
+    "stdout": "",
+    "stderr": "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/baseline-timeout.sh: line 224: BASHPID: unbound variable\n"
+  },
+  {
+    "source": ".test-phase/baseline-timeout.sh",
+    "mode": "subshell",
+    "status": 127,
+    "stdout": "",
+    "stderr": "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/baseline-timeout.sh: line 224: BASHPID: unbound variable\n"
+  },
+  {
+    "source": "bin/fm-timeout-lib.sh",
+    "mode": "direct",
+    "status": 0,
+    "stdout": "real-timed-command\n",
+    "stderr": ""
+  },
+  {
+    "source": "bin/fm-timeout-lib.sh",
+    "mode": "subshell",
+    "status": 0,
+    "stdout": "real-timed-command\n",
+    "stderr": ""
+  }
+]

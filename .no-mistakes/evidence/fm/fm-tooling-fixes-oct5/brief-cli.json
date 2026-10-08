@@ -1,0 +1,30 @@
+[
+  {
+    "command": [
+      "bin/fm-brief.sh",
+      "ship-none",
+      "disposable-project",
+      "--mode",
+      "no-mistakes",
+      "--forge",
+      "none"
+    ],
+    "status": 0,
+    "stdout": "scaffolded: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/data/ship-none/brief.md (ship, mode=no-mistakes; replace {TASK} and {FIRSTMATE_SPEC})\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "bin/fm-brief.sh",
+      "ship-gerrit",
+      "disposable-project",
+      "--mode",
+      "no-mistakes",
+      "--forge",
+      "gerrit"
+    ],
+    "status": 0,
+    "stdout": "scaffolded: /Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/public-lab/data/ship-gerrit/brief.md (ship, mode=no-mistakes forge=gerrit shape=squash; replace {TASK} and {FIRSTMATE_SPEC})\n",
+    "stderr": ""
+  }
+]

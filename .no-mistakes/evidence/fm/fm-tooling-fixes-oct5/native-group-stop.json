@@ -1,0 +1,46 @@
+[
+  {
+    "version": "baseline",
+    "shell": "/bin/bash 3.2",
+    "signal": "HUP",
+    "signal_target": "entire isolated watcher process group",
+    "status": -1,
+    "owned_lock_before_signal": "42543",
+    "lock_after_signal": false,
+    "marker_after_signal": "pending:downtime:42543.1791475380.vx44ty\n",
+    "output": "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/.test-phase/baseline-bin/fm-wake-lib.sh: line 584: 42751 Hangup: 1               FM_HOME_SUMMARY_IF_IDLE=1 \"$SCRIPT_DIR/fm-home-summary-refresh.sh\" --best-effort < /dev/null > /dev/null 2>&1\n"
+  },
+  {
+    "version": "baseline",
+    "shell": "/bin/bash 3.2",
+    "signal": "TERM",
+    "signal_target": "entire isolated watcher process group",
+    "status": -15,
+    "owned_lock_before_signal": "42898",
+    "lock_after_signal": false,
+    "marker_after_signal": "pending:downtime:42898.1791475381.A0syxR\n",
+    "output": ""
+  },
+  {
+    "version": "current",
+    "shell": "/bin/bash 3.2",
+    "signal": "HUP",
+    "signal_target": "entire isolated watcher process group",
+    "status": 129,
+    "owned_lock_before_signal": "43174",
+    "lock_after_signal": false,
+    "marker_after_signal": "pending:downtime:43174.1791475381.JAyzrp\n",
+    "output": "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DR9JRJQ9KWVJ2ZGHKNTQNR/bin/fm-watch.sh: line 1065: [: : integer expression expected\n"
+  },
+  {
+    "version": "current",
+    "shell": "/bin/bash 3.2",
+    "signal": "TERM",
+    "signal_target": "entire isolated watcher process group",
+    "status": 143,
+    "owned_lock_before_signal": "43455",
+    "lock_after_signal": false,
+    "marker_after_signal": "pending:downtime:43455.1791475381.ZktwyZ\n",
+    "output": ""
+  }
+]
