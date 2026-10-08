@@ -1,0 +1,32 @@
+real server PID: 37869
+generated sessions: ['01a11b03-efa3-7a83-8c51-0f650218a93b', '01a11b04-06c7-7b80-9293-053e6bf1d783']
+owner actions:
+server ancestry: 37932
+hook session: 01a11b03-efa3-7a83-8c51-0f650218a93b
+recorded owner: 01a11b03-efa3-7a83-8c51-0f650218a93b
+lock acquired: harness pid 37932
+owner reentry exit=0
+checkpoint: no actionable wake within 1s
+owner checkpoint exit=124
+
+competitor and descendant actions:
+server ancestry: 37932
+hook session: 01a11b04-06c7-7b80-9293-053e6bf1d783
+recorded owner: 01a11b03-efa3-7a83-8c51-0f650218a93b
+error: native Codex session does not own the home lock; operate read-only until resolved
+competitor checkpoint exit=1
+descendant ownership exit=1
+error: cannot locate harness process in ancestry
+descendant lock exit=1
+error: native Codex session does not own the home lock; operate read-only until resolved
+descendant checkpoint exit=1
+{"systemMessage":"FIRSTMATE SUPERVISION IS OWNED BY ANOTHER LIVE SESSION: this read-only session cannot and should not arm or repair the watcher (lock owner pid 37932). Allowing this turn to end safely; the owning session must restore supervision."}
+descendant Stop exit=0
+legacy sidecar remains absent exit=0
+error: cannot locate harness process in ancestry
+descendant dead-lock reclaim exit=1
+lock acquired: harness pid 37932
+competitor dead-lock reclaim exit=0
+recovered owner proof exit=0
+
+ok - fm-isolated-regression/0.161.0 (Mac OS 27.0.1; arm64) dumb (fm-isolated-regression; 1): distinct native hook identities sharing one server preserve one lock owner

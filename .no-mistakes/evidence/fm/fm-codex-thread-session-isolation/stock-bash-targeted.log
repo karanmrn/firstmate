@@ -1,0 +1,21 @@
+FM_TEST_BEGIN 2026-10-08T10:22:13Z tests/fm-codex-session-lock.test.sh family=watcher-wake-lock expected_gate_skip=none
+shared server PID: 31819
+owner startup: True
+competing startup read-only: True
+ok - distinct native sessions sharing a server cannot acquire or trust its owner lock
+FM_TEST_END 2026-10-08T10:22:24Z tests/fm-codex-session-lock.test.sh exit=0 duration_ms=11555 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T10:22:25Z tests/fm-watch-checkpoint.test.sh family=watcher-wake-lock expected_gate_skip=none
+ok - quiet checkpoint exits 124 with a clean checkpoint line and no live lock
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 45675.1791454949.0M5Neq
+ok - checkpoint passes through a real watcher wake and leaves the queue for drain
+ok - checkpoint preserves watcher environment for registered custom checks
+ok - checkpoint rejects an existing watcher singleton as unowned
+ok - checkpoint: an opted-in home runs the host for the checkpoint's bound, raised only while away
+ok - checkpoint: a handed-back wake passes through, and a host stand-down is a failure
+ok - checkpoint: a Codex home without config/supervision-host, or with an off file, never runs the host
+ok - checkpoint: the real host ends its park at the checkpoint bound as a quiet checkpoint
+FM_TEST_END 2026-10-08T10:22:39Z tests/fm-watch-checkpoint.test.sh exit=0 duration_ms=14546 gate_skip=false
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=26214
+FM_TEST_SUMMARY_FAMILY family=watcher-wake-lock count=2 duration_ms=26101 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-watch-checkpoint.test.sh duration_ms=14546
+FM_TEST_SLOWEST rank=2 script=tests/fm-codex-session-lock.test.sh duration_ms=11555

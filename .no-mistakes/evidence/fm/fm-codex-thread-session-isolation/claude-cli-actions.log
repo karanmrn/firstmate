@@ -1,0 +1,7 @@
+lock acquired: harness pid 24146
+initial lock exit=0
+lock acquired: harness pid 24146
+reentry exit=0
+owner proof exit=0
+anchor pid: 24146
+sidecar: 94e4391d-6024-4507-9df1-af6fb9a2751e

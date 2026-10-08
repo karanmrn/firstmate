@@ -1,0 +1,7 @@
+server ancestry: 37932
+hook session: 01a11b03-efa3-7a83-8c51-0f650218a93b
+recorded owner: 01a11b03-efa3-7a83-8c51-0f650218a93b
+lock acquired: harness pid 37932
+owner reentry exit=0
+checkpoint: no actionable wake within 1s
+owner checkpoint exit=124

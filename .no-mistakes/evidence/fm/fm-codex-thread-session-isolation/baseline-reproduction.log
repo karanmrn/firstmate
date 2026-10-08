@@ -1,0 +1,8 @@
+session 1 01a11b04-8c27-75e2-bb5d-703bc135d884 acquired: True read-only: False
+session 2 01a11b04-94d2-7481-a43f-91e1e0131153 acquired: True read-only: False
+real baseline server PID: 36268
+Traceback (most recent call last):
+  File "/Users/karanmanoharan/.no-mistakes/worktrees/48f6cc4ba3af/01M4DEY2V71QRR9X00H9DCKW4R/tests/.gate-baseline-native.py", line 141, in <module>
+    assert 'READ-ONLY SESSION' in (home / ('state/'+identities[1]+'.startup')).read_text()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

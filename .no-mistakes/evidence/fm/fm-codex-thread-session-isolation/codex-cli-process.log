@@ -1,0 +1,20 @@
+Reading additional input from stdin...
+OpenAI Codex v0.161.0
+--------
+workdir: /var/folders/j_/wjtv52sn0vx4tgwpwzmq50vw0000gp/T/fm-cli-live-wkocacfq/codex
+model: fixture
+provider: fixture
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: none
+session id: 01a11b05-4dda-70b3-beca-8603c413428a
+--------
+user
+Token-free hook validation.
+warning: `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.
+warning: `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.
+warning: Model metadata for `fixture` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.
+hook: SessionStart
+hook: SessionStart Completed
+ERROR: Reconnecting... waiting for network

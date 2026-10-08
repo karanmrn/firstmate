@@ -1,0 +1,7 @@
+lock acquired: harness pid 23426
+initial lock exit=0
+lock acquired: harness pid 23426
+reentry exit=0
+owner proof exit=0
+anchor pid: 23426
+sidecar: 

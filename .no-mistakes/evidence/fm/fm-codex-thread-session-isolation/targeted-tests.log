@@ -1,0 +1,117 @@
+FM_TEST_BEGIN 2026-10-08T10:14:07Z tests/fm-codex-session-identity-live-e2e.test.sh family=live-harness-optin expected_gate_skip=live-capability
+ok - fm-isolated-regression/0.161.0 (Mac OS 27.0.1; arm64) dumb (fm-isolated-regression; 1): distinct native hook identities sharing one server preserve one lock owner
+FM_TEST_END 2026-10-08T10:14:12Z tests/fm-codex-session-identity-live-e2e.test.sh exit=0 duration_ms=4147 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T10:14:12Z tests/fm-codex-session-lock.test.sh family=watcher-wake-lock expected_gate_skip=none
+shared server PID: 92900
+owner startup: True
+competing startup read-only: True
+ok - distinct native sessions sharing a server cannot acquire or trust its owner lock
+FM_TEST_END 2026-10-08T10:14:26Z tests/fm-codex-session-lock.test.sh exit=0 duration_ms=14603 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T10:14:26Z tests/fm-watch-checkpoint.test.sh family=watcher-wake-lock expected_gate_skip=none
+ok - quiet checkpoint exits 124 with a clean checkpoint line and no live lock
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 8445.1791454471.XQcyfW
+ok - checkpoint passes through a real watcher wake and leaves the queue for drain
+ok - checkpoint preserves watcher environment for registered custom checks
+ok - checkpoint rejects an existing watcher singleton as unowned
+ok - checkpoint: an opted-in home runs the host for the checkpoint's bound, raised only while away
+ok - checkpoint: a handed-back wake passes through, and a host stand-down is a failure
+ok - checkpoint: a Codex home without config/supervision-host, or with an off file, never runs the host
+ok - checkpoint: the real host ends its park at the checkpoint bound as a quiet checkpoint
+FM_TEST_END 2026-10-08T10:14:39Z tests/fm-watch-checkpoint.test.sh exit=0 duration_ms=12953 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T10:14:39Z tests/fm-session-lock-ancestry.test.sh family=watcher-wake-lock expected_gate_skip=none
+ok - session-lock: a version-named Claude Code session is identified from its install path and argv[0]
+ok - session-lock: a harness that is pid 1 of its own namespace is examined, not skipped
+ok - session-lock: ordinary script paths under a harness directory are not harness processes
+ok - session-lock: ownership stops at the first non-harness gap above the contiguous run
+ok - session-lock: a live version-named session holding the lock is not mistaken for a stale owner
+ok - session-lock: a trusted same-session id keeps owning a recycled background chain, and nothing weaker does
+ok - session-lock: a trusted id anchors the lock on the model-loop process, anything else on the outermost pid
+ok - session-lock e2e: a version-named session claims the home and arms supervision
+ok - session-lock e2e: a session parented by a harness-named daemon claims the home and arms supervision
+ok - session-lock e2e: a version-named session under a harness-named daemon keeps its own lock
+ok - session-lock e2e: a background session keeps its lock and its supervision across a recycled helper chain
+ok - session-lock: a same-session confirmation waits for the claim lock and refreshes a re-keyed id
+ok - session-lock: a waiting confirmation does not steal another session's lock
+ok - session-lock: a failed lock write restores the previous sidecar
+ok - session-lock: a failed lock write removes a newly created sidecar
+ok - session-lock: a verified reclaim keeps the new sidecar beside the new pid
+FM_TEST_END 2026-10-08T10:15:15Z tests/fm-session-lock-ancestry.test.sh exit=0 duration_ms=35610 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T10:15:15Z tests/fm-sessionstart-nudge.test.sh family=session-bootstrap expected_gate_skip=none
+ok - fm-sessionstart-nudge: a genuine primary gets one explicitly marked instruction line
+ok - fm-sessionstart-nudge: NO_MISTAKES_GATE is silent
+ok - fm-sessionstart-nudge: .no-mistakes gate common-dir is silent
+ok - fm-sessionstart-nudge: an unmarked linked task worktree is silent
+ok - fm-sessionstart-nudge: a marked linked secondmate home is a primary
+ok - fm-sessionstart-nudge: a checkout without state is silent
+ok - fm-sessionstart-nudge: a lock holder in process ancestry is already run
+# skip: unprivileged PID namespaces are unavailable here, so the namespace pid 1 lock owner is unverified
+ok - OpenCode session.created delivers the exact wrapper nudge once per session
+ok - run wrapper: startup runs the full digest and never also nudges
+ok - run wrapper: clear and compact re-emit the digest without repeating startup sweeps
+ok - run wrapper forwards only stale-cache rebuild sources to immutable-baseline instruction refresh
+ok - run wrapper refreshes a compact even when startup completion is unproven
+ok - run wrapper: clear falls back to full startup when completion is unproven
+ok - run wrapper: clear accepts completion only from the current harness
+ok - run wrapper: resume delegates to the nudge instead of re-running the digest
+ok - run wrapper: the hook payload's source field drives routing with no explicit argument
+ok - run wrapper: an unrecognized or absent source takes the helm rather than skipping it
+ok - run wrapper: ordinary ineligible opens stay silent-zero and Pi preflight gets an explicit silent stand-down
+ok - run wrapper: a fresh primary checkout gets its missing state dir created, a linked worktree still does not
+ok - run wrapper: a fresh primary that cannot create its state dir says so on stderr, then stands down
+ok - run wrapper: a session start that cannot take the lock still opens the session and says so
+ok - Pi distinguishes header-proven restored CLI sessions from named create-if-missing startups
+ok - Pi provider preflight owns one generation-bound startup prerequisite with deterministic fallback, replacement, cancellation, timeout, and truncation
+ok - Pi reload shutdown releases its exit listener and stale startup generation
+ok - Pi retains a bounded digest prefix and loudly marks oversized preflight delivery
+FM_TEST_END 2026-10-08T10:16:43Z tests/fm-sessionstart-nudge.test.sh exit=0 duration_ms=87816 gate_skip=false
+FM_TEST_BEGIN 2026-10-08T10:16:43Z tests/fm-turnend-guard.test.sh family=watcher-wake-lock expected_gate_skip=none
+ok - fm_supervision_unhealthy: false with no state/*.meta at all
+ok - fm_supervision_unhealthy: true with in-flight task and no beacon ever
+ok - fm_supervision_unhealthy: true with in-flight task and a beacon far outside the grace window
+ok - fm_supervision_unhealthy: false with in-flight task and a fresh beacon
+ok - fm_supervision_status: FM_SUP_QUEUE_PENDING tracks state/.wake-queue
+ok - fm_supervision_needed: X-mode relay poll needs supervision
+ok - fm_supervision_unhealthy: source-only home needs supervision
+ok - fm_supervision_needed: a registered custom check needs supervision with no task in flight
+ok - fm_supervision_needed: a registered check whose bytes drifted still needs supervision
+ok - fm_supervision_needed: false for a check.sh with no registration binding
+ok - fm_supervision_needed: a task PR poll without a trust binding is not a registered custom check
+ok - fm_supervision_status: the relay shim is not counted as a registered custom check
+ok - fm-turnend-guard: silent no-op with nothing in flight
+ok - fm-turnend-guard: blocks when a fresh beacon has no live watcher lock
+ok - fm-turnend-guard: non-Claude path blocks a source-only home
+ok - fm-turnend-guard: blocks on a dead watcher lock even when the beacon is fresh
+ok - fm-turnend-guard: silent no-op with a live watcher lock and fresh beacon
+ok - fm-turnend-guard: healthy non-Claude harness paths ignore Claude episode contention
+ok - fm-turnend-guard: blocks on a live watcher lock with an ancient beacon
+ok - fm-turnend-guard: blocks with the exact required reason in the primary when unhealthy
+ok - fm-turnend-guard: blocks from active FM_HOME state, not only repo-root state
+ok - fm-turnend-guard: X-mode repair reason sources the cadence config
+ok - fm-turnend-guard: X-mode-only supervision remains guarded in default mode
+ok - fm-turnend-guard: registered-check-only supervision is named in the block banner
+ok - fm-turnend-guard: ignores stale repo-root state when FM_HOME is set
+ok - fm-turnend-guard: uses FM_STATE_OVERRIDE ahead of FM_HOME/state
+ok - fm-turnend-guard: stop_hook_active=true always allows the stop (never blocks twice in one turn)
+ok - fm-turnend-guard: blocks a blind turn end in a secondmate's own home (.fm-secondmate-home no longer excludes it)
+ok - fm-turnend-guard: idle-by-default - silent in a secondmate home with nothing in flight
+ok - fm-turnend-guard: stop_hook_active=true allows the stop in a secondmate home (never blocks twice in one turn)
+ok - fm-turnend-guard: secondmate deferred-death recovery - silent while watched, forces re-arm once the watcher exits
+ok - fm-turnend-guard: inert in a secondmate's own child worktree (linked git worktree) even when unhealthy
+ok - fm-turnend-guard: blocks a blind turn end in a treehouse-leased LINKED secondmate home (marker force-include)
+ok - fm-turnend-guard: an invalid (empty) marker cannot spoof inclusion; linked worktree stays exempt
+ok - fm-turnend-guard: a non-ASCII marker cannot spoof inclusion; linked worktree stays exempt
+ok - fm-turnend-guard: inert in a crewmate/scout task worktree (linked git worktree) even when unhealthy
+ok - fm-turnend-guard: fails open (never blocks) when jq is missing
+ok - fm-turnend-guard: silent no-op on empty stdin
+not ok - hook took 3s, expected well under a second (generous 3s CI margin)
+FM_TEST_END 2026-10-08T10:17:28Z tests/fm-turnend-guard.test.sh exit=1 duration_ms=45110 gate_skip=false
+FM_TEST_SUMMARY total=6 failed=1 skipped_gate=0 duration_ms=200553
+FM_TEST_SUMMARY_FAMILY family=live-harness-optin count=1 duration_ms=4147 failed=0
+FM_TEST_SUMMARY_FAMILY family=session-bootstrap count=1 duration_ms=87816 failed=0
+FM_TEST_SUMMARY_FAMILY family=watcher-wake-lock count=4 duration_ms=108276 failed=1
+FM_TEST_SLOWEST rank=1 script=tests/fm-sessionstart-nudge.test.sh duration_ms=87816
+FM_TEST_SLOWEST rank=2 script=tests/fm-turnend-guard.test.sh duration_ms=45110
+FM_TEST_SLOWEST rank=3 script=tests/fm-session-lock-ancestry.test.sh duration_ms=35610
+FM_TEST_SLOWEST rank=4 script=tests/fm-codex-session-lock.test.sh duration_ms=14603
+FM_TEST_SLOWEST rank=5 script=tests/fm-watch-checkpoint.test.sh duration_ms=12953
+FM_TEST_SLOWEST rank=6 script=tests/fm-codex-session-identity-live-e2e.test.sh duration_ms=4147
