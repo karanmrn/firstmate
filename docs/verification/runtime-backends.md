@@ -2420,3 +2420,30 @@ A throwaway scout was spawned through `bin/fm-spawn.sh --scout --harness omp --m
 6. `bin/fm-control.sh <id> exit` stopped the agent and `bin/fm-teardown.sh` returned the worktree and closed the item.
 
 `FM_OMP_LIVE_E2E=1 tests/fm-omp-primary-live-e2e.test.sh` refreshes the primary evidence; the worker path above is refreshed by repeating the scout dispatch after any omp upgrade.
+
+### Native Codex session-lock identity
+
+Verified on 2026-10-08 with codex-cli 0.161.0 on macOS 27.0.1, arm64.
+The native app-server generated two distinct SessionStart `session_id` values in one process.
+The first hook acquired an isolated home lock, and the second hook received the read-only startup digest.
+The original PID and `codex-native:` session sidecar remained owned by the first session.
+The test uses a temporary Codex home and a closed loopback provider, without credentials or model tokens.
+It does not connect to Desktop threads or install hooks into an operator home.
+
+Refresh the installed-harness evidence with:
+
+```sh
+bash tests/fm-codex-session-identity-live-e2e.test.sh
+```
+
+Observed output:
+
+```text
+ok - fm-isolated-regression/0.161.0 (Mac OS 27.0.1; arm64) dumb (fm-isolated-regression; 1): distinct native hook identities sharing one server preserve one lock owner
+```
+
+`tests/fm-codex-session-lock.test.sh` covers portable startup, lock, ownership, Stop, and checkpoint behavior, including descendant threads with distinct `CODEX_THREAD_ID` and `CODEX_SESSION_ID`.
+That descendant case uses a fixture process table, while the installed-harness test above exercises separate root sessions and their native hooks.
+[`bin/fm-session-lock-lib.sh`](../../bin/fm-session-lock-lib.sh) owns the native identity trust contract and the legacy PID-only lock boundary.
+The dated vendor references are [`exec_env.rs`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/core/src/exec_env.rs) and [`hook_runtime.rs`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/core/src/hook_runtime.rs).
+This verification does not establish Desktop deployment or a hot patch of an active session.

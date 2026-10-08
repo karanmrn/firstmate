@@ -45,7 +45,14 @@ lock_is_in_ancestry() {
   return 1
 }
 
-lock_is_in_ancestry && exit 0
+# Native threads cannot use the shared app-server ancestry as session proof.
+# shellcheck source=bin/fm-session-lock-lib.sh
+. "$SCRIPT_DIR/fm-session-lock-lib.sh"
+if fm_session_lock_codex_native_ancestry; then
+  fm_session_lock_owned_by_self "$STATE" && exit 0
+else
+  lock_is_in_ancestry && exit 0
+fi
 nudge=
 fm_operational_input_encode session-start \
   "Run \`bin/fm-session-start.sh\` now, exactly once, before executing any other instructions." \

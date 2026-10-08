@@ -2,6 +2,10 @@
 # Run one bounded foreground watcher checkpoint for harnesses that should not
 # rely on background-task completion to wake the model.
 #
+# Native Codex requires verified home-lock ownership before either supervisor
+# starts. Refusal exits 1 without running it. bin/fm-session-lock-lib.sh owns
+# the identity contract.
+#
 # SUPERVISION HOST. A home opted in with config/supervision-host
 # (docs/configuration.md "Supervision host" owns the gate;
 # config/supervision-host-off opts out, and a Codex home without the file does not run the host) runs
@@ -62,6 +66,16 @@ case "$SECONDS_ARG" in
   ''|*[!0-9]*) echo "error: --seconds must be a positive integer" >&2; exit 2 ;;
   0) echo "error: --seconds must be greater than zero" >&2; exit 2 ;;
 esac
+
+# A native app-server PID is shared across threads. Only its verified session
+# owner may start another checkpoint, even when its predecessor still has the
+# same server ancestor. CLI and detached watcher behavior stays unchanged.
+# shellcheck source=bin/fm-session-lock-lib.sh
+. "$SCRIPT_DIR/fm-session-lock-lib.sh"
+if fm_session_lock_codex_native_ancestry && ! fm_session_lock_owned_by_self "$STATE"; then
+  echo "error: native Codex session does not own the home lock; operate read-only until resolved" >&2
+  exit 1
+fi
 
 OUT=$(mktemp "${TMPDIR:-/tmp}/fm-watch-checkpoint.out.XXXXXX") || exit 1
 ERR=$(mktemp "${TMPDIR:-/tmp}/fm-watch-checkpoint.err.XXXXXX") || {
