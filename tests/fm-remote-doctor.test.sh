@@ -5,7 +5,7 @@
 # a private HOME, a fake launchctl backed by state files, a fake herdr CLI, a
 # fake lsof that names a real holder process as the fm-remote socket owner, and
 # a fake uname that selects the platform under test. The holders are real
-# non-platform Bash processes blocked on a fifo whose environment carries the
+# non-platform Node processes blocked on a fifo whose environment carries the
 # birth markers bin/fm-remote-herdr-owner-lib.sh reads, so the Aqua-versus-SSH
 # verdict is exercised for real. Nothing here touches the runner's own launch
 # agents, login session, or herdr server.

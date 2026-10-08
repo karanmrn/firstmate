@@ -1597,6 +1597,75 @@ SH
   done
 }
 
+test_watcher_startup_signals_release_lock() {
+  local row shell stage signal dir state fakebin out watcher i status
+  for row in modern stock; do
+    shell=bash
+    [ "$row" != stock ] || shell=/bin/bash
+    [ -x "$shell" ] || [ "$shell" = bash ] || continue
+    for stage in acquisition recovery handlers; do
+      for signal in HUP TERM; do
+        dir=$(make_case "watcher-startup-$row-$stage-$signal")
+        state="$dir/state"
+        fakebin="$dir/fakebin"
+        out="$dir/watch.out"
+        cat > "$dir/startup-env.sh" <<'SH'
+trap() {
+  builtin trap "$@"
+  case "$0" in */fm-watch.sh) ;; *) return 0 ;; esac
+  [ "$FM_STARTUP_STAGE" = handlers ] || return 0
+  [ "$#" -eq 2 ] && [ "$2" = INT ] || return 0
+  [ ! -e "$FM_HOME/startup-ready" ] || return 0
+  printf '%s\n' "$$" > "$FM_HOME/startup-ready"
+  while [ ! -e "$FM_HOME/startup-release" ]; do sleep 0.05; done
+}
+SH
+        cat > "$fakebin/ln" <<'SH'
+#!/usr/bin/env bash
+/bin/ln "$@" || exit $?
+for target do :; done
+case "$FM_STARTUP_STAGE:$target" in
+  recovery:*/state/.watcher-down.lock|acquisition:*/state/.watch.lock)
+    if [ ! -e "$FM_HOME/startup-ready" ]; then
+      printf '%s\n' "$PPID" > "$FM_HOME/startup-ready"
+      while [ ! -e "$FM_HOME/startup-release" ]; do sleep 0.05; done
+    fi
+    ;;
+esac
+SH
+        chmod +x "$fakebin/ln"
+        PATH="$fakebin:$PATH" FM_HOME="$dir" FM_STATE_OVERRIDE="$state" \
+          FM_POLL=1 FM_SIGNAL_GRACE=0 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
+          FM_STARTUP_STAGE="$stage" BASH_ENV="$dir/startup-env.sh" \
+          "$shell" "$WATCH" > "$out" 2>&1 &
+        watcher=$!
+        i=0
+        while [ "$i" -lt 100 ] && [ ! -s "$dir/startup-ready" ]; do
+          sleep 0.1
+          i=$((i + 1))
+        done
+        [ -s "$dir/startup-ready" ] || fail "$row/$stage: startup barrier was not reached: $(cat "$out")"
+        [ "$(cat "$dir/startup-ready")" = "$watcher" ] || fail "$row/$stage: startup barrier named another process"
+        [ ! -e "$state/.last-watcher-beat" ] || fail "$row/$stage: signal missed startup"
+        kill -"$signal" "$watcher" || fail "$row/$stage: could not send $signal"
+        touch "$dir/startup-release"
+        status=0
+        wait_for_exit "$watcher" 150 || status=$?
+        [ "$status" -ne 0 ] && [ "$status" -ne 124 ] || fail "$row/$stage: $signal did not stop watcher ($status)"
+        [ ! -e "$state/.watch.lock" ] || fail "$row/$stage: $signal left a dead-pid watcher lock"
+        if [ "$stage" != handlers ]; then
+          case "$(cat "$state/.watcher-down" 2>/dev/null || true)" in
+            pending:downtime:*) ;;
+            *) fail "$row/$stage: $signal lost the durable downtime episode" ;;
+          esac
+        fi
+        pass "$row: $signal during $stage leaves no owned watcher lock"
+      done
+    done
+  done
+}
+
+test_watcher_startup_signals_release_lock
 test_watcher_stop_signals_release_lock_on_supported_shells
 test_wait_deadline_reaps_a_stopped_child
 test_singleton_start

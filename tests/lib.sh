@@ -407,13 +407,10 @@ fm_live_gate() {
 # cannot be reported as an unparseable build simply for answering `--version`
 # with nothing.
 
-# fm_test_fifo_holder <fixture-dir>: write a real FIFO reader using this Bash.
-# This avoids macOS platform jq, whose environment the owner library cannot read.
 fm_test_fifo_holder() {
-  local path="$1/holder.sh"
-  # The generated reader expands its own FIFO argument.
-  # shellcheck disable=SC2016
-  printf '#!%s\nIFS= read -r _ < "$1"\n' "$BASH" > "$path" || return 1
+  local path="$1/holder.js" node
+  node=$(command -v node) || { printf 'fm_test_fifo_holder: node is required\n' >&2; return 1; }
+  printf '#!%s\nconst fs = require("node:fs");\nfs.readSync(fs.openSync(process.argv[2], "r"), Buffer.alloc(1), 0, 1, null);\n' "$node" > "$path" || return 1
   chmod +x "$path" || return 1
   printf '%s\n' "$path"
 }
