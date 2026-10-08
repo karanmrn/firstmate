@@ -2002,7 +2002,7 @@ test_reply_reload_callers_preserve_arm_generation() {
       for caller in confirm_delivery reconcile_delivery reset_known_undelivered try_resolve send_recovery close_escalation maybe_escalate; do
         dir=$(setup_parent "arm-reload-$row-$capture-$caller")
         out="$dir/reload.out"
-        "$shell" -s -- "$ROOT" "$dir" "$capture" "$caller" > "$out" 2>&1 <<'SH'
+        if ! "$shell" -s -- "$ROOT" "$dir" "$capture" "$caller" > "$out" 2>&1 <<'SH'
 set -u
 root=$1
 export FM_HOME=$2 FM_STATE_OVERRIDE="$2/state" FM_CONFIG_OVERRIDE="$2/config"
@@ -2041,7 +2041,9 @@ fm_recovery_transition "$STATE/.watcher-down" release-lock "$STATE/.watch.lock" 
 [ ! -e "$STATE/.watch.lock" ] || exit 1
 [ "$(cat "$STATE/.watcher-down")" = "pending:downtime:$generation" ] || exit 1
 SH
-        [ "$?" -eq 0 ] || fail "$row/$capture/$caller lost arm recovery across reload: $(cat "$out")"
+        then
+          fail "$row/$capture/$caller lost arm recovery across reload: $(cat "$out")"
+        fi
       done
       pass "$row: $capture capture survives every pending-reply reload caller"
     done

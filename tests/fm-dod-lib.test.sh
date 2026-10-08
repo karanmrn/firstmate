@@ -392,7 +392,7 @@ test_no_mistakes_starts_immediately_after_commit_for_each_forge() {
     assert_contains "$out" "1. Implement the task and commit it on your branch.
 2. Start \`no-mistakes axi run$skip\` immediately after the commit." \
       "$forge: emitted DoD did not number startup directly after committing"
-    assert_contains "$out" 'never stop or append `done:` here' \
+    assert_contains "$out" "never stop or append \`done:\` here" \
       "$forge: emitted DoD still permits stopping before validation"
     if [ "$forge" = gerrit ]; then
       assert_contains "$out" 'skip nothing else' "$forge: validation steps may be skipped"

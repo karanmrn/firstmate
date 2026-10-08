@@ -1814,6 +1814,7 @@ test_watcher_reply_reload_preserves_recovery() {
       dir=$(make_case "reply-reload-$row-$signal")
       state="$dir/state"
       out="$dir/watch.out"
+      # shellcheck disable=SC2016 # Variables expand in the child shell.
       corr=$(FM_HOME="$dir" FM_STATE_OVERRIDE="$state" "$shell" -c '
         . "$1"
         fm_pending_reply_create "$FM_HOME" "$FM_HOME/state" seed "awaiting an isolated report"
