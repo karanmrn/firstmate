@@ -22,6 +22,26 @@ ARM_FAIL_EXIT_POLLS=400
 
 TMP_ROOT=$(fm_test_tmproot fm-watcher-lock-tests)
 
+watcher_test_cleanup() {
+  local dir pid
+  trap '' HUP INT TERM QUIT
+  for dir in "$TMP_ROOT"/watcher-startup-* "$TMP_ROOT"/announcement-*; do
+    [ -d "$dir" ] || continue
+    touch "$dir/startup-release" "$dir/announcement-release"
+  done
+  for pid in $(jobs -pr) $(jobs -ps); do
+    kill -TERM "$pid" 2>/dev/null || true
+    wait_for_exit "$pid" 150 || true
+  done
+  fm_test_cleanup
+}
+
+trap watcher_test_cleanup EXIT
+trap 'watcher_test_cleanup; exit 130' INT
+trap 'watcher_test_cleanup; exit 143' TERM
+trap 'watcher_test_cleanup; exit 129' HUP
+trap 'watcher_test_cleanup; exit 131' QUIT
+
 # Execute the actual disposable-checkout guard before any watcher can start.
 lab="$TMP_ROOT/marked-lab"
 foreign_state="$TMP_ROOT/foreign-state"
@@ -1624,7 +1644,11 @@ trap() {
   [ "$#" -eq 2 ] && [ "$2" = INT ] || return 0
   [ ! -e "$FM_HOME/startup-ready" ] || return 0
   printf '%s\n' "$$" > "$FM_HOME/startup-ready"
-  while [ ! -e "$FM_HOME/startup-release" ]; do sleep 0.05; done
+  local barrier_deadline=$((SECONDS + FM_TEST_STUB_MAX_BLOCK_SECONDS))
+  while [ ! -e "$FM_HOME/startup-release" ]; do
+    [ "$SECONDS" -lt "$barrier_deadline" ] && [ -d "$FM_HOME" ] || exit 75
+    sleep 0.05
+  done
 }
 SH
         cat > "$fakebin/ln" <<'SH'
@@ -1635,7 +1659,11 @@ case "$FM_STARTUP_STAGE:$target" in
   recovery:*/state/.watcher-down.lock|acquisition:*/state/.watch.lock|inherited:*/state/.watch.lock)
     if [ ! -e "$FM_HOME/startup-ready" ]; then
       printf '%s\n' "$PPID" > "$FM_HOME/startup-ready"
-      while [ ! -e "$FM_HOME/startup-release" ]; do sleep 0.05; done
+      barrier_deadline=$((SECONDS + FM_TEST_STUB_MAX_BLOCK_SECONDS))
+      while [ ! -e "$FM_HOME/startup-release" ]; do
+        [ "$SECONDS" -lt "$barrier_deadline" ] && [ -d "$FM_HOME" ] || exit 75
+        sleep 0.05
+      done
     fi
     ;;
 esac
@@ -1702,7 +1730,11 @@ printf() {
       _fm_recovery_marker_restore_token_locked "$STATE/.watcher-down" announced:downtime:announcement-generation || exit 1
     fi
     builtin printf '%s\n' "$$" > "$FM_HOME/announcement-ready"
-    while [ ! -e "$FM_HOME/announcement-release" ]; do sleep 0.05; done
+    local barrier_deadline=$((SECONDS + FM_TEST_STUB_MAX_BLOCK_SECONDS))
+    while [ ! -e "$FM_HOME/announcement-release" ]; do
+      [ "$SECONDS" -lt "$barrier_deadline" ] && [ -d "$FM_HOME" ] || exit 75
+      sleep 0.05
+    done
   fi
   builtin printf "$@"
 }
@@ -1716,7 +1748,11 @@ if [ "$target" = "$FM_HOME/state/.watcher-down" ] \
   && [ "$(cat "$target")" = announced:downtime:announcement-generation ] \
   && [ ! -e "$FM_HOME/announcement-ready" ]; then
   printf '%s\n' "$PPID" > "$FM_HOME/announcement-ready"
-  while [ ! -e "$FM_HOME/announcement-release" ]; do sleep 0.05; done
+  barrier_deadline=$((SECONDS + FM_TEST_STUB_MAX_BLOCK_SECONDS))
+  while [ ! -e "$FM_HOME/announcement-release" ]; do
+    [ "$SECONDS" -lt "$barrier_deadline" ] && [ -d "$FM_HOME" ] || exit 75
+    sleep 0.05
+  done
 fi
 SH
         chmod +x "$fakebin/mv"
