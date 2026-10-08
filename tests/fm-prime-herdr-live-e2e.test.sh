@@ -19,21 +19,16 @@
 # docs/verification/prime.md.
 set -u
 
-if [ "${FM_PRIME_HERDR_LIVE:-0}" != 1 ]; then
-  echo "skip: set FM_PRIME_HERDR_LIVE=1 to run the live Prime Agent Herdr guard"
-  exit 0
-fi
-
 # shellcheck source=tests/fixtures.sh
 . "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
+# The Herdr lab keeps its private opt-in even when the rest of the family is on.
+[ "${FM_PRIME_HERDR_LIVE:-}" = 1 ] || FM_PRIME_HERDR_LIVE=0
+fm_live_gate opt-in FM_PRIME_HERDR_LIVE prime-agent herdr jq
 # shellcheck source=/dev/null
 . "$ROOT/bin/fm-busy-lib.sh"
 
 note() { printf '# %s\n' "$1"; }
 
-for tool in herdr jq; do
-  command -v "$tool" >/dev/null 2>&1 || fail "$tool is required for the live Prime Agent guard"
-done
 PRIME_BIN=$(command -v prime-agent 2>/dev/null) \
   || fail "prime harness is not installed: prime-agent was not found on PATH, so nothing was verified"
 # prime-agent prints its version on stderr.

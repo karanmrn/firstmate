@@ -181,9 +181,10 @@ SH
 # workspace. Pair it with fm_test_run_spawn_herdr, which turns the projection
 # off and clears inherited herdr pane identity. pane get reports
 # FM_FAKE_PANE_PATH as the foreground cwd, and agent get reports no registered
-# agent. Launch logging is env-gated: each pane send-text payload is appended
-# to FM_FAKE_LAUNCH_LOG when set. A payload that contains
-# FM_FAKE_EXECUTE_LAUNCH_MATCH, when set, also runs in FM_FAKE_PANE_PATH.
+# agent. Launch logging resolves a staged source line as the tmux fake does.
+# The resolved command is appended to FM_FAKE_LAUNCH_LOG when set.
+# When it contains FM_FAKE_EXECUTE_LAUNCH_MATCH, the original payload also runs
+# in FM_FAKE_PANE_PATH.
 fm_test_fake_herdr_spawn() {
   local fakebin=$1
   cat > "$fakebin/herdr" <<'SH'
@@ -206,9 +207,17 @@ case "${1:-} ${2:-}" in
     printf '{"error":{"code":"agent_not_found","message":"agent target %s not found"}}\n' "${3:-}"
     ;;
   "pane send-text")
-    [ -z "${FM_FAKE_LAUNCH_LOG:-}" ] || printf '%s\n' "${4:-}" >> "$FM_FAKE_LAUNCH_LOG"
+    launch=${4:-}
+    case "$launch" in
+      ". '"*"'")
+        staged=${launch#". '"}
+        staged=${staged%"'"}
+        [ ! -f "$staged" ] || launch=$(cat "$staged")
+        ;;
+    esac
+    [ -z "${FM_FAKE_LAUNCH_LOG:-}" ] || printf '%s\n' "$launch" >> "$FM_FAKE_LAUNCH_LOG"
     if [ -n "${FM_FAKE_EXECUTE_LAUNCH_MATCH:-}" ]; then
-      case "${4:-}" in
+      case "$launch" in
         *"$FM_FAKE_EXECUTE_LAUNCH_MATCH"*) (cd "$FM_FAKE_PANE_PATH" && bash -c "$4") ;;
       esac
     fi

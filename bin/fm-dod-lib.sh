@@ -18,8 +18,8 @@
 # (secondmate ledger-first publish of a child done). A ship `done:` is not
 # accepted while the named head exists only in the worker's disposable copy.
 # The check tests that head, not whether some branch moved. In no-mistakes
-# mode the pre-validation `done: {summary}` is the pipeline handoff and is
-# not gated; only the later CI-ready `done: PR <url> checks green` is, or on a
+# mode legacy `done: {summary}` lines remain ungated for compatibility.
+# Only the CI-ready `done: PR <url> checks green` is gated, or on a
 # Gerrit project the later `done: PR <change url> published for review`. The
 # named head is the worker copy's HEAD, except that a done naming the task's
 # recorded pr= passes when the forge holds that head: a forge-reported
@@ -378,10 +378,11 @@ Ship branch: $branch
 This project's review server is Gerrit: it has no pull requests and no forge CI the pipeline can watch, so **no-mistakes runs here as a review pass that ends at a ready branch**, and you then publish that branch as one change.
 Pass \`--skip push,pr,ci\` on every \`no-mistakes axi run\` for this task, and skip nothing else: \`review\`, \`test\`, \`document\`, and \`lint\` are the whole point of the run.
 Those three are the only steps that reach a forge, and skipping them is a supported outcome, not a degraded one.
-The task is complete only when committed on your branch.
-When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
-Firstmate will then instruct you to run /no-mistakes to validate.
-That first \`done:\` is the handoff that starts the pipeline; it is not a request to publish.
+Complete these steps in order, without stopping between them:
+1. Implement the task and commit it on your branch.
+2. Start \`no-mistakes axi run --skip push,pr,ci\` immediately after the commit. A commit is not the end of the task, so never stop or append \`done:\` here, and wait for no instruction from firstmate.
+3. Drive the run to its passing outcome as described below.
+4. Recover the validated branch, publish it, and report done as described after the driving rules.
 
 EOF
       fm_nm_driving_block "$forge"
@@ -436,10 +437,11 @@ EOF
 # Definition of done
 Delivery contract: mode=no-mistakes
 Ship branch: $branch
-The task is complete only when committed on your branch.
-When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
-Firstmate will then instruct you to run /no-mistakes to validate and ship a PR.
-That first \`done:\` is the handoff that starts the pipeline, which owns the push; it is not a request to push from this copy.
+Complete these steps in order, without stopping between them:
+1. Implement the task and commit it on your branch.
+2. Start \`no-mistakes axi run\` immediately after the commit. A commit is not the end of the task, so never stop or append \`done:\` here, and wait for no instruction from firstmate. The pipeline owns the push; do not push from this copy.
+3. Drive the run to its CI-ready PR as described below.
+4. Read the PR back and report done as described after the driving rules.
 
 EOF
       fm_nm_driving_block "$forge"
@@ -490,7 +492,7 @@ fm_dod_note_reports_published_change() {  # <note>
 }
 
 # 0 when this ship done: is one the named-head gate must accept or refuse.
-# no-mistakes pre-validation done: is the pipeline handoff and is not gated.
+# The header owns compatibility with legacy no-mistakes done: lines.
 # Empty mode is treated as no-mistakes, the unregistered-project default.
 fm_dod_should_gate_ship_done() {  # <kind> <mode> <line>
   local note

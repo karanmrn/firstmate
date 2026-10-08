@@ -106,6 +106,33 @@ assert_absent "$H/state/when/when-arm-test.trust" "retire removes the trust bind
 assert_absent "$H/state/procevent/when-arm-test.source" "retire drops the registration"
 out=$(when "$H" retire arm-test)
 assert_contains "$out" "retired: when-arm-test" "retire is idempotent"
+# retire accepts the listed source id as the spec name, and refuses a doubled
+# when-when-<name> that matches no watch.
+when "$H" arm arm-test --interval 0.1 --condition "$COND" "$TMP_ROOT/never" "$TMP_ROOT/arm-count" \
+  --action "$ACT" "$TMP_ROOT/arm-act" >/dev/null
+out=$(when "$H" retire when-arm-test)
+assert_contains "$out" "retired: when-arm-test" "retire accepts the listed source id"
+assert_absent "$H/state/when/when-arm-test.spec" "the listed id retires the real spec"
+if when "$H" retire when-nonexistent 2>"$TMP_ROOT/dbl.err"; then
+  fail "retire must refuse a prefixed name that matches no watch"
+fi
+assert_grep "no watch registered" "$TMP_ROOT/dbl.err" "the refusal names the problem"
+when "$H" arm arm-test --condition false --action true >/dev/null
+when "$H" arm when-arm-test --condition false --action true >/dev/null
+out=$(when "$H" retire when-arm-test)
+assert_contains "$out" "retired: when-arm-test" "an exact listed id wins over a prefixed raw name"
+assert_absent "$H/state/when/when-arm-test.spec" "retire removes the listed watch when both names exist"
+assert_present "$H/state/when/when-when-arm-test.spec" "retire preserves the different prefixed watch"
+if when "$H" retire when-arm-test 2>"$TMP_ROOT/prefixed.err"; then
+  fail "a missing listed id must not retire the remaining doubled watch"
+fi
+assert_present "$H/state/when/when-when-arm-test.spec" "a refused listed id leaves the doubled watch intact"
+when "$H" retire when-when-arm-test >/dev/null
+long_name=$(printf '%059d' 1)
+when "$H" arm "$long_name" --condition false --action true >/dev/null
+out=$(when "$H" retire "when-$long_name")
+assert_contains "$out" "retired: when-$long_name" "retire accepts the longest listed source id"
+assert_absent "$H/state/when/when-$long_name.spec" "retire removes a maximum-length listed watch"
 pass "arm binds, refuses duplicates, and retire cleans up"
 
 # --- concurrent arms publish exactly one complete registration ---------------

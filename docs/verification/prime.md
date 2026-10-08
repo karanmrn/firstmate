@@ -18,7 +18,7 @@ The skill tree rooted at [`.agents/skills/harness-adapters/SKILL.md`](../../.age
 The guard runs the real `prime-agent` with the launch command and extension that `bin/fm-spawn.sh` composes, inside an isolated Herdr lab session, and spends two short model turns:
 
 ```sh
-FM_PRIME_HERDR_LIVE=1 HERDR_LAB_HELPER=bin/fm-herdr-lab.sh \
+FM_LIVE=1 FM_PRIME_HERDR_LIVE=1 HERDR_LAB_HELPER=bin/fm-herdr-lab.sh \
   tests/fm-prime-herdr-live-e2e.test.sh
 ```
 

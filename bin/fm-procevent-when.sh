@@ -9,7 +9,7 @@
 #   fm-procevent-when.sh classify <result-file>
 #   fm-procevent-when.sh terminal <result-file>
 #   fm-procevent-when.sh source-id <name>
-#   fm-procevent-when.sh retire <name>
+#   fm-procevent-when.sh retire <name|source-id>
 #   fm-procevent-when.sh rebind-all
 #   fm-procevent-when.sh run <source-id>
 #
@@ -46,10 +46,12 @@
 #            outcome is terminal because the pair fires at most once; the
 #            generic runner then retires the registration itself.
 # source-id  Print the canonical source id for <name>.
-# retire     Stop the watch: retire the registration and remove the spec, trust
-#            record, and fired marker. Idempotent. Captured results and their
-#            handled acknowledgements are never touched. Warns when the action
-#            had already fired without a captured outcome.
+# retire     Stop the watch and remove its registration, spec, trust, and fired marker.
+#            Accept an unprefixed name or an exact listed when-<name> id.
+#            Refuse a missing listed id instead of adding another when- prefix.
+#            Repeated retirement of an unprefixed name is idempotent.
+#            Preserve captured results and their handled acknowledgements.
+#            Warn when the action already fired without a captured outcome.
 # rebind-all Refresh the trust binding of every registered watch whose action
 #            executable lives under this repo (FM_ROOT), re-hashing it against
 #            its CURRENT on-disk bytes. A self-update fast-forwards bin/ in
@@ -610,8 +612,19 @@ cmd_rebind_all() {
 
 cmd_retire() {
   local name=${1-} sid captured=0 result
-  when_name_valid "$name" || die "name must be path-safe and at most 59 characters: ${name-}"
-  sid="when-$name"
+  # list prints the source id (when-<name>); accept it as the spec name rather
+  # than retiring a doubled when-when-<name> that matches no registered watch.
+  case "$name" in
+    when-*)
+      when_name_valid "${name#when-}" || die "invalid source id: $name"
+      sid=$name
+      [ -e "$(spec_file "$sid")" ] || die "no watch registered as $sid (run list for the registered names)"
+      ;;
+    *)
+      when_name_valid "$name" || die "name must be path-safe and at most 59 characters: ${name-}"
+      sid="when-$name"
+      ;;
+  esac
   if [ -e "$(fired_file "$sid")" ]; then
     for result in "$(fm_procevent_inbox_dir "$STATE")/$sid".*.result; do
       [ -e "$result" ] && captured=1

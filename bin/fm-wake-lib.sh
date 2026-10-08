@@ -687,7 +687,7 @@ _fm_recovery_marker_write_locked() {
   # tests/fm-wake-queue.test.sh).
   # Pid/date failures stay unchecked like the pre-fix sibling assignment so a
   # grammar-valid token is still minted and the durable wake row still appends.
-  local marker=$1 kind=$2 generation=${3:-} status=${4:-pending} tmp pid epoch token
+  local marker=$1 kind=$2 generation=${3:-} status=${4:-pending} token_output=${5:-} tmp pid epoch token
   FM_RECOVERY_MARKER_WRITTEN_TOKEN=
   case "$kind" in handling|downtime) ;; *) return 1 ;; esac
   case "$status" in pending|announced|acked) ;; *) return 1 ;; esac
@@ -699,10 +699,12 @@ _fm_recovery_marker_write_locked() {
     generation="${pid}.${epoch}.${tmp##*.}"
   fi
   token="$status:$kind:$generation"
+  [ -z "$token_output" ] || printf -v "$token_output" '%s' "$token"
   if ! printf '%s\n' "$token" > "$tmp" \
     || ! chmod 0600 "$tmp" \
     || ! _fm_atomic_replace "$tmp" "$marker"; then
     rm -f -- "$tmp"
+    [ -z "$token_output" ] || printf -v "$token_output" '%s' ''
     return 1
   fi
   FM_RECOVERY_MARKER_WRITTEN_TOKEN=$token
@@ -711,7 +713,7 @@ _fm_recovery_marker_write_locked() {
 # Apply the downtime republication states owned by docs/watcher-continuity.md
 # while preserving an outstanding generation-bound acknowledgement.
 _fm_recovery_marker_publish() {
-  local marker=$1 kind=${2:-downtime} bound=${3:-} source=${4:-watcher}
+  local marker=$1 kind=${2:-downtime} bound=${3:-} source=${4:-watcher} undelivered=${5:-}
   local lock saved_token generation='' status=pending previous_append_token=''
   case "$kind" in handling|downtime) ;; *) return 1 ;; esac
   case "$source" in watcher|append) ;; *) return 1 ;; esac
@@ -751,6 +753,7 @@ _fm_recovery_marker_publish() {
           if [ "$source" = watcher ]; then
             generation=${FM_RECOVERY_MARKER_TOKEN##*:}
             status=announced
+            [ "$FM_RECOVERY_MARKER_TOKEN" != "$undelivered" ] || status=pending
           fi
           ;;
       esac
@@ -871,6 +874,7 @@ _fm_recovery_marker_ack() {
 _fm_recovery_marker_arm_check() {
   local marker=$1 lock line quarantine
   FM_RECOVERY_MARKER_ACTION='none'
+  FM_RECOVERY_ARM_TOKEN=
   lock="${marker}.lock"
   fm_lock_acquire_wait "$FM_WAKE_QUEUE_LOCK" || return 1
   if ! fm_lock_acquire_wait "$lock"; then
@@ -879,7 +883,7 @@ _fm_recovery_marker_arm_check() {
   fi
   if [ ! -e "$marker" ] && [ ! -L "$marker" ]; then
     if [ -s "$FM_WAKE_QUEUE" ]; then
-      if ! _fm_recovery_marker_write_locked "$marker" downtime "" announced; then
+      if ! _fm_recovery_marker_write_locked "$marker" downtime "" announced FM_RECOVERY_ARM_TOKEN; then
         fm_lock_release "$lock"
         fm_lock_release "$FM_WAKE_QUEUE_LOCK"
         return 1
@@ -898,7 +902,7 @@ _fm_recovery_marker_arm_check() {
         return 1
       }
     if ! mv -- "$marker" "$quarantine/marker" \
-      || ! _fm_recovery_marker_write_locked "$marker" downtime "" announced; then
+      || ! _fm_recovery_marker_write_locked "$marker" downtime "" announced FM_RECOVERY_ARM_TOKEN; then
       rmdir "$quarantine" 2>/dev/null || true
       fm_lock_release "$lock"
       fm_lock_release "$FM_WAKE_QUEUE_LOCK"
@@ -918,7 +922,7 @@ _fm_recovery_marker_arm_check() {
       return 0
       ;;
     pending:downtime:*)
-      if ! _fm_recovery_marker_write_locked "$marker" downtime "${line##*:}" announced; then
+      if ! _fm_recovery_marker_write_locked "$marker" downtime "${line##*:}" announced FM_RECOVERY_ARM_TOKEN; then
         fm_lock_release "$lock"
         fm_lock_release "$FM_WAKE_QUEUE_LOCK"
         return 1
@@ -928,7 +932,7 @@ _fm_recovery_marker_arm_check() {
       ;;
     acked:*)
       if [ -s "$FM_WAKE_QUEUE" ]; then
-        if ! _fm_recovery_marker_write_locked "$marker" downtime "" announced; then
+        if ! _fm_recovery_marker_write_locked "$marker" downtime "" announced FM_RECOVERY_ARM_TOKEN; then
           fm_lock_release "$lock"
           fm_lock_release "$FM_WAKE_QUEUE_LOCK"
           return 1
@@ -1043,7 +1047,7 @@ fm_recovery_transition() {
       ;;
     release-lock)
       [ -n "$target" ] || return 1
-      _fm_recovery_marker_publish "$marker" "${value:-downtime}" "$bound" || return 1
+      _fm_recovery_marker_publish "$marker" "${value:-downtime}" "$bound" watcher "${6:-}" || return 1
       fm_lock_release "$target"
       ;;
     release-lock-existing)

@@ -211,8 +211,10 @@ The away return brief treats a still-open handling episode as a wake in progress
 
 ### Announcement
 
-An unacknowledged downtime generation is announced at most once.
-The first recovery marks that generation announced, and later empty-queue arms leave it announced until durable work or interrupted handling makes recovery pending again.
+An unacknowledged downtime generation delivers at most one recovery wake until durable work or interrupted handling makes recovery pending again.
+The first recovery marks that generation announced before delivery.
+After delivery, later empty-queue arms leave it announced.
+Interrupted delivery follows [Generation reuse](#generation-reuse).
 A non-successor watcher start checks the durable queue and recovery marker under their locks.
 If an announced-but-unacknowledged episode has an empty queue, the arm leaves that generation announced, making repeated empty-queue arms idempotent while a long-poll source is merely alive.
 If a durable row arrived after the announcement, the arm opens a fresh pending downtime generation so buried work still resurfaces once.
@@ -223,7 +225,10 @@ An ordinary watcher close attempts to publish downtime, and every durable queue 
 A handling successor closing to resurface recovery preserves the existing marker instead.
 If EXIT cleanup cannot acquire the downtime-marker lock within its bound, it retains the stale singleton for the next arm to publish the missing downtime before clearing that lock (see [Grace, beacon, and stop signals](#grace-beacon-and-stop-signals)).
 A downtime republication of a pending episode reuses its generation.
-A watcher close leaves an announced downtime episode announced, while a successful durable append opens a fresh pending generation so a live watcher can recover the new work.
+A watcher close leaves a delivered downtime announcement announced, while a successful durable append opens a fresh pending generation so a live watcher can recover the new work.
+If this watcher published an announcement but did not deliver its recovery wake, cleanup restores that exact generation to pending before releasing its singleton.
+This restoration also covers interruption during atomic publication and preserves other generations and handling successors.
+The watcher initializes announcement ownership when it starts, and same-shell library reloads preserve that ownership until delivery or cleanup.
 An announced handling episode becomes pending downtime on the same generation because its handling turn may have been interrupted.
 That handling republication gives a successor exactly one recovery presentation without orphaning the acknowledgement already printed for that generation.
 A watcher stopped so an arm can take its cycle over (`bin/fm-watch-arm.sh --take-over`) publishes downtime like any close, but the taking arm restores an acknowledged episode that stop reopened only when the taken-over arm's cycle-ledger row for that exact arm and watcher records the watcher ending by the take-over's TERM and no wake was appended in between.
@@ -396,7 +401,12 @@ Only the watcher process touches `state/.last-watcher-beat`.
 No helper process can make a wedged watcher appear healthy.
 An arm whose own script path sits under a disposable no-mistakes validation checkout (`.no-mistakes/worktrees/`) refuses with the typed failure line before touching any state, because a watcher started there outlives the validation step and keeps writing the real home's state from a checkout about to be deleted.
 Once per poll the watcher checks that its home, its state directory, and its own code root still exist, and exits with a logged reason when one is gone, scoped to itself alone, so a torn-down temporary home or a discarded checkout never leaves an orphan watcher behind.
-The watcher uses bash's native fatal handling for HUP and TERM, including during a blocked poll, so both run its EXIT cleanup.
+Before lock acquisition or recovery, the watcher records its PID and installs EXIT cleanup and stop handlers.
+On Bash 3.2, explicit HUP and TERM handlers exit with statuses 129 and 143.
+On newer Bash versions, native fatal handling preserves those statuses.
+Both paths run EXIT cleanup, including during a blocked poll.
+Custom-check handoff preserves the signal status and restores the stop handlers.
+Cleanup ignores repeated stop signals while it persists recovery state and releases owned locks.
 `watcher_stop_signals` in `bin/fm-watch.sh` owns the signal-handling rationale.
 The EXIT cleanup bounds its wait for `state/.watcher-down.lock` while persisting recovery state with `FM_WATCHER_CLEANUP_LOCK_BOUND` (default 2 seconds).
 Only positive decimal integers are accepted, including leading-zero forms such as `08`; empty, non-numeric, and zero values (including `00`) fall back to 2 seconds.
@@ -465,6 +475,11 @@ It checks that a newly appended keyed decision is classified without rereading e
 - The typed self-eviction failure.
 - Bounded and successor-linked lifecycle rows.
 - A SIGSTOP counterfactual that distinguishes a live PID from a stale beacon before classifying termination.
+- Exact HUP and TERM statuses during startup, polling, and custom-check handoff, including repeated signals during cleanup.
+- Undelivered announcement recovery after interrupted publication or pending-reply reconciliation, while preserving other generations and handling successors.
+- Owner-arm signal records and acknowledged take-over without a spurious recovery wake.
+
+`tests/fm-pending-reply.test.sh` covers announcement ownership across every pending-reply library reload caller and all four announcement capture branches.
 
 ### Claude auto-arm and turn-end guard
 

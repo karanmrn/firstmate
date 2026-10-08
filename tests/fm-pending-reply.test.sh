@@ -1992,8 +1992,67 @@ test_escalated_undelivered_correlation_stays_retryable() {
   pass "an escalated correlation stays retryable only while undelivered"
 }
 
+test_reply_reload_callers_preserve_arm_generation() {
+  local row shell capture caller dir out
+  for row in modern stock; do
+    shell=bash
+    [ "$row" != stock ] || shell=/bin/bash
+    [ -x "$shell" ] || [ "$shell" = bash ] || continue
+    for capture in pending absent invalid acked; do
+      for caller in confirm_delivery reconcile_delivery reset_known_undelivered try_resolve send_recovery close_escalation maybe_escalate; do
+        dir=$(setup_parent "arm-reload-$row-$capture-$caller")
+        out="$dir/reload.out"
+        if ! "$shell" -s -- "$ROOT" "$dir" "$capture" "$caller" > "$out" 2>&1 <<'SH'
+set -u
+root=$1
+export FM_HOME=$2 FM_STATE_OVERRIDE="$2/state" FM_CONFIG_OVERRIDE="$2/config"
+export FM_PENDING_REPLY_NOW=1000 FM_PENDING_REPLY_GRACE_SECS=0 FM_PENDING_REPLY_SEND_HOOK=:
+mkdir -p "$FM_CONFIG_OVERRIDE"
+. "$root/bin/fm-wake-lib.sh"
+. "$root/bin/fm-pending-reply-lib.sh"
+corr=$(fm_pending_reply_create "$FM_HOME" "$STATE" seed "isolated reload test") || exit 1
+rec=$(fm_pending_reply_path "$STATE" "$corr")
+if [ "$4" = send_recovery ]; then
+  fm_pending_reply_mark_delivered "$STATE" "$corr" 1 || exit 1
+  fm_pending_reply_set "$rec" request_turn_completed_epoch 1 || exit 1
+fi
+fm_lock_try_acquire "$STATE/.watch.lock" || exit 1
+case "$3" in
+  pending) printf 'pending:downtime:capture-generation\n' > "$STATE/.watcher-down" ;;
+  *)
+    fm_wake_append check capture "isolated capture input" || exit 1
+    case "$3" in
+      absent) rm -f "$STATE/.watcher-down" ;;
+      invalid) printf 'invalid recovery marker\n' > "$STATE/.watcher-down" ;;
+      acked) printf 'acked:downtime:capture-generation\n' > "$STATE/.watcher-down" ;;
+    esac
+    ;;
+esac
+fm_recovery_marker_arm_check "$STATE/.watcher-down" || exit 1
+[ "$FM_RECOVERY_MARKER_ACTION" = recover ] || exit 1
+generation=${FM_RECOVERY_ARM_TOKEN##*:}
+status=0
+"fm_pending_reply_$4" "$STATE" "$corr" || status=$?
+case "$4:$status" in
+  confirm_delivery:0|reset_known_undelivered:0|send_recovery:0|close_escalation:0|reconcile_delivery:1|try_resolve:1|maybe_escalate:1) ;;
+  *) printf 'unexpected caller outcome: %s=%s\n' "$4" "$status"; exit 1 ;;
+esac
+fm_recovery_transition "$STATE/.watcher-down" release-lock "$STATE/.watch.lock" downtime 2 "$FM_RECOVERY_ARM_TOKEN" || exit 1
+[ ! -e "$STATE/.watch.lock" ] || exit 1
+[ "$(cat "$STATE/.watcher-down")" = "pending:downtime:$generation" ] || exit 1
+SH
+        then
+          fail "$row/$capture/$caller lost arm recovery across reload: $(cat "$out")"
+        fi
+      done
+      pass "$row: $capture capture survives every pending-reply reload caller"
+    done
+  done
+}
+
 # --- run --------------------------------------------------------------------
 
+test_reply_reload_callers_preserve_arm_generation
 test_normal_correlated_reply_resolves_once
 test_completed_turn_no_report_triggers_one_recovery
 test_recovery_waits_while_the_mate_has_an_open_decision

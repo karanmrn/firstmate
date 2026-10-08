@@ -2133,17 +2133,20 @@ fm_active_check_stop() {
   FM_ACTIVE_CHECK_PGID=
 }
 
-# Stop-signal dispositions, installed with the EXIT trap below. HUP and TERM
-# keep bash's native fatal-signal handling, which runs watcher_cleanup through
-# the EXIT trap and then exits on every supported bash. A trap body such as
-# 'exit 1' is not reliable for them: bash 5.2 runs a pending trap inside the
+# A trap body such as 'exit 1' is not reliable for HUP and TERM on bash 5.2,
+# which runs a pending trap inside the
 # parse of the next command substitution, the body then fails to parse ("trap:
 # line 2: unexpected EOF while looking for matching `)'", or nothing at all),
 # and the signal is consumed, so a stop request could leave this watcher
 # polling forever while its stopper waits (fixed upstream in bash 5.3). INT
 # keeps its trap because bash ignores a direct SIGINT while a child runs.
 watcher_stop_signals() {
-  trap - HUP TERM
+  if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    trap 'exit 129' HUP
+    trap 'exit 143' TERM
+  else
+    trap - HUP TERM
+  fi
   trap 'exit 1' INT
 }
 
@@ -2157,14 +2160,16 @@ run_check_capture() {
   # Defer stop signals only until the check's process group is recorded for
   # watcher_cleanup. Keep command substitutions out of this window: bash 5.2
   # can drop a trap that is pending when one is parsed (watcher_stop_signals).
-  trap 'FM_CHECK_SIGNAL_PENDING=1' HUP INT TERM
+  trap 'FM_CHECK_SIGNAL_PENDING=129' HUP
+  trap 'FM_CHECK_SIGNAL_PENDING=143' TERM
+  trap 'FM_CHECK_SIGNAL_PENDING=1' INT
   set -m
   ( FM_CHECK_OWNED_GROUP=1 run_check_process "$@" ) > "$FM_CHECK_OUTPUT" 2>/dev/null &
   FM_ACTIVE_CHECK_PID=$!
   FM_ACTIVE_CHECK_PGID=$FM_ACTIVE_CHECK_PID
   set +m
   watcher_stop_signals
-  [ -z "$FM_CHECK_SIGNAL_PENDING" ] || exit 1
+  [ -z "$FM_CHECK_SIGNAL_PENDING" ] || exit "$FM_CHECK_SIGNAL_PENDING"
   pgid=$(ps -o pgid= -p "$FM_ACTIVE_CHECK_PID" 2>/dev/null | tr -d '[:space:]')
   if [ -n "$pgid" ] && [ "$pgid" != "$FM_ACTIVE_CHECK_PGID" ]; then
     fm_active_check_stop || true
@@ -2406,6 +2411,52 @@ evict_stalled_holder() {
   ! fm_pid_alive "$pid"
 }
 
+PR_POLL_CONTROL_LOCK=
+PR_POLL_PUBLISH_LOCK=
+WATCHER_RECOVERY_PENDING=0
+FM_RECOVERY_ARM_TOKEN=
+fm_current_pid WATCHER_PID || exit 1
+
+pr_poll_control_release() {
+  [ -z "$PR_POLL_CONTROL_LOCK" ] || fm_lock_release "$PR_POLL_CONTROL_LOCK" || return 1
+  PR_POLL_CONTROL_LOCK=
+}
+
+pr_poll_publish_release() {
+  [ -z "$PR_POLL_PUBLISH_LOCK" ] || fm_lock_release "$PR_POLL_PUBLISH_LOCK" || return 1
+  PR_POLL_PUBLISH_LOCK=
+}
+
+watcher_cleanup() {
+  trap '' HUP INT TERM
+  local cleanup_status=0 owns_lock=0 transition=release-lock undelivered=
+  if [ "${FM_WATCH_HANDLING_SUCCESSOR:-0}" != 1 ] \
+    && [ "${FM_WATCH_DELIVERED_REASON:-}" != "check: rearm-resurface" ]; then
+    undelivered=$FM_RECOVERY_ARM_TOKEN
+  fi
+  pr_poll_publish_release || cleanup_status=1
+  pr_poll_control_release || cleanup_status=1
+  if [ "$(cat "$WATCH_LOCK/pid" 2>/dev/null || true)" = "${WATCHER_PID:-}" ]; then
+    owns_lock=1
+    if [ "${WATCHER_RECOVERY_PENDING:-0}" -eq 1 ] \
+      && [ "${FM_WATCH_DELIVERED_REASON:-}" = "check: rearm-resurface" ]; then
+      transition=release-lock-existing
+    fi
+  fi
+  fm_active_check_stop || cleanup_status=1
+  fm_check_output_cleanup
+  fm_custom_check_snapshot_cleanup
+  if [ "$owns_lock" -eq 1 ] \
+    && ! fm_recovery_transition "$WATCHER_DOWNTIME_MARKER" "$transition" "$WATCH_LOCK" \
+      downtime "$CLEANUP_LOCK_BOUND" "$undelivered"; then
+    echo "watcher: recovery state could not be persisted; retaining stale lock evidence" >&2
+    cleanup_status=1
+  fi
+  return "$cleanup_status"
+}
+trap watcher_cleanup EXIT
+watcher_stop_signals
+
 EVICTED_PID=
 EVICTED_BEAT_AGE=
 BEAT="$STATE/.last-watcher-beat"
@@ -2439,7 +2490,6 @@ done
 if [ -n "$EVICTED_PID" ]; then
   echo "watcher: replaced stalled pid $EVICTED_PID (beacon ${EVICTED_BEAT_AGE}s past hard bound ${WATCHER_STALL_BOUND}s)"
 fi
-WATCHER_RECOVERY_PENDING=0
 if [ -n "${FM_LOCK_RECOVERED_PID:-}" ]; then
   WATCHER_RECOVERY_PENDING=1
 fi
@@ -2515,47 +2565,6 @@ reconcile_requests_detached() {
   RECONCILE_REQUEST_PID=$!
 }
 
-PR_POLL_CONTROL_LOCK=
-PR_POLL_PUBLISH_LOCK=
-
-pr_poll_control_release() {
-  [ -z "$PR_POLL_CONTROL_LOCK" ] || fm_lock_release "$PR_POLL_CONTROL_LOCK" || return 1
-  PR_POLL_CONTROL_LOCK=
-}
-
-pr_poll_publish_release() {
-  [ -z "$PR_POLL_PUBLISH_LOCK" ] || fm_lock_release "$PR_POLL_PUBLISH_LOCK" || return 1
-  PR_POLL_PUBLISH_LOCK=
-}
-
-watcher_cleanup() {
-  local cleanup_status=0 owns_lock=0 transition=release-lock
-  pr_poll_publish_release || cleanup_status=1
-  pr_poll_control_release || cleanup_status=1
-  if [ "$(cat "$WATCH_LOCK/pid" 2>/dev/null || true)" = "${WATCHER_PID:-}" ]; then
-    owns_lock=1
-    if [ "${WATCHER_RECOVERY_PENDING:-0}" -eq 1 ] \
-      && [ "${FM_WATCH_DELIVERED_REASON:-}" = "check: rearm-resurface" ]; then
-      transition=release-lock-existing
-    fi
-  fi
-  fm_active_check_stop || cleanup_status=1
-  fm_check_output_cleanup
-  fm_custom_check_snapshot_cleanup
-  if [ "$owns_lock" -eq 1 ] \
-    && ! fm_recovery_transition "$WATCHER_DOWNTIME_MARKER" "$transition" "$WATCH_LOCK" \
-      downtime "$CLEANUP_LOCK_BOUND"; then
-    echo "watcher: recovery state could not be persisted; retaining stale lock evidence" >&2
-    cleanup_status=1
-  fi
-  return "$cleanup_status"
-}
-trap watcher_cleanup EXIT
-watcher_stop_signals
-# This watcher's own pid, as recorded in the lock by fm_lock_claim (which writes
-# ${BASHPID:-$$} from this same main shell). Read directly, never via a command
-# substitution, so it matches the stored holder pid for the self-eviction check.
-WATCHER_PID=${BASHPID:-$$}
 printf '%s\n' "$FM_HOME" > "$WATCH_LOCK/fm-home" || true
 printf '%s\n' "$WATCH_PATH" > "$WATCH_LOCK/watcher-path" || true
 # shellcheck disable=SC2034 # Consumed by wake() in the separately linted transition owner.

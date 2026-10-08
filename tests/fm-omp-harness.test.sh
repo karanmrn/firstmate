@@ -55,7 +55,7 @@ export NODE_NO_WARNINGS=1
 make_named_shells() {  # <dir> -> echoes <bindir>
   local dir=$1 name
   mkdir -p "$dir"
-  for name in omp ompd comp; do
+  for name in omp ompd comp claude codex; do
     ln -sf /bin/bash "$dir/$name"
   done
   printf '%s' "$dir"
@@ -84,8 +84,13 @@ test_detection_anchored_name_and_marker_precedence() {
   # ...and is inert when it leaks into a worker with no omp ancestor.
   # shellcheck disable=SC2016 # the quoted body expands inside the named shell
   out=$(env -u PI_CODING_AGENT -u CURSOR_AGENT -u CURSOR_INVOKED_AS CLAUDECODE=1 FM_OMP_HARNESS=omp \
-    bash -c '"$1"; :' _ "$HARNESS")
+    "$bin/claude" -c '"$1"; :' _ "$HARNESS")
   [ "$out" = claude ] || fail "a leaked FM_OMP_HARNESS without an omp ancestor must not relabel a claude worker, got '$out'"
+  # A structural Codex ancestor must also beat both retained markers.
+  # shellcheck disable=SC2016 # the quoted body expands inside the named shell
+  out=$(env -u PI_CODING_AGENT -u CURSOR_AGENT -u CURSOR_INVOKED_AS CLAUDECODE=1 FM_OMP_HARNESS=omp \
+    "$bin/codex" -c '"$1"; :' _ "$HARNESS")
+  [ "$out" = codex ] || fail "a Codex ancestor must outrank retained Claude and OMP markers, got '$out'"
   pass "fm-harness: omp detects by its anchored name; the marker is a precedence override that needs real omp ancestry"
 }
 
