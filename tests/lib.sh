@@ -318,8 +318,8 @@ fi
 # Setting any of those variables to 1 (or FM_LIVE=1, for every guard at once)
 # both turns the guard on and makes an absent tool a hard failure rather than a
 # skip, which is how "run it after a harness upgrade" keeps proving the guard
-# actually ran. Setting one to 0 (or FM_LIVE=0) turns it off; a guard's own
-# variable wins over FM_LIVE.
+# actually ran. FM_LIVE=0 disables every guard even when its own variable is 1.
+# Otherwise a guard's own variable wins over FM_LIVE.
 #
 # Sourcing this library also exports FM_GATE_REFUSE_BYPASS=1, which is what
 # lets a live guard drive the real fm-spawn/fm-send/fm-teardown from inside a
@@ -354,6 +354,11 @@ fm_live_gate() {
   [ "${#var_list[@]}" -gt 0 ] || fail "fm_live_gate: at least one control variable is required"
   primary=${var_list[0]}
 
+  if [ "${FM_LIVE:-}" = 0 ]; then
+    printf 'skip: live: disabled by FM_LIVE=0\n'
+    exit 0
+  fi
+
   for var in "${var_list[@]}"; do
     value=${!var:-}
     case "$value" in
@@ -368,10 +373,6 @@ fm_live_gate() {
       exit 0
     fi
     case "${FM_LIVE:-}" in
-      0)
-        printf 'skip: live: disabled by FM_LIVE=0\n'
-        exit 0
-        ;;
       1) requested=1 ;;
       *)
         if [ "$policy" = opt-in ]; then

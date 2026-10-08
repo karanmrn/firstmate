@@ -143,6 +143,57 @@ test_a_guards_own_variable_wins_over_fm_live() {
   assert_contains "$result" "skip: live: disabled by FM_FAKE_LIVE=0" \
     "a guard's own 0 must win over FM_LIVE=1 and say so"
   assert_not_contains "$result" ran "a guard switched off by name must not run"
+
+  path=$(guard global-off opt-in FM_FAKE_LIVE fmfakeharness)
+  result=$(run_guard "$path" FM_LIVE=0 FM_FAKE_LIVE=1)
+  assert_contains "$result" "skip: live: disabled by FM_LIVE=0" \
+    "the global disable gate must outrank a retained private opt-in"
+  assert_not_contains "$result" ran "a private opt-in must never bypass global off"
+}
+
+test_prime_global_off_and_private_opt_in() {
+  local fakebin marker tool value global out rc
+  fakebin="$TMP_ROOT/prime-off-bin"
+  marker="$TMP_ROOT/prime-activity.log"
+  mkdir -p "$fakebin"
+  for tool in prime-agent herdr jq lab-helper; do
+    cat > "$fakebin/$tool" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$0 $*" >> "$FM_SENTINEL_LOG"
+exit 90
+SH
+    chmod +x "$fakebin/$tool"
+  done
+  for global in 0 1; do
+    for value in unset 0 1 invalid; do
+      # Global on alone must not authorize Prime's private Herdr lab.
+      [ "$global:$value" != 1:1 ] || continue
+      : > "$marker"
+      set +e
+      if [ "$value" = unset ]; then
+        out=$(clean_env FM_LIVE="$global" PATH="$fakebin:$PATH" \
+          FM_SENTINEL_LOG="$marker" HERDR_LAB_HELPER="$fakebin/lab-helper" \
+          bash "$ROOT/tests/fm-prime-herdr-live-e2e.test.sh" 2>&1)
+      else
+        out=$(clean_env FM_LIVE="$global" FM_PRIME_HERDR_LIVE="$value" \
+          PATH="$fakebin:$PATH" FM_SENTINEL_LOG="$marker" \
+          HERDR_LAB_HELPER="$fakebin/lab-helper" \
+          bash "$ROOT/tests/fm-prime-herdr-live-e2e.test.sh" 2>&1)
+      fi
+      rc=$?
+      set -e
+      expect_code 0 "$rc" "disabled Prime guard must exit cleanly ($global/$value): $out"
+      [ ! -s "$marker" ] || fail "disabled Prime guard touched a live tool ($global/$value): $(cat "$marker")"
+      if [ "$global" = 0 ]; then
+        assert_contains "$out" 'skip: live: disabled by FM_LIVE=0' \
+          "global off must precede every Prime private-flag state"
+      else
+        assert_contains "$out" 'skip: live: disabled by FM_PRIME_HERDR_LIVE=0' \
+          "global on must preserve Prime's private opt-in"
+      fi
+    done
+  done
+  pass "global off prevents all Prime tool activity and global on preserves the private Herdr opt-in"
 }
 
 test_any_of_several_entry_points_turns_a_guard_on() {
@@ -317,7 +368,8 @@ pass "a demanded run refuses to pass as a skip"
 test_fm_live_turns_the_whole_family_off_and_on
 pass "FM_LIVE switches the whole family"
 test_a_guards_own_variable_wins_over_fm_live
-pass "a guard's own setting wins over FM_LIVE"
+pass "global off wins over private opt-in and private off wins over global on"
+test_prime_global_off_and_private_opt_in
 test_any_of_several_entry_points_turns_a_guard_on
 pass "any entry point of a multi-mode guard turns it on"
 test_gate_lets_a_guard_drive_the_real_fleet_scripts_under_a_gate_marker
