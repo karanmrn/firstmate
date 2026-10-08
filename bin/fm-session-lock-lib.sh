@@ -176,9 +176,9 @@ fm_harness_pid_alive() {
 
 # Native Codex app-server and code-mode-host processes serve multiple threads.
 # Their PIDs prove the transport, never a session. Codex 0.161.0 injects
-# CODEX_SESSION_ID from the current session into shell tools after environment
-# policy and snapshot restoration. Its SessionStart/Stop payload session_id
-# carries the same identity (core/src/exec_env.rs and hook_runtime.rs).
+# CODEX_SESSION_ID from the root session and CODEX_THREAD_ID from the current
+# thread into shell tools. Its SessionStart/Stop payload session_id carries
+# the root session identity (core/src/exec_env.rs and hook_runtime.rs).
 # Accept those runtime values only inside a verified native Codex ancestry.
 # An inherited value under another harness cannot authorize native ownership.
 fm_session_lock_codex_native_pid() {  # <pid>
@@ -254,6 +254,7 @@ fm_session_lock_codex_trusted_id() {  # [<ancestry-pids>]
   local id=${FM_CODEX_HOOK_SESSION_ID-${CODEX_SESSION_ID:-}}
   fm_session_lock_codex_id_valid "$id" || return 1
   [ -z "${CODEX_SESSION_ID:-}" ] || [ "$CODEX_SESSION_ID" = "$id" ] || return 1
+  [ -z "${CODEX_THREAD_ID:-}" ] || [ "$CODEX_THREAD_ID" = "$id" ] || return 1
   printf 'codex-native:%s\n' "$id"
 }
 

@@ -49,10 +49,11 @@ exec '{PS}' "$@"
                   'FM_SESSION_START_STAGE_FILE': str(home / 'state/stage'),
                   'PATH': str(home / 'fakebin') + ':' + BASE['PATH']}
 
-    def run(command, identity=OWNER, payload=None):
+    def run(command, identity=OWNER, payload=None, thread_identity=None):
         call_env = env.copy()
         if identity is not None:
-            call_env |= {'CODEX_SESSION_ID': identity, 'CODEX_THREAD_ID': identity}
+            call_env |= {'CODEX_SESSION_ID': identity,
+                         'CODEX_THREAD_ID': identity if thread_identity is None else thread_identity}
         return subprocess.run(['bash', '-c', command], input=payload,
                               env=call_env, text=True, capture_output=True,
                               timeout=30)
@@ -153,6 +154,9 @@ exec '{PS}' "$@"
     assert 'READ-ONLY SESSION' in second.stdout, 'different native threads both acquired one home lock'
     assert run(lock, OTHER).returncode == 1, 'competitor acquired owner lock'
     assert run(own, OTHER).returncode == 1, 'competitor trusted owner lock'
+    assert run(own, thread_identity=OTHER).returncode == 1, 'descendant trusted its root owner lock'
+    assert run(lock, thread_identity=OTHER).returncode == 1, 'descendant acquired its root owner lock'
+    assert 'READ-ONLY SESSION' in run(start, thread_identity=OTHER).stdout, 'descendant startup acquired its root owner lock'
     assert run(own, None).returncode == 1, 'missing identity trusted shared PID'
     assert (home / 'state/.lock').read_bytes() == before, 'owner PID changed'
     assert (home / 'state/.lock-session').read_bytes() == sidecar, 'owner identity changed'
@@ -162,8 +166,13 @@ exec '{PS}' "$@"
     payload = '{"session_id":"' + OTHER + '","stop_hook_active":false}'
     foreign_stop = run(stop, OTHER, payload)
     assert foreign_stop.returncode == 0, 'read-only native Stop requested impossible supervision repair'
+    owner_stop_payload = '{"session_id":"' + OWNER + '","stop_hook_active":false}'
+    descendant_stop = run(stop, payload=owner_stop_payload, thread_identity=OTHER)
+    assert descendant_stop.returncode == 0, 'read-only descendant Stop requested impossible supervision repair'
+    assert 'OWNED BY ANOTHER LIVE SESSION' in descendant_stop.stdout, 'descendant Stop did not report the foreign owner'
     checkpoint = '\"$FM_HOME/bin/fm-watch-checkpoint.sh\" --seconds 1'
     assert run(checkpoint, OTHER).returncode == 1, 'competitor started a second checkpoint'
+    assert run(checkpoint, thread_identity=OTHER).returncode == 1, 'descendant started its root owner checkpoint'
     assert not (home / 'state/checkpoint-ran').exists(), 'read-only checkpoint ran the watcher'
     assert run(checkpoint).returncode == 0, 'owner could not start its checkpoint'
     assert (home / 'state/checkpoint-ran').exists(), 'owner checkpoint did not run'
@@ -172,6 +181,7 @@ exec '{PS}' "$@"
     hook = '\"$FM_HOME/bin/fm-sessionstart-run.sh\"'
     good_payload = '{"source":"startup","session_id":"' + OWNER + '"}'
     assert 'lock acquired:' in run(hook, None, good_payload).stdout, 'authenticated hook lost its session identity'
+    assert 'READ-ONLY SESSION' in run(hook, payload=good_payload, thread_identity=OTHER).stdout, 'hook identity authorized a descendant shell thread'
     bad_payload = '{"source":"startup","session_id":"' + OTHER + '"}'
     assert 'READ-ONLY SESSION' in run(hook, OWNER, bad_payload).stdout, 'contradictory hook identity acquired the lock'
     assert 'READ-ONLY SESSION' in run(hook, OWNER, '{"source":"startup"}').stdout, 'missing hook identity fell back to retained environment'
@@ -189,6 +199,7 @@ exec '{PS}' "$@"
     env['FM_FIXTURE_ARGV0'] = '/opt/codex-code-mode-host'
     assert run(own).returncode == 0, 'code-mode host owner lost its lock'
     assert run(lock, OTHER).returncode == 1, 'code-mode host accepted a competing session'
+    assert run(own, thread_identity=OTHER).returncode == 1, 'code-mode host authorized a descendant shell thread'
     env.pop('FM_FIXTURE_COMM')
     env.pop('FM_FIXTURE_ARGV0')
     env['FM_FIXTURE_SUBCOMMAND'] = '-c features.hooks=true app-server'
@@ -209,6 +220,7 @@ exec '{PS}' "$@"
     (home / 'state/.lock').unlink()
     # A genuinely dead process remains reclaimable with a fresh verified ID.
     (home / 'state/.lock').write_text('99999999\n')
+    assert run(lock, thread_identity=OTHER).returncode == 1, 'descendant reclaimed a dead native lock as its root owner'
     assert run(lock, OTHER).returncode == 0, 'dead native process prevented verified recovery'
     assert run(own, OTHER).returncode == 0, 'new owner could not prove its reclaimed lock'
     # Removing the shared-server condition restores ordinary PID ownership.
