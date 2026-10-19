@@ -209,6 +209,7 @@ write_valid_payload() {  # <path>
     {
       "id": "sample-task",
       "repo": "sample",
+      "name": "Sample change",
       "kind": "ship",
       "owner": "crewmate",
       "state": "working",
@@ -503,8 +504,8 @@ test_v2_renders_in_browser() {
 
   write_valid_payload "$data"
   jq '.underway += [
-    {"id":"a/b","repo":"sample","kind":"ship","owner":"crewmate","state":"working","state_detail":"working","doing":"Slash task","next":"Review slash task"},
-    {"id":"a:b","repo":"sample","kind":"ship","owner":"scout","state":"working","state_detail":"working","doing":"Colon task","next":"Review colon task"}
+    {"id":"a/b","repo":"sample","name":"Slash task","kind":"ship","owner":"crewmate","state":"working","state_detail":"working","doing":"Slash task","next":"Review slash task"},
+    {"id":"a:b","repo":"sample","name":"Colon task","kind":"ship","owner":"scout","state":"working","state_detail":"working","doing":"Colon task","next":"Review colon task"}
   ]' "$data" > "$data.tmp" && mv "$data.tmp" "$data"
   run_board "$home" build "$data" >/dev/null || fail "could not build colliding task-id fixture"
   CHROME_DEVTOOLS_AXI_SESSION="$session" chrome-devtools-axi open "file://$board" >/dev/null 2>&1 || fail "browser could not reload colliding task-id fixture"

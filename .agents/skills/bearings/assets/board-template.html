@@ -778,7 +778,7 @@ __FM_BEARINGS_BOARD_DATA__
     var state = el("span", "bb-underway-row__state" + (t.state === "unknown" ? " bb-underway-row__state--unknown" : ""), t.state_detail);
     button.appendChild(state);
     var main = el("span", "bb-row__main");
-    main.appendChild(el("span", "bb-underway-row__title", t.doing));
+    main.appendChild(el("span", "bb-underway-row__title", t.name));
     main.appendChild(el("span", "bb-underway-row__crew", crewParts.join(" · ")));
     button.appendChild(main);
     var caret = document.createElement("span");

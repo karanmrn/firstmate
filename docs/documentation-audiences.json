@@ -476,6 +476,7 @@
       "path": "docs/supervision-host.md",
       "audience": "maintainer-architecture"
     },
+    {
       "path": "docs/tmux-backend.md",
       "audience": "operator-current"
     },
