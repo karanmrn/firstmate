@@ -222,9 +222,19 @@ case "${1:-} ${2:-}" in
     printf '{"error":{"code":"agent_not_found","message":"agent target %s not found"}}\n' "${3:-}"
     ;;
   "pane send-text")
-    [ -z "${FM_FAKE_LAUNCH_LOG:-}" ] || printf '%s\n' "${4:-}" >> "$FM_FAKE_LAUNCH_LOG"
+    # A spawn types a short line sourcing its staged launch file; log and match
+    # the staged command itself so suites assert what the pane runs.
+    logged=${4:-}
+    case "$logged" in
+      ". '"*"'")
+        staged=${logged#". '"}
+        staged=${staged%"'"}
+        [ ! -f "$staged" ] || logged=$(cat "$staged")
+        ;;
+    esac
+    [ -z "${FM_FAKE_LAUNCH_LOG:-}" ] || printf '%s\n' "$logged" >> "$FM_FAKE_LAUNCH_LOG"
     if [ -n "${FM_FAKE_EXECUTE_LAUNCH_MATCH:-}" ]; then
-      case "${4:-}" in
+      case "$logged" in
         *"$FM_FAKE_EXECUTE_LAUNCH_MATCH"*) (cd "$FM_FAKE_PANE_PATH" && bash -c "$4") ;;
       esac
     fi
