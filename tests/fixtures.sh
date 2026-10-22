@@ -110,15 +110,31 @@ set -u
 case "$*" in
   *"#{pane_current_path}"*) printf '%s\n' "${FM_FAKE_PANE_PATH:-}"; exit 0 ;;
 esac
+window_file="$(dirname "$0")/.spawn-window"
 case "${1:-}" in
   display-message) printf 'firstmate\n'; exit 0 ;;
   list-windows)
     if [ -n "${FM_FAKE_DUPLICATE_WINDOW:-}" ]; then
       printf '%s\n' "$FM_FAKE_DUPLICATE_WINDOW"
     fi
+    [ ! -s "$window_file" ] || cat "$window_file"
     exit 0
     ;;
-  has-session|new-session|new-window|kill-window|set-window-option) exit 0 ;;
+  new-window)
+    name=
+    previous=
+    for arg in "$@"; do
+      [ "$previous" = -n ] && name=$arg
+      previous=$arg
+    done
+    printf '%s\n' "$name" > "$window_file"
+    exit 0
+    ;;
+  kill-window)
+    : > "$window_file"
+    exit 0
+    ;;
+  has-session|new-session|set-window-option) exit 0 ;;
   send-keys)
     if [ -n "${FM_FAKE_LAUNCH_LOG:-}" ]; then
       prev=
@@ -206,9 +222,19 @@ case "${1:-} ${2:-}" in
     printf '{"error":{"code":"agent_not_found","message":"agent target %s not found"}}\n' "${3:-}"
     ;;
   "pane send-text")
-    [ -z "${FM_FAKE_LAUNCH_LOG:-}" ] || printf '%s\n' "${4:-}" >> "$FM_FAKE_LAUNCH_LOG"
+    # A spawn types a short line sourcing its staged launch file; log and match
+    # the staged command itself so suites assert what the pane runs.
+    logged=${4:-}
+    case "$logged" in
+      ". '"*"'")
+        staged=${logged#". '"}
+        staged=${staged%"'"}
+        [ ! -f "$staged" ] || logged=$(cat "$staged")
+        ;;
+    esac
+    [ -z "${FM_FAKE_LAUNCH_LOG:-}" ] || printf '%s\n' "$logged" >> "$FM_FAKE_LAUNCH_LOG"
     if [ -n "${FM_FAKE_EXECUTE_LAUNCH_MATCH:-}" ]; then
-      case "${4:-}" in
+      case "$logged" in
         *"$FM_FAKE_EXECUTE_LAUNCH_MATCH"*) (cd "$FM_FAKE_PANE_PATH" && bash -c "$4") ;;
       esac
     fi
