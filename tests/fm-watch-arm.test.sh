@@ -1470,6 +1470,249 @@ test_reaper_stops_a_tracked_watcher() {
   pass "watch-arm: the test reaper stops a watcher armed for a tracked temporary home"
 }
 
+# A handling-delivery confirmation for an episode the drain already
+# acknowledged must succeed as a no-op when the generation matches: the pid is
+# alive and holds the lock, so the handling is already retired, not rejected.
+# A mismatched generation, a dead pid, and a lock mismatch stay rejections.
+test_handling_delivered_accepts_already_acked_generation() {
+  local dir home state pid identity generation status dead
+  dir=$(make_case handling-delivered-acked)
+  home="$dir/home"
+  state="$dir/state"
+  mkdir -p "$home/data" "$state/.watch.lock"
+  sleep 60 &
+  pid=$!
+  identity=$(bash -c '. "$1"; fm_pid_identity "$2"' _ "$ROOT/bin/fm-wake-lib.sh" "$pid") \
+    || fail "could not read the fixture watcher identity"
+  printf '%s' "$home" > "$state/.watch.lock/fm-home"
+  printf '%s' "$WATCH" > "$state/.watch.lock/watcher-path"
+  printf '%s' "$identity" > "$state/.watch.lock/pid-identity"
+  FM_STATE_OVERRIDE="$state" bash -c '. "$1"; fm_recovery_marker_publish "$2" downtime' \
+    _ "$ROOT/bin/fm-wake-lib.sh" "$state/.watcher-down" \
+    || fail "could not publish the fixture downtime episode"
+  generation=$(recovery_marker_generation "$state/.watcher-down")
+  [ -n "$generation" ] || fail "published episode left no recovery generation"
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" "$WATCH_ARM" --handling-delivered "$generation" \
+    --watcher-pid "$pid" || fail "confirmed prompt delivery did not begin handling"
+  FM_STATE_OVERRIDE="$state" bash -c '. "$1"; fm_recovery_marker_ack "$2" "$3"' \
+    _ "$ROOT/bin/fm-wake-lib.sh" "$state/.watcher-down" "$generation" \
+    || fail "could not acknowledge the fixture handling episode"
+  case "$(cat "$state/.watcher-down")" in
+    acked:handling:"$generation") ;;
+    *) fail "acknowledged episode did not retire: $(cat "$state/.watcher-down")" ;;
+  esac
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" "$WATCH_ARM" --handling-delivered "$generation" \
+    --watcher-pid "$pid"
+  expect_code 0 "$?" "an already-acknowledged confirmation must succeed as a no-op"
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" "$WATCH_ARM" --handling-delivered "superseded.0.deadbeef" \
+    --watcher-pid "$pid" 2>/dev/null
+  expect_code 3 "$?" "a superseded generation must stay rejected"
+  sleep 0 &
+  dead=$!
+  wait "$dead" 2>/dev/null || true
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" "$WATCH_ARM" --handling-delivered "$generation" \
+    --watcher-pid "$dead" 2>/dev/null
+  expect_code 1 "$?" "a dead watcher pid must stay rejected"
+  printf 'foreign-identity\n' > "$state/.watch.lock/pid-identity"
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" "$WATCH_ARM" --handling-delivered "$generation" \
+    --watcher-pid "$pid" 2>/dev/null
+  status=$?
+  printf '%s' "$identity" > "$state/.watch.lock/pid-identity"
+  expect_code 1 "$status" "a lock mismatch must stay rejected"
+  kill -KILL "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+  pass "watch-arm: an already-acknowledged handling confirmation succeeds as a no-op"
+}
+
+# A non-successor arm start mints a fresh generation, and a confirmation for
+# the churned generation reports a mismatch (status 3). The closing arm check
+# without a reopen - the marker step a handling successor runs - keeps the
+# churned generation. This characterizes existing marker behavior that the Pi
+# superseded-delivery path relies on.
+test_handling_delivered_rejects_a_superseded_generation() {
+  local dir home state pid identity first second status
+  dir=$(make_case handling-delivered-superseded)
+  home="$dir/home"
+  state="$dir/state"
+  mkdir -p "$home/data" "$state/.watch.lock"
+  sleep 60 &
+  pid=$!
+  identity=$(bash -c '. "$1"; fm_pid_identity "$2"' _ "$ROOT/bin/fm-wake-lib.sh" "$pid") \
+    || fail "could not read the fixture watcher identity"
+  printf '%s' "$home" > "$state/.watch.lock/fm-home"
+  printf '%s' "$WATCH" > "$state/.watch.lock/watcher-path"
+  printf '%s' "$identity" > "$state/.watch.lock/pid-identity"
+  FM_STATE_OVERRIDE="$state" bash -c '. "$1"; fm_recovery_marker_publish "$2" downtime && fm_recovery_marker_arm_check "$2"' \
+    _ "$ROOT/bin/fm-wake-lib.sh" "$state/.watcher-down" \
+    || fail "could not announce the fixture downtime episode"
+  first=$(recovery_marker_generation "$state/.watcher-down")
+  case "$(cat "$state/.watcher-down")" in
+    announced:downtime:"$first") ;;
+    *) fail "announced episode has the wrong shape: $(cat "$state/.watcher-down")" ;;
+  esac
+  # Reopening mints a fresh generation only when unrecovered work is queued:
+  # an announced episode with an empty queue must survive untouched, so queue
+  # one wake and re-announce first. Without this the reopen below is a no-op
+  # by design (no idle churn) and the fresh-generation assertion below fails.
+  append_wake "$state" check inbox:fixture 'check: manual-restart churn fixture' \
+    || fail "could not queue the fixture wake for the manual restart"
+  FM_STATE_OVERRIDE="$state" bash -c '. "$1"; fm_recovery_marker_arm_check "$2"' \
+    _ "$ROOT/bin/fm-wake-lib.sh" "$state/.watcher-down" \
+    || fail "could not re-announce the queued fixture episode"
+  first=$(recovery_marker_generation "$state/.watcher-down")
+  case "$(cat "$state/.watcher-down")" in
+    announced:downtime:"$first") ;;
+    *) fail "queued episode has the wrong shape: $(cat "$state/.watcher-down")" ;;
+  esac
+  FM_STATE_OVERRIDE="$state" bash -c '. "$1"; fm_recovery_marker_reopen_announced "$2"' \
+    _ "$ROOT/bin/fm-wake-lib.sh" "$state/.watcher-down" \
+    || fail "a manual arm start could not reopen the announced episode"
+  second=$(recovery_marker_generation "$state/.watcher-down")
+  [ -n "$second" ] && [ "$second" != "$first" ] \
+    || fail "a non-successor arm start did not mint a fresh generation: $(cat "$state/.watcher-down")"
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" "$WATCH_ARM" --handling-delivered "$first" \
+    --watcher-pid "$pid" 2>/dev/null
+  expect_code 3 "$?" "a confirmation for the churned generation must report a mismatch"
+  FM_STATE_OVERRIDE="$state" bash -c '. "$1"; fm_recovery_marker_arm_check "$2"' \
+    _ "$ROOT/bin/fm-wake-lib.sh" "$state/.watcher-down" \
+    || fail "the arm check after the reopen could not run"
+  status=$(recovery_marker_generation "$state/.watcher-down")
+  [ "$status" = "$second" ] \
+    || fail "an arm check without a reopen minted another generation: $(cat "$state/.watcher-down")"
+  kill -KILL "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+  pass "watch-arm: a churned generation's handling confirmation reports a mismatch and an arm check keeps it"
+}
+
+# The OpenCode arm plugin must decide whether to arm with the shared supervision
+# predicate (bin/fm-supervision-lib.sh's fm_supervision_needed), the same
+# condition owner bin/fm-turnend-guard.sh decides with, so the plugin and the
+# guard can never disagree about whether a watcher is needed. The fixture is a
+# minimal primary root carrying the real shared predicate, a home whose state
+# directory receives each case's records, and a fake arm that records its own
+# run; the plugin is exercised through its public coordinator interface.
+make_arm_decision_fixture() {  # <name>
+  local name=$1 dir repo home
+  dir=$(make_case "$name")
+  repo="$dir/repo"
+  home="$dir/home"
+  mkdir -p "$repo/bin" "$home/state" "$home/config"
+  git init -q -b main "$repo"
+  : > "$repo/AGENTS.md"
+  cp "$ROOT/bin/fm-supervision-lib.sh" "$repo/bin/fm-supervision-lib.sh"
+  cat > "$repo/bin/fm-watch-arm.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'arm\n' >> "${FM_ARM_LOG:?}"
+printf 'watcher: healthy pid=1 (beacon 0s)\n'
+SH
+  chmod +x "$repo/bin/fm-watch-arm.sh"
+  printf '%s\n' "$dir"
+}
+
+test_opencode_arm_plugin_decides_with_the_shared_predicate() {
+  command -v node >/dev/null 2>&1 || { printf 'skip: node not found\n'; return 0; }
+  local driver case_name dir state config out status
+  driver="$TMP_ROOT/arm-decision-driver.mjs"
+  cat > "$driver" <<'EOF'
+import { existsSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
+
+const state = `${process.env.FM_HOME}/state`;
+const config = `${process.env.FM_HOME}/config`;
+const armLog = process.env.FM_ARM_LOG;
+
+// The shared predicate verdict over the same state directory and the same lib
+// copy the delegation in the plugin sources.
+const probe = spawnSync(
+  "bash",
+  [
+    "-c",
+    '. "$1/bin/fm-supervision-lib.sh"; if fm_supervision_needed "$2"; then printf arm; else printf no-arm; fi',
+    "predicate-probe",
+    process.env.FM_ROOT_OVERRIDE,
+    state,
+  ],
+  { encoding: "utf8" },
+);
+const verdict = String(probe.stdout || "").trim();
+if (verdict !== "arm" && verdict !== "no-arm") {
+  console.error(`predicate probe failed (status ${probe.status}): ${probe.stderr}`);
+  process.exit(1);
+}
+
+// The two local overrides: an away record declines even when the predicate
+// reads needed, because away mode owns supervision through its daemon, and an
+// x-mode home arms before its relay poll is registered. Every other state
+// directory must match the shared verdict exactly.
+let expected;
+if (existsSync(`${state}/.afk`)) {
+  if (verdict !== "arm") {
+    console.error(`afk fixture lost its registered need: predicate said ${verdict}`);
+    process.exit(1);
+  }
+  expected = "no-arm";
+} else if (existsSync(`${config}/x-mode.env`)) {
+  if (verdict !== "no-arm") {
+    console.error(`x-mode fixture unexpectedly reads as needed: predicate said ${verdict}`);
+    process.exit(1);
+  }
+  expected = "arm";
+} else {
+  expected = verdict;
+}
+
+const mod = await import(pathToFileURL(process.env.PLUGIN).href);
+const client = { session: { promptAsync: async () => {} } };
+await mod.FmPrimaryWatchArm({ client, directory: process.env.WORKTREE, worktree: process.env.WORKTREE });
+writeFileSync(`${state}/.lock`, `${process.pid}\n`);
+const status = await globalThis.__firstmateOpenCodeWatchArm.ensureArmed("session-test", client);
+if (expected === "no-arm") {
+  if (status !== "not-needed") {
+    console.error(`expected a not-needed decline, got ${status}`);
+    process.exit(1);
+  }
+  if (existsSync(armLog)) {
+    console.error("the plugin declined but the arm ran");
+    process.exit(1);
+  }
+  process.exit(0);
+}
+for (let i = 0; i < 250 && !existsSync(armLog); i += 1) {
+  await new Promise((resolve) => setTimeout(resolve, 20));
+}
+if (!existsSync(armLog)) {
+  console.error(`the arm never ran (ensureArmed status ${status})`);
+  process.exit(1);
+}
+process.exit(0);
+EOF
+  for case_name in source registered-check empty afk-with-source task-meta x-mode; do
+    dir=$(make_arm_decision_fixture "opencode-arm-$case_name")
+    state="$dir/home/state"
+    config="$dir/home/config"
+    case "$case_name" in
+      source) mkdir -p "$state/procevent"; : > "$state/procevent/fixture.source" ;;
+      registered-check) : > "$state/fixture.check.sh"; : > "$state/fixture.check-trust" ;;
+      empty) : ;;
+      afk-with-source)
+        mkdir -p "$state/procevent"
+        : > "$state/procevent/fixture.source"
+        : > "$state/.afk"
+        ;;
+      task-meta) : > "$state/fixture.meta" ;;
+      x-mode) : > "$config/x-mode.env" ;;
+    esac
+    out=$(FM_ROOT_OVERRIDE="$dir/repo" WORKTREE="$dir/repo" FM_HOME="$dir/home" \
+      FM_ARM_LOG="$dir/arm.log" NODE_NO_WARNINGS=1 \
+      PLUGIN="$ROOT/.opencode/plugins/fm-primary-watch-arm.js" node "$driver" 2>&1)
+    status=$?
+    expect_code 0 "$status" "OpenCode arm plugin must decide with the shared predicate ($case_name): $out"
+    [ -z "$out" ] || fail "OpenCode arm predicate case $case_name printed output: $out"
+  done
+  pass "watch-arm: the OpenCode arm plugin decides with the shared supervision predicate"
+}
+
 test_attached_arm_reports_the_delivered_wake
 test_attached_arm_reports_the_delivered_wake_after_drain
 test_arm_refuses_an_unusable_launch_confirm_window
@@ -1495,6 +1738,9 @@ test_handling_window_close_keeps_the_acknowledgement_valid
 test_moved_generation_acknowledgement_is_self_healing
 test_downtime_marker_does_not_follow_symlink
 test_stop_ends_the_home_watcher_and_publishes_downtime
+test_handling_delivered_accepts_already_acked_generation
+test_handling_delivered_rejects_a_superseded_generation
 test_take_over_attaches_to_a_cycle_the_named_arm_does_not_own
 test_take_over_owns_a_fresh_cycle_and_keeps_queued_work_surfacing
 test_take_over_preserves_downtime_from_watcher_self_exit
+test_opencode_arm_plugin_decides_with_the_shared_predicate

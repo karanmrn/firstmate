@@ -28,6 +28,8 @@
 #
 #   1. lock          - acquire the per-home session lock FIRST, before any
 #                       mutating step runs.
+#   1b. home role    - the resolved firstmate-repository role line
+#                      (bin/fm-role.sh report), purely local, no network.
 #   2. bootstrap      - home-local stale Herdr projection cleanup and the
 #                       report of this session's own Herdr fleet role token
 #                       run only when this session actually holds the lock. Detect-only
@@ -67,7 +69,7 @@
 #                       script points back to the emitted harness supervision
 #                       block and deliberately never arms the watcher itself.
 #
-# Those nine names are also the runtime-bound stage list below, so a truncated
+# Those ten names are also the runtime-bound stage list below, so a truncated
 # startup can name exactly which of them never ran - and the parent banners
 # EVERY nonzero child exit, not only the bound: a child that dies or is killed
 # mid-stage must never truncate the digest silently.
@@ -220,7 +222,9 @@
 #             already treats a lock owned through shared ancestry or a trusted
 #             same-session Claude id as its own, so the re-emit proceeds, while
 #             a lock another live session took meanwhile still produces the
-#             ordinary read-only path.
+#             ordinary read-only path. A re-emit prints a short RE-EMIT CUE
+#             first, so a harness that spills a large output and shows only its
+#             head still tells the model to read the saved full output.
 #
 #   --source  The native session-open source, supplied only by
 #             fm-sessionstart-run.sh. A genuine `startup` that owns the active
@@ -276,7 +280,7 @@ done
 # The ordered stage list is the contract behind the truncation banner: the child
 # names the stage it is entering, and the parent reports every stage at or after
 # that one as never emitted. Keep it in the exact order the digest prints.
-SESSION_START_STAGES='lock bootstrap wake-queue supervision-instructions read-once fleet-state network-checks context next-step'
+SESSION_START_STAGES='lock role bootstrap wake-queue supervision-instructions read-once fleet-state network-checks context next-step'
 
 stage() {  # <stage-name>: breadcrumb for the parent's truncation banner
   [ -n "${FM_SESSION_START_STAGE_FILE:-}" ] || return 0
@@ -668,6 +672,12 @@ if [ "$REEMIT" -eq 0 ] && [ "$SESSION_SOURCE" = startup ]; then
 fi
 
 if [ "$REEMIT" -eq 1 ]; then
+  # First in the output on purpose: a harness that spills a large hook output
+  # delivers only a short head inline (Claude: about 2,000 characters), and
+  # CONTEXT prints last, so this cue is the part that must survive the spill.
+  printf 'RE-EMIT CUE: if this output ends with "Output too large ... Full output saved to <path>",\n'
+  printf 'read that whole file now, before acting. Otherwise read data/captain.md, data/captain-shared.md,\n'
+  printf 'and data/learnings.md under %s now if any of them is missing below.\n' "$DATA"
   section "SESSION START (CONTEXT RE-EMIT) - $FM_HOME"
   printf 'This session already took the helm at its own startup and has only lost its\n'
   printf 'context. Lock ownership is re-verified and the durable records below are\n'
@@ -703,6 +713,15 @@ if [ "$LOCK_RC" -ne 0 ]; then
 fi
 REBUILDING_SESSION_PID=$(fm_harness_ancestry_pid 2>/dev/null || true)
 print_agents_refresh_if_required "$REBUILDING_SESSION_PID"
+
+# --- 1b. home role -------------------------------------------------------
+# This home's firstmate-repository role: user/operator unless an explicit
+# local or receipt-proven inherited grant says otherwise (bin/fm-role-lib.sh).
+# Purely local resolution - no network, no gh call.
+stage role
+subsection "HOME ROLE"
+FM_HOME="$FM_HOME" FM_CONFIG_OVERRIDE="$CONFIG" "$SCRIPT_DIR/fm-role.sh" report 2>/dev/null \
+  || printf 'fm-role: unknown (bin/fm-role.sh report failed)\n'
 
 if [ "$READ_ONLY" -eq 0 ]; then
   if [ "$REEMIT" -eq 0 ]; then
@@ -844,7 +863,20 @@ if [ "$PRIMARY_HARNESS" = omp ]; then
   OMP_TURNEND_VERSION=$(fm_pi_extension_version "$OMP_TURNEND_EXT" || printf '')
   if ! fm_pi_extension_loaded "$OMP_WATCH_MARKER" "$OMP_WATCH_VERSION" "$OMP_LOCK" \
     || ! fm_pi_extension_loaded "$OMP_TURNEND_MARKER" "$OMP_TURNEND_VERSION" "$OMP_LOCK"; then
-    printf 'OMP_WATCH_EXTENSION: not loaded - restart omp with this home as its working directory so %s and %s auto-load from .omp/extensions/ for turn-end guard and background wake coverage; pass -e %s -e %s only when omp must start from another directory, never together with auto-discovery (omp loads a file named both ways twice)\n' "$OMP_TURNEND_EXT" "$OMP_EXT" "$OMP_TURNEND_EXT" "$OMP_EXT"
+    OMP_HOME_PHYS=$(cd -P "$FM_HOME" 2>/dev/null && pwd -P || printf '%s' "$FM_HOME")
+    OMP_ROOT_PHYS=$(cd -P "$FM_ROOT" 2>/dev/null && pwd -P || printf '%s' "$FM_ROOT")
+    if [ "$OMP_HOME_PHYS" = "$OMP_ROOT_PHYS" ]; then
+      printf 'OMP_WATCH_EXTENSION: not loaded - restart omp with this home as its working directory so %s and %s auto-load from .omp/extensions/ for turn-end guard and background wake coverage; pass -e %s -e %s only when omp must start from another directory, never together with auto-discovery (omp loads a file named both ways twice)\n' "$OMP_TURNEND_EXT" "$OMP_EXT" "$OMP_TURNEND_EXT" "$OMP_EXT"
+    else
+      # shellcheck disable=SC2016  # backticks are literal text in the diagnostic
+      printf 'OMP_WATCH_EXTENSION: not loaded - exit omp and relaunch through `fm <project>` (the launcher sets FM_HOME and --cwd) so %s and %s auto-load for this home; a bare omp or /resume from the firstmate checkout does not register the extensions for this home\n' "$OMP_TURNEND_EXT" "$OMP_EXT"
+    fi
+    # Warning only: name the cause when existing facts establish it.
+    OMP_MARKER_PID=$(sed -n '2p' "$OMP_WATCH_MARKER" 2>/dev/null || true)
+    OMP_CURRENT_PID=${REBUILDING_SESSION_PID:-$(sed -n '1p' "$OMP_LOCK" 2>/dev/null || true)}
+    if [ -n "$OMP_MARKER_PID" ] && [ -n "$OMP_CURRENT_PID" ] && [ "$OMP_MARKER_PID" != "$OMP_CURRENT_PID" ]; then
+      printf 'OMP_WATCH_CAUSE: the extension marker %s names pid %s, which is not this session (pid %s)\n' "$OMP_WATCH_MARKER" "$OMP_MARKER_PID" "$OMP_CURRENT_PID"
+    fi
   fi
 fi
 "$SCRIPT_DIR/fm-supervision-instructions.sh" \
@@ -882,7 +914,9 @@ Go to a source directly only when:
   - the NETWORK CHECKS section reported its checks still IN PROGRESS and this
     turn needs their verdict (bin/fm-startup-network.sh report),
   - or a STARTUP TRUNCATED banner named the stage that would have printed it, in
-    which case that stage's sources were never emitted and must be reconciled.
+    which case that stage's sources were never emitted and must be reconciled,
+  - or a context re-emit opened with a read cue because the
+    harness cut the digest short.
 EOF
 
 # --- 6. fleet-state digest ---------------------------------------------
