@@ -1,0 +1,4 @@
+ok - codex codex-cli 0.166.0 still publishes the hook feature flag firstmate disables
+ok - codex codex-cli 0.166.0 accepts the requested hook disablement for a firstmate crewmate launch
+ok - codex codex-cli 0.166.0: Stop parser checked 12 isolated cases with clean wrapper JSON and bounded continuation
+# all fm-codex-hook-layer-live-e2e tests passed

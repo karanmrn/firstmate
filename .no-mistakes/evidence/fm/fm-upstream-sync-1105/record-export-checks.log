@@ -1,0 +1,18 @@
+ok - record export sync is inert when config is absent
+ok - record export sync copies only the fixed v1 allowlist with restrictive modes
+ok - record export sync leaves the prior live snapshot intact when capture fails
+ok - record export accepts an absolute export root with spaces
+ok - record export sync refuses malformed config, traversal-shaped names, symlinks, and non-regular files
+ok - record export requires a dedicated root disjoint from and owned by exactly one home
+ok - record export rejects an unowned root without changing its mode
+ok - interrupted live publication staging cannot wedge archive or sync
+ok - record export sync publishes the exact current allowlist as one live snapshot
+ok - record export refuses unknown managed artifacts before publishing a snapshot
+ok - record export sync binds destination validation to descriptor-safe publication
+ok - teardown archive commits a complete v1 manifest after every allowlisted source
+ok - teardown archive is inert before any state read when config is absent
+ok - teardown archive retries idempotently and reused task IDs stay separated by spawn_gen
+ok - teardown archive retry accepts sources already retired after a committed capture
+sed: 1: "/"captured_at":/a\  "ca ...": extra characters after \ at the end of a command
+sed: 1: "/"complete": true/a\  " ...": extra characters after \ at the end of a command
+not ok - archive retry accepted a extra-entry committed manifest

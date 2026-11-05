@@ -1,0 +1,26 @@
+ok - record export sync is inert when config is absent
+ok - record export sync copies only the fixed v1 allowlist with restrictive modes
+ok - record export sync leaves the prior live snapshot intact when capture fails
+ok - record export accepts an absolute export root with spaces
+ok - record export sync refuses malformed config, traversal-shaped names, symlinks, and non-regular files
+ok - record export requires a dedicated root disjoint from and owned by exactly one home
+ok - record export rejects an unowned root without changing its mode
+ok - interrupted live publication staging cannot wedge archive or sync
+ok - record export sync publishes the exact current allowlist as one live snapshot
+ok - record export refuses unknown managed artifacts before publishing a snapshot
+ok - record export sync binds destination validation to descriptor-safe publication
+ok - teardown archive commits a complete v1 manifest after every allowlisted source
+ok - teardown archive is inert before any state read when config is absent
+ok - teardown archive retries idempotently and reused task IDs stay separated by spawn_gen
+ok - teardown archive retry accepts sources already retired after a committed capture
+ok - teardown archive rejects a corrupt committed manifest
+ok - teardown archive refuses to commit when a source changes during capture
+ok - teardown archive safely repairs an uncommitted same-generation attempt
+ok - teardown archive retry publishes a fresh generation without stale partial files
+ok - teardown archive revalidates sources immediately before publication
+ok - teardown archive holds the task producer lock through source enumeration and commit
+ok - teardown archive treats absent status and inbox records as a complete capture
+ok - teardown archive refuses malformed generations, unknown artifacts, symlinks, and non-regular files
+ok - record export retention mirrors 30 completed days and prunes only owned committed generations
+ok - presentation, wake, classification, and snapshot readers leave the export root cold
+ALL TESTS PASSED

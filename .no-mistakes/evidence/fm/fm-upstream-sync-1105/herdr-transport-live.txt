@@ -1,0 +1,44 @@
+$ fm-herdr-lab.sh name transport-proof
+exit=0
+fm-lab-transport-proof-76051-2425
+
+
+$ fm-herdr-lab.sh provision fm-lab-transport-proof-76051-2425
+exit=0
+
+
+$ fm-herdr-lab.sh run fm-lab-transport-proof-76051-2425 status --json
+exit=0
+{"client":{"version":"0.9.5","channel":"stable","protocol":22,"endpoint_protocol_generation":1,"endpoint_capabilities":["surface_interest","presentation_effects_fence","health_check"],"remote_host_bridge":true,"remote_bridge_idle_timeout":true,"binary":"/opt/homebrew/bin/herdr","session":"fm-lab-transport-proof-76051-2425"},"server":{"status":"running","running":true,"version":"0.9.5","protocol":22,"capabilities":{"live_handoff":true,"detached_server_daemon":false,"endpoint_protocol_generation":1,"surface_interest":true,"health_check":true,"ssh_agent_registration":true},"compatible":true,"endpoint_compatible":true,"socket":"~/.config/herdr/sessions/fm-lab-transport-proof-76051-2425/herdr.sock","session":"fm-lab-transport-proof-76051-2425","restart_needed":false,"server_binary_stale":false},"update":{"restart_needed":false,"server_binary_stale":false}}
+
+
+$ fm-herdr-lab.sh run fm-lab-transport-proof-76051-2425 workspace create --cwd ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6NY60YHPS535VKYXW3SAEZ5 --label lab-transport --no-focus
+exit=0
+{"id":"cli:workspace:create","result":{"root_pane":{"agent_status":"unknown","cwd":"~/.no-mistakes/worktrees/48f6cc4ba3af/01M6NY60YHPS535VKYXW3SAEZ5","focused":true,"foreground_cwd":"~/.no-mistakes/worktrees/48f6cc4ba3af/01M6NY60YHPS535VKYXW3SAEZ5","pane_id":"w1:p1","revision":0,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t1","terminal_id":"term_65f87f17f48101","workspace_id":"w1"},"tab":{"agent_status":"unknown","focused":true,"label":"1","number":1,"pane_count":1,"tab_id":"w1:t1","workspace_id":"w1"},"type":"workspace_created","workspace":{"active_tab_id":"w1:t1","agent_status":"unknown","focused":true,"label":"lab-transport","number":1,"pane_count":1,"tab_count":1,"workspace_id":"w1"}}}
+
+
+$ fm-herdr-lab.sh run fm-lab-transport-proof-76051-2425 pane run w1:p1 printf 'TRANSPORT_%s\n' DELIVERED
+exit=0
+
+
+Actual pane capture:
+printf 'TRANSPORT_%s\n' DELIVERED
+01M6NY60YHPS535VKYXW3SAEZ5  HEAD !?
+❯ printf 'TRANSPORT_%s\n' DELIVERED
+TRANSPORT_DELIVERED
+01M6NY60YHPS535VKYXW3SAEZ5  HEAD !?
+❯
+
+
+$ fm-herdr-lab.sh run fm-lab-transport-proof-76051-2425 pane get w1:p1
+exit=0
+{"id":"cli:pane:get","result":{"pane":{"agent_status":"unknown","cwd":"~/.no-mistakes/worktrees/48f6cc4ba3af/01M6NY60YHPS535VKYXW3SAEZ5","focused":true,"foreground_cwd":"~/.no-mistakes/worktrees/48f6cc4ba3af/01M6NY60YHPS535VKYXW3SAEZ5","pane_id":"w1:p1","revision":0,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t1","terminal_id":"term_65f87f17f48101","workspace_id":"w1"},"type":"pane_info"}}
+
+
+$ fm-herdr-lab.sh run default status --json
+exit=1
+fm-herdr-lab: refusing session name 'default'
+
+
+$ fm-herdr-lab.sh teardown fm-lab-transport-proof-76051-2425
+exit=0

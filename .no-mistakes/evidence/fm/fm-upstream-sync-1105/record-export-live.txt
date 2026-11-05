@@ -1,0 +1,59 @@
+$ fm-record-export.sh sync
+exit=0
+
+
+Published live inventory (byte-exact):
+data/projects.md
+data/task-a/brief.md
+state/task-a.inbox/001.msg
+state/task-a.inbox/handled/002.msg
+state/task-a.meta
+state/task-a.status
+
+$ fm-record-export.sh archive-task task-a
+exit=0
+
+
+Committed archive manifest:
+{
+  "schema": "firstmate-record-export-archive.v1",
+  "schema_version": 1,
+  "task": "task-a",
+  "spawn_gen": "lab-generation",
+  "captured_at": "2026-11-05T13:52:55Z",
+  "complete": true,
+  "files": [
+    {
+      "source": "state/task-a.meta",
+      "archive": "meta",
+      "bytes": 35,
+      "sha256": "2e65d8caf2f1bc4bd2bcec9df5d29ce331412851702753e7461a3c4ad342fb7e"
+    },
+    {
+      "source": "state/task-a.status",
+      "archive": "status",
+      "bytes": 24,
+      "sha256": "7098595127cff074d0c48ef4e5ff75110ba9e6368c539bc90ea43c489219d2ee"
+    },
+    {
+      "source": "state/task-a.inbox/001.msg",
+      "archive": "inbox/001.msg",
+      "bytes": 22,
+      "sha256": "e74a760f6d5152d3171dc3ab63d722306634135434fb72b0107da6dc69627da4"
+    },
+    {
+      "source": "state/task-a.inbox/handled/002.msg",
+      "archive": "inbox/handled/002.msg",
+      "bytes": 22,
+      "sha256": "fa1e596a7abdf599ac77e4ac841071aeb3cd0489474fcbb94535dc6dc2a0efa5"
+    }
+  ]
+}
+
+
+$ fm-record-export.sh sync
+exit=1
+error: record export root is not a real directory
+
+
+Symlink destination refused. Existing archive and all source records remained unchanged.

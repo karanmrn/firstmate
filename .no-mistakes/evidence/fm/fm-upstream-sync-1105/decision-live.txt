@@ -1,0 +1,81 @@
+$ fm-lab-home.sh create ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6NY60YHPS535VKYXW3SAEZ5/.live-decision-t112tbpm/home
+exit=0
+~/.no-mistakes/worktrees/48f6cc4ba3af/01M6NY60YHPS535VKYXW3SAEZ5/.live-decision-t112tbpm/home
+
+
+$ fm-captain-hold.sh hold lab-decision --title Choose the release action --reason Choose the next release after the full validation report. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Option A: approve the reviewed merge. Option B: keep the PR open. Option C: request a new validation run (FINAL_OPTION_VISIBLE). --repo lab
+exit=0
+lab-decision
+
+
+$ fm-bearings-snapshot.sh --json
+exit=0
+{
+  "schema": "fm-bearings.v1",
+  "home": ".live-decision-t112tbpm/home",
+  "generated": "2026-11-05T13:59:32Z",
+  "prs": "not_requested (run: /bearings include PRs)",
+  "contributions": {
+    "scope": "owned contributions per home",
+    "known": 0,
+    "checked": 0,
+    "counts": {
+      "captain": 0,
+      "fleet": 0,
+      "maintainer": 0,
+      "nobody": 0
+    },
+    "complete": true,
+    "proven_clear": true,
+    "unmeasured_homes": 0,
+    "unreadable_records": 0,
+    "unmeasured": 0,
+    "stale_verdicts": 0,
+    "missing_verdicts": 0,
+    "captain_omitted": 0,
+    "captain": []
+  },
+  "in_flight": [],
+  "secondmates": [],
+  "secondmate_reconcile": [],
+  "decisions_open": [
+    {
+      "id": "lab-decision",
+      "key": "lab-decision",
+      "verb": "captain-hold",
+      "summary": "Choose the release action: Choose the next release after the full validation report. Keep …",
+      "question": "Choose the release action: Choose the next release after the full validation report. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Keep every condition and option visible. Option A: approve the reviewed merge. Option B: keep the PR open. Option C: request a new validation run (FINAL_OPTION_VISIBLE).",
+      "owner": "(main)"
+    }
+  ],
+  "landed": [],
+  "gates": [],
+  "reports": [],
+  "recorded_prs": [],
+  "omitted": [
+    {
+      "surface": "backlog item bodies",
+      "reveal": "--fields bodies"
+    },
+    {
+      "surface": "task paths",
+      "reveal": "--fields paths"
+    },
+    {
+      "surface": "watch/steer actions",
+      "reveal": "--fields actions"
+    },
+    {
+      "surface": "healthy endpoint detail",
+      "reveal": "--fields endpoints"
+    },
+    {
+      "surface": "full scout-report inventory",
+      "reveal": "--all-reports"
+    },
+    {
+      "surface": "live PR discovery + checks",
+      "reveal": "--include-prs"
+    }
+  ]
+}

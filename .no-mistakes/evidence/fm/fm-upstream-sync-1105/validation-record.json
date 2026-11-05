@@ -1,0 +1,24 @@
+{
+  "target": "4ddc0291f87a706d2629ce66e596a8ca21d30ea0",
+  "tested_with_test_only_repairs": "tests/fm-record-export.test.sh",
+  "evidence": [
+    "herdr-projected-cd.log",
+    "herdr-viewer.log",
+    "codex-hooks.log",
+    "session-ownership.log",
+    "watcher-recovery.log",
+    "record-export-final.log",
+    "record-export-confirm.log",
+    "codex-primary.log",
+    "record-export-live.txt",
+    "decision-live.txt",
+    "herdr-transport-live.txt"
+  ],
+  "cleanup": {
+    "worktree_runtime_state_removed": true,
+    "temporary_primary_driver_removed": true,
+    "herdr_lab_state_removed": true,
+    "codex_primary_stopped": true
+  },
+  "limitations": "Targeted validation only. Hook protocol and watcher fixtures supplement live journeys. Native terminal UIs ran in private PTYs without a graphical desktop window to screenshot."
+}
