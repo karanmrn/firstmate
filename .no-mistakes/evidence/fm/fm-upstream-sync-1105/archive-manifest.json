@@ -1,0 +1,28 @@
+{
+  "schema": "firstmate-record-export-archive.v1",
+  "schema_version": 1,
+  "task": "proof",
+  "spawn_gen": "live-proof-1",
+  "captured_at": "2026-11-05T15:24:34Z",
+  "complete": true,
+  "files": [
+    {
+      "source": "state/proof.meta",
+      "archive": "meta",
+      "bytes": 44,
+      "sha256": "ccdab5ce1db0d47abba6d8b16e5cd9b661afdbf8866766bd70a929b65280c56a"
+    },
+    {
+      "source": "state/proof.status",
+      "archive": "status",
+      "bytes": 37,
+      "sha256": "99a3cf47fb69a3de6062ec2e1dcaa64418518ea6cab2ba5c42edf589265d0c65"
+    },
+    {
+      "source": "state/proof.inbox/001.msg",
+      "archive": "inbox/001.msg",
+      "bytes": 33,
+      "sha256": "aa928615cec2762fe414afee42a36d539198fcd602a3c219e8bb26e0f5220281"
+    }
+  ]
+}

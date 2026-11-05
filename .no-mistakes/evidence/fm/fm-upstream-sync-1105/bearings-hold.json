@@ -1,0 +1,69 @@
+{
+  "schema": "fm-bearings.v1",
+  "home": ".test-phase-tmp/holds",
+  "generated": "2026-11-05T15:22:02Z",
+  "prs": "not_requested (run: /bearings include PRs)",
+  "contributions": {
+    "scope": "owned contributions per home",
+    "known": 0,
+    "checked": 0,
+    "counts": {
+      "captain": 0,
+      "fleet": 0,
+      "maintainer": 0,
+      "nobody": 0
+    },
+    "complete": true,
+    "proven_clear": true,
+    "unmeasured_homes": 0,
+    "unreadable_records": 0,
+    "unmeasured": 0,
+    "stale_verdicts": 0,
+    "missing_verdicts": 0,
+    "captain_omitted": 0,
+    "captain": []
+  },
+  "in_flight": [],
+  "secondmates": [],
+  "secondmate_reconcile": [],
+  "decisions_open": [
+    {
+      "id": "sample-review",
+      "key": "sample-review",
+      "verb": "captain-hold",
+      "summary": "Select the release route: Choose the release route (all conditions apply). The operator mu…",
+      "question": "Select the release route: Choose the release route (all conditions apply).\nThe operator must retain the review evidence and the complete question. The operator must retain the review evidence and the complete question. The operator must retain the review evidence and the complete question. The operator must retain the review evidence and the complete question. The operator must retain the review evidence and the complete question. \nOption A: keep the review open.\nOption B: approve the change after the captain reviews it.\nOption C: defer until tomorrow.",
+      "owner": "(main)"
+    }
+  ],
+  "landed": [],
+  "gates": [],
+  "reports": [],
+  "recorded_prs": [],
+  "omitted": [
+    {
+      "surface": "backlog item bodies",
+      "reveal": "--fields bodies"
+    },
+    {
+      "surface": "task paths",
+      "reveal": "--fields paths"
+    },
+    {
+      "surface": "watch/steer actions",
+      "reveal": "--fields actions"
+    },
+    {
+      "surface": "healthy endpoint detail",
+      "reveal": "--fields endpoints"
+    },
+    {
+      "surface": "full scout-report inventory",
+      "reveal": "--all-reports"
+    },
+    {
+      "surface": "live PR discovery + checks",
+      "reveal": "--include-prs"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "base": "47133d99d6f04ce2b06a021565898bfe725e4315",
+  "target": "27edbe79c262dcd1f28283f4a9e6a14c3855a973",
+  "local_changes": [
+    "tests/fm-record-export.test.sh: portable manifest corruption fixtures and reliable owned-process race checks",
+    ".agents/skills/bearings/assets/board-template.html: wrap the section header at narrow widths"
+  ],
+  "tmux": "real private socket, nonzero 200x50 grid",
+  "herdr": "0.9.5 protocol 22, named fm-lab session, helper teardown succeeded",
+  "primary": "real Claude 2.1.318 normal existing login in print mode, private tmux 140x40, marked lab home, raw tool results retained",
+  "browser": "Chromium 156.0.8078.4, isolated Playwright, 1280x900 and 390x844, real shipped renderer with snapshot-derived payload"
+}

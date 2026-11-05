@@ -1,0 +1,17 @@
+{"client":{"version":"0.9.5","channel":"stable","protocol":22,"endpoint_protocol_generation":1,"endpoint_capabilities":["surface_interest","presentation_effects_fence","health_check"],"remote_host_bridge":true,"remote_bridge_idle_timeout":true,"binary":"/opt/homebrew/bin/herdr","session":"fm-lab-sync-proof-37415-15899"},"server":{"status":"running","running":true,"version":"0.9.5","protocol":22,"capabilities":{"live_handoff":true,"detached_server_daemon":false,"endpoint_protocol_generation":1,"surface_interest":true,"health_check":true,"ssh_agent_registration":true},"compatible":true,"endpoint_compatible":true,"socket":"~/.config/herdr/sessions/fm-lab-sync-proof-37415-15899/herdr.sock","session":"fm-lab-sync-proof-37415-15899","restart_needed":false,"server_binary_stale":false},"update":{"restart_needed":false,"server_binary_stale":false}}
+~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/herdr.ZWW8Y3/home
+Created endpoint fm-lab-sync-proof-37415-15899:w1:p2 in fm-lab-sync-proof-37415-15899:w1
+Literal input stayed unsubmitted until Enter, then wrote: literal-delivered
+Long command executed, exact bytes: 24000 SHA256: 19925f17c8bb53d9f325165217dea12b189e5639b8a43b6378430f47f5387766
+3abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc1
+23abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc
+123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123ab
+c123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123a
+bc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123
+abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123' > '~
+ran/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/herdr.ZWW8Y3/long'
+01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/herdr.ZWW8Y3  HEAD !?
+❯ printf 'capture-%s\n' verified
+capture-verified
+01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/herdr.ZWW8Y3  HEAD !?
+❯Deleted endpoint is absent. Teardown must preserve the default-session tripwire.

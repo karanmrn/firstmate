@@ -1,0 +1,120 @@
+{
+  "schema": "fm-fleet-snapshot.v1",
+  "generated": "2026-11-05T15:21:16Z",
+  "fm_home": "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/holds",
+  "roots": {
+    "fm_root": "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD",
+    "state": "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/holds/state",
+    "data": "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/holds/data",
+    "config": "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/holds/config",
+    "projects": "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/holds/projects"
+  },
+  "backlog": {
+    "present": true,
+    "path": "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/holds/data/backlog.md",
+    "records": [
+      {
+        "blocked_by": null,
+        "blocked_reason": null,
+        "since": "2026-11-05",
+        "report_path": null,
+        "hold_set": "2026-11-05T15:21:14Z",
+        "hold_bucket": "live",
+        "priority": null,
+        "hold_kind": "captain",
+        "kind": "captain",
+        "reported": null,
+        "title": "Select the release route",
+        "captain_actionable": true,
+        "blocked_by_ids": [],
+        "current_role": "queued",
+        "order": 1,
+        "checked": false,
+        "pr_url": null,
+        "body_excerpt": "Captain hold set: 2026-11-05T15:21:14Z",
+        "hold_until": null,
+        "hold_age_days": 0,
+        "body_lines": [
+          "Captain hold set: 2026-11-05T15:21:14Z"
+        ],
+        "raw": "- [ ] sample-review - Select the release route (repo: sample) (kind: captain) (since 2026-11-05) (hold: fm-hold-v1:Q2hvb3NlIHRoZSByZWxlYXNlIHJvdXRlIChhbGwgY29uZGl0aW9ucyBhcHBseSkuClRoZSBvcGVyYXRvciBtdXN0IHJldGFpbiB0aGUgcmV2aWV3IGV2aWRlbmNlIGFuZCB0aGUgY29tcGxldGUgcXVlc3Rpb24uIFRoZSBvcGVyYXRvciBtdXN0IHJldGFpbiB0aGUgcmV2aWV3IGV2aWRlbmNlIGFuZCB0aGUgY29tcGxldGUgcXVlc3Rpb24uIFRoZSBvcGVyYXRvciBtdXN0IHJldGFpbiB0aGUgcmV2aWV3IGV2aWRlbmNlIGFuZCB0aGUgY29tcGxldGUgcXVlc3Rpb24uIFRoZSBvcGVyYXRvciBtdXN0IHJldGFpbiB0aGUgcmV2aWV3IGV2aWRlbmNlIGFuZCB0aGUgY29tcGxldGUgcXVlc3Rpb24uIFRoZSBvcGVyYXRvciBtdXN0IHJldGFpbiB0aGUgcmV2aWV3IGV2aWRlbmNlIGFuZCB0aGUgY29tcGxldGUgcXVlc3Rpb24uIApPcHRpb24gQToga2VlcCB0aGUgcmV2aWV3IG9wZW4uCk9wdGlvbiBCOiBhcHByb3ZlIHRoZSBjaGFuZ2UgYWZ0ZXIgdGhlIGNhcHRhaW4gcmV2aWV3cyBpdC4KT3B0aW9uIEM6IGRlZmVyIHVudGlsIHRvbW9ycm93Lg==) (hold-kind: captain)",
+        "done": null,
+        "requires_child_metadata": false,
+        "local_note": null,
+        "structured": true,
+        "completion": {
+          "verb": null,
+          "date": null
+        },
+        "links": [],
+        "state": "queued",
+        "id": "sample-review",
+        "unresolved_blocker_ids": [],
+        "repo": "sample",
+        "hold_reason": "Choose the release route (all conditions apply).\nThe operator must retain the review evidence and the complete question. The operator must retain the review evidence and the complete question. The operator must retain the review evidence and the complete question. The operator must retain the review evidence and the complete question. The operator must retain the review evidence and the complete question. \nOption A: keep the review open.\nOption B: approve the change after the captain reviews it.\nOption C: defer until tomorrow.",
+        "merged": null
+      }
+    ]
+  },
+  "tasks": [],
+  "main_inventory": {
+    "valid": true,
+    "reason": null,
+    "orphan_in_flight": [],
+    "unstructured_current_count": 0
+  },
+  "contributions": {
+    "known": 0,
+    "checked": 0,
+    "counts": {
+      "captain": 0,
+      "fleet": 0,
+      "maintainer": 0,
+      "nobody": 0
+    },
+    "unmeasured": 0,
+    "complete": true,
+    "proven_clear": true,
+    "stale_verdicts": 0,
+    "missing_verdicts": 0,
+    "unreadable_records": 0,
+    "valid_until": 900,
+    "captain": [],
+    "captain_omitted": 0
+  },
+  "scout_reports": [],
+  "secondmate_current": {
+    "registry": {
+      "present": false,
+      "available": true,
+      "complete": true,
+      "reason": null,
+      "provenance": "registered-table",
+      "path": "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/holds/data/secondmates.md",
+      "freshness": {
+        "status": "fresh",
+        "observed_at": "2026-11-05T15:21:16Z"
+      },
+      "records": [],
+      "input_truncated": false,
+      "records_truncated": false,
+      "reasons": [],
+      "lines_in_window": 0,
+      "records_in_window": 0
+    },
+    "records": [],
+    "total_registered": 0,
+    "total": 0,
+    "shown": 0,
+    "truncated": 0
+  },
+  "secondmate_landed": {
+    "records": [],
+    "truncated": [],
+    "unreadable": [],
+    "partial": []
+  },
+  "secondmate_guidance": {
+    "note": "For kind=secondmate, bearings selects validated structured state from that registered home; parent events and bounded terminal evidence are fallback-only supplements and never current-state authority."
+  }
+}

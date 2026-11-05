@@ -1,0 +1,5 @@
+desktop: {"viewport":1280,"scrollWidth":1280,"outside":[]}
+desktop: full original question visible, final option selectable, no horizontal overflow
+mobile: {"viewport":390,"scrollWidth":390,"outside":[]}
+mobile: full original question visible, final option selectable, no horizontal overflow
+Chromium: 156.0.8078.4

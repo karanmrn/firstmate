@@ -1,0 +1,5 @@
+lock acquired: harness pid 79695
+lock acquired: harness pid 79695
+lock: held by live harness pid 79695
+dead=1 exit=0
+Persisted lock PID equals both acquire results and the live-status result.

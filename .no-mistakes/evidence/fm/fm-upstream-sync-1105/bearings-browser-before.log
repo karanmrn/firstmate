@@ -1,0 +1,5 @@
+desktop: {"viewport":1280,"scrollWidth":1280,"outside":[]}
+desktop: full original question visible, final option selectable, no horizontal overflow
+mobile: {"viewport":390,"scrollWidth":460,"outside":[{"tag":"SPAN","class":"fm-sign fm-sign--muted","right":459.671875,"text":"1 item wait on you, captain"}]}
+Error: mobile: horizontal page overflow
+    at ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6P2V422HSKW40WQJTDHX3GD/.test-phase-tmp/bearings-browser.cjs:30:45

@@ -1,0 +1,7 @@
+sync: exit 0
+archive-task proof: exit 0
+Unsafe source sync: exit 1
+error: data/proof/report.md is not a regular non-symlink file
+Previous complete live generation preserved.
+Archive bytes and SHA256 independently match every source file.
+Private captain.md fixture omitted from the live export.
