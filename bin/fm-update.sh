@@ -21,9 +21,10 @@
 # Absent, behaviour is exactly the origin path. A present but unreadable or
 # malformed file, an unknown remote, or an invalid branch name stops the whole
 # update before anything moves; it never falls back to origin. Nothing else
-# reads the file: worker spawns, review diffs, the cleanup landed-work test,
-# lint, and default-branch detection keep using origin. The fast-forward-only
-# guards still apply, so the named branch must only ever move forward.
+# reads the file: worker spawn-base resolution, review diffs, the cleanup
+# landed-work test, lint, and default-branch detection are unchanged by it.
+# Fast-forward-only guards still apply, so the named branch must only ever
+# move forward.
 #
 # Local homes are treehouse worktrees or standalone clones; remote routes update
 # their configured code root on that host and then fast-forward the persistent

@@ -165,10 +165,12 @@ The only sanctioned teardown is `tern_safe_kill_session <session_id> <want_name>
 
 - tern is experimental and has no dedicated real-backend CI lane.
 - Secondmate spawns are unsupported (`fm-spawn.sh` refuses `--secondmate` on `backend=tern`).
-- The away-mode `/afk` supervisor backend does not support tern; only `tmux`, `herdr`, and `rex` supervisor panes are accepted.
+- The away-mode `/afk` supervisor backend does not support tern.
+  [Away-mode supervisor configuration](configuration.md#away-mode-supervisor-backend-fm_supervisor_backend--fm_supervisor_target) owns the supported backends.
 - Native agent state requires a Tern window control endpoint; remote-host or headless daemon access that can `ls`/`capture` may still lack `ctl`.
 - Multiplexers swallow TSP: a Tern block hosting tmux or Herdr never shows native Tern agent state.
-- There is no verified native push-event wait (`tern events` is not treated as an agent-transition stream; `has_push` stays herdr-only).
+- There is no verified native push-event wait for tern because `tern events` is not a verified agent-transition stream.
+  [Runtime session backends](architecture.md#runtime-session-backends) describes the supported native event sources.
 - On Tern 0.9.4 remote-host blocks observed here, plain and `--ansi` capture of an omp TSP surface are empty, and `--surfaces` returns transcript text without omp's composer, so composer-only submit proof is `unknown` for omp and native state is the submit path when `ctl` works.
 - Creating a session or tab does not attempt focus restore; focus behaviour is not live-verified here.
 - A target can disappear after structural readiness and before the operation.

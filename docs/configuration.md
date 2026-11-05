@@ -1190,7 +1190,7 @@ When the file is absent, `/updatefirstmate` fast-forwards from `origin` exactly 
 When it is present, [`bin/fm-update.sh`](../bin/fm-update.sh) fetches only that branch and fast-forwards the primary to it under the same guards as the origin path: a dirty, off-default, or diverged primary is skipped and left untouched, so the named branch must only ever move forward.
 Local secondmate homes then advance to the primary's resulting default-branch commit, the same commit the startup secondmate sync follows, and a standalone-clone home that lacks that commit imports it from the primary first.
 A remote secondmate's host runs its own update against its own code root, so a remote home follows the named branch only when that code root has the same file; otherwise it keeps following its own origin.
-Worker spawns, review diffs, the cleanup landed-work test, lint, and default-branch detection keep using `origin`, so work started in this home still branches from, and is judged against, upstream.
+The file does not affect [worker spawn bases](#spawn-base-from-the-primary-checkout-configspawn-base-primary-checkout), review diffs, the cleanup landed-work test, lint, or default-branch detection.
 An unreadable or malformed file, an unknown remote, or an invalid branch name stops the whole update before anything moves and names the file; it never falls back to `origin`.
 The file is per home and is not inherited by secondmate homes.
 To stop following the branch, remove the file; a primary already ahead of `origin` is then reported as diverged until it is brought back by hand.

@@ -105,7 +105,7 @@
 # native_state returns Tern's own words (working|idle|waiting_input|unknown),
 # and submit confirmation counts working and waiting_input alike as a landed
 # turn. `tern events` kinds were not shown to cover agent transitions, so there
-# is no has_push/wait_transition surface (herdr-only).
+# is no has_push/wait_transition surface for this adapter.
 #
 # agent_state follows the recovery-grade contract in bin/fm-backend.sh from
 # `tern ls --json` (is the block there, in the recorded session, still live?)

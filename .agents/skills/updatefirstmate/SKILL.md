@@ -29,7 +29,7 @@ The only live mates that do not restart are the ones whose home the update pass 
 
 The source is `origin` unless this home has `config/self-update-source`, which names one remote branch for the primary to follow instead, with local secondmates following the primary's resulting commit; [`docs/configuration.md`](../../../docs/configuration.md#self-update-source-configself-update-source) owns that contract, including its remote-secondmate limit.
 The primary update is fast-forward only, while each secondmate uses the same guarded convergence path plus one narrow recovery for squash-merged local history.
-For a remote route, it updates the configured Firstmate code root on that host from its own origin, then guardedly fast-forwards the persistent home to that code-root commit.
+For a remote route, it updates that host's configured Firstmate code root, then guardedly fast-forwards the persistent home to that commit.
 It never forces, never creates a merge commit, and never stashes.
 A clean secondmate divergence advances with `reset --keep` only when a three-way tree proof shows its complete local result is already present at the target, which recognizes squash-merged contributions without discarding unique content.
 Every other dirty, diverged, offline, or wrong-branch target is skipped and reported, and a genuine divergence leaves a durable `state/.secondmate-update-reconcile/<id>.pending` record that future bootstrap and update passes surface until convergence clears it.
