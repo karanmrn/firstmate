@@ -1,0 +1,33 @@
+{
+  "scenarios": [
+    {
+      "name": "A workspace moves through a real session socket beyond the AF_UNIX path limit, preserving other workspaces and focus",
+      "result": "pass",
+      "live": true,
+      "evidence": "live-workspace-mover.log; before-long-move.json; after-baseline-failure.json; after-long-move.json",
+      "reason": ""
+    },
+    {
+      "name": "A workspace still moves through a normal-length socket path",
+      "result": "pass",
+      "live": true,
+      "evidence": "live-workspace-mover.log; after-short-move.json",
+      "reason": ""
+    },
+    {
+      "name": "A deep socket path with spaces and multibyte characters moves the selected workspace",
+      "result": "pass",
+      "live": true,
+      "evidence": "live-workspace-mover.log; after-unicode-space-path-move.json",
+      "reason": ""
+    },
+    {
+      "name": "Invalid move requests and unavailable sockets fail without reordering the live session",
+      "result": "pass",
+      "live": true,
+      "evidence": "live-workspace-mover.log; after-rejected-request.json",
+      "reason": ""
+    }
+  ],
+  "teardown_ok": true
+}

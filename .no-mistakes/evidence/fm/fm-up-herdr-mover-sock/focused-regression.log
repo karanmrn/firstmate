@@ -1,0 +1,3 @@
+Existing targeted regression: test_workspace_mover_connects_to_socket_path_beyond_af_unix_limit
+ok - herdr workspace mover reaches a 153-byte session socket beyond the AF_UNIX address limit
+exit=0

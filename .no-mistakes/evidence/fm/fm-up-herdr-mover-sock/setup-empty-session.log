@@ -1,0 +1,22 @@
+$ ["~/.no-mistakes/worktrees/f4015f9d35fc/01M6PP50ZYJKAGPHE8S1D2HTM2/bin/fm-herdr-lab.sh", "run", "fm-lab-mover-79754", "session", "list", "--json"]
+{"sessions":[{"default":true,"name":"default","running":true,"session_dir":"~/.config/herdr","socket_path":"~/.config/herdr/herdr.sock"}]}
+exit=0
+$ ["~/.no-mistakes/worktrees/f4015f9d35fc/01M6PP50ZYJKAGPHE8S1D2HTM2/bin/fm-herdr-lab.sh", "provision", "fm-lab-mover-79754"]
+exit=0
+$ ["~/.no-mistakes/worktrees/f4015f9d35fc/01M6PP50ZYJKAGPHE8S1D2HTM2/bin/fm-herdr-lab.sh", "run", "fm-lab-mover-79754", "status", "--json"]
+{"client":{"version":"0.9.5","channel":"stable","protocol":22,"endpoint_protocol_generation":1,"endpoint_capabilities":["surface_interest","presentation_effects_fence","health_check"],"remote_host_bridge":true,"remote_bridge_idle_timeout":true,"binary":"/opt/homebrew/bin/herdr","session":"fm-lab-mover-79754"},"server":{"status":"running","running":true,"version":"0.9.5","protocol":22,"capabilities":{"live_handoff":true,"detached_server_daemon":false,"endpoint_protocol_generation":1,"surface_interest":true,"health_check":true,"ssh_agent_registration":true},"compatible":true,"endpoint_compatible":true,"socket":".mover-lab/herdr/sessions/fm-lab-mover-79754/herdr.sock","session":"fm-lab-mover-79754","restart_needed":false,"server_binary_stale":false},"update":{"restart_needed":false,"server_binary_stale":false}}
+exit=0
+$ ["~/.no-mistakes/worktrees/f4015f9d35fc/01M6PP50ZYJKAGPHE8S1D2HTM2/bin/fm-herdr-lab.sh", "run", "fm-lab-mover-79754", "session", "list", "--json"]
+{"sessions":[{"default":true,"name":"default","running":true,"session_dir":".mover-lab/herdr","socket_path":".mover-lab/herdr/herdr.sock"},{"default":false,"name":"fm-lab-mover-79754","running":true,"session_dir":".mover-lab/herdr/sessions/fm-lab-mover-79754","socket_path":".mover-lab/herdr/sessions/fm-lab-mover-79754/herdr.sock"}]}
+exit=0
+Absolute lab socket length: 140 bytes
+$ ["~/.no-mistakes/worktrees/f4015f9d35fc/01M6PP50ZYJKAGPHE8S1D2HTM2/bin/fm-herdr-lab.sh", "run", "fm-lab-mover-79754", "workspace", "list"]
+{"id":"cli:workspace:list","result":{"type":"workspace_list","workspaces":[]}}
+exit=0
+DRIVER FAILURE: AssertionError()
+$ ["~/.no-mistakes/worktrees/f4015f9d35fc/01M6PP50ZYJKAGPHE8S1D2HTM2/bin/fm-herdr-lab.sh", "teardown", "fm-lab-mover-79754"]
+exit=0
+$ ["~/.no-mistakes/worktrees/f4015f9d35fc/01M6PP50ZYJKAGPHE8S1D2HTM2/bin/fm-herdr-lab.sh", "run", "fm-lab-mover-79754", "session", "list", "--json"]
+{"sessions":[{"default":true,"name":"default","running":true,"session_dir":".mover-lab/herdr","socket_path":".mover-lab/herdr/herdr.sock"}]}
+exit=0
+Teardown confirmed: lab session absent and default-session tripwire unchanged.
