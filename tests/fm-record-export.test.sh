@@ -296,7 +296,7 @@ test_sync_refuses_unknown_managed_artifacts_before_publication() {
 }
 
 test_sync_detects_destination_parent_replacement() {
-  local home export_root outside live_target prior_snapshot
+  local home export_root outside pid rc=0 wait_count=0 stage='' live_target prior_snapshot
   home=$(make_home sync-destination-race)
   export_root="$TMP_ROOT/export-sync-destination-race"
   outside="$TMP_ROOT/outside-sync-destination-race"
@@ -308,55 +308,34 @@ test_sync_detects_destination_parent_replacement() {
   live_target=$(readlink "$export_root/live" 2>/dev/null || true)
   dd if=/dev/zero of="$home/data/projects.md" bs=1048576 count=64 status=none
 
-  # Start the CLI directly so SIGSTOP targets the filesystem engine after exec,
-  # rather than a shell function's parent while its child continues publishing.
-  python3 - "$EXPORTER" "$home" "$export_root" "$outside" "$live_target" <<'PYRACE'
-import os
-import pathlib
-import signal
-import subprocess
-import sys
-import time
-
-exporter, home_arg, export_arg, outside_arg, live_target = sys.argv[1:]
-home, export_root, outside = map(pathlib.Path, (home_arg, export_arg, outside_arg))
-env = dict(os.environ, FM_HOME=str(home))
-with (home / "race.out").open("w") as out, (home / "race.err").open("w") as err:
-    child = subprocess.Popen([exporter, "sync"], env=env, stdout=out, stderr=err)
-    try:
-        deadline = time.monotonic() + 15
-        stage = None
-        while time.monotonic() < deadline and child.poll() is None:
-            candidates = list((export_root / ".live-generations").glob(".stage-*"))
-            candidates += list((export_root / "live/data").glob(".record-export.*"))
-            if candidates:
-                stage = candidates[0]
-                child.send_signal(signal.SIGSTOP)
-                break
-            time.sleep(0.001)
-        assert stage is not None and stage.exists(), "destination-race fixture missed staging"
-        if stage.parent == export_root / ".live-generations":
-            parent = export_root / ".live-generations"
-            saved = export_root / ".live-generations.saved"
-            parent.rename(saved)
-            parent.symlink_to(outside, target_is_directory=True)
-            prior = saved / pathlib.Path(live_target).name / "data/projects.md"
-        else:
-            parent = export_root / "live/data"
-            saved = export_root / "live/data.saved"
-            parent.rename(saved)
-            parent.symlink_to(outside, target_is_directory=True)
-            prior = saved / "projects.md"
-        (home / "prior-snapshot").write_text(str(prior))
-        child.send_signal(signal.SIGCONT)
-        assert child.wait(timeout=25) != 0, "sync committed after its destination parent was replaced"
-    finally:
-        if child.poll() is None:
-            child.kill()
-        child.wait()
-PYRACE
-  [ "$?" -eq 0 ] || fail "destination replacement scenario failed"
-  prior_snapshot=$(cat "$home/prior-snapshot")
+  run_export "$home" sync > "$home/race.out" 2> "$home/race.err" &
+  pid=$!
+  while kill -0 "$pid" 2>/dev/null; do
+    stage=$(find "$export_root/live/data" -maxdepth 1 -name '.record-export.*' -print -quit 2>/dev/null || true)
+    [ -n "$stage" ] || stage=$(find "$export_root/.live-generations" -maxdepth 1 -name '.stage-*' -print -quit 2>/dev/null || true)
+    [ -z "$stage" ] || break
+    wait_count=$((wait_count + 1))
+    [ "$wait_count" -le 500 ] || break
+    sleep 0.01
+  done
+  [ -n "$stage" ] || { wait "$pid" || true; fail "destination-race fixture never observed a staged snapshot"; }
+  kill -STOP "$pid"
+  case "$stage" in
+    "$export_root/live/data"/*)
+      mv "$export_root/live/data" "$export_root/live/data.saved"
+      ln -s "$outside" "$export_root/live/data"
+      prior_snapshot="$export_root/live/data.saved/projects.md"
+      ;;
+    "$export_root/.live-generations"/*)
+      mv "$export_root/.live-generations" "$export_root/.live-generations.saved"
+      ln -s "$outside" "$export_root/.live-generations"
+      prior_snapshot="$export_root/.live-generations.saved/${live_target#.live-generations/}/data/projects.md"
+      ;;
+    *) kill -CONT "$pid"; wait "$pid" || true; fail "destination-race fixture observed an unknown staging path" ;;
+  esac
+  kill -CONT "$pid"
+  wait "$pid" || rc=$?
+  [ "$rc" -ne 0 ] || fail "sync committed after its destination parent was replaced"
   assert_absent "$outside/projects.md" "sync wrote through a replacement destination symlink"
   assert_grep 'initial' "$prior_snapshot" \
     "failed destination-race sync changed the prior published snapshot"
@@ -498,10 +477,10 @@ test_archive_refuses_a_corrupt_committed_manifest() {
     case "$case_name" in
       wrong-task) sed 's/"task": "task-a"/"task": "another-task"/' "$manifest" > "$home/manifest.tmp" ;;
       trailing-garbage) cp "$manifest" "$home/manifest.tmp"; printf 'not-json\n' >> "$home/manifest.tmp" ;;
-      duplicate-key) awk '/"captured_at":/ { print "  \"captured_at\": \"2000-01-01T00:00:00Z\"," } { print }' "$manifest" > "$home/manifest.tmp" ;;
+      duplicate-key) sed '/"captured_at":/a\  "captured_at": "2000-01-01T00:00:00Z",' "$manifest" > "$home/manifest.tmp" ;;
       wrong-type) sed 's/"captured_at": "[^"]*"/"captured_at": 1/' "$manifest" > "$home/manifest.tmp" ;;
-      extra-root) awk '/"complete": true/ { print "  \"unexpected\": true," } { print }' "$manifest" > "$home/manifest.tmp" ;;
-      extra-entry) awk '!changed && /"sha256":/ { sub(/"sha256": "[^"]*"/, "& , \"unexpected\": true"); changed=1 } { print }' "$manifest" > "$home/manifest.tmp" ;;
+      extra-root) sed '/"complete": true/a\  "unexpected": true,' "$manifest" > "$home/manifest.tmp" ;;
+      extra-entry) sed '0,/"sha256": "[^"]*"/s//& , "unexpected": true/' "$manifest" > "$home/manifest.tmp" ;;
     esac
     mv "$home/manifest.tmp" "$manifest"
     rc=0
@@ -513,7 +492,7 @@ test_archive_refuses_a_corrupt_committed_manifest() {
 }
 
 test_archive_detects_a_source_change_during_capture() {
-  local home export_root archive outside
+  local home export_root archive outside archive_pid worker_pid rc=0 wait_count=0 stage=
   home=$(make_home archive-source-race)
   export_root="$TMP_ROOT/export-archive-source-race"
   outside="$TMP_ROOT/outside-archive-source-race"
@@ -523,43 +502,25 @@ test_archive_detects_a_source_change_during_capture() {
   mkdir -p "$outside"
   printf 'outside sentinel\n' > "$outside/sentinel"
   dd if=/dev/zero of="$home/state/task-a.status" bs=1048576 count=64 status=none
-  # Drive the filesystem engine's CLI directly so the suspended PID is the
-  # worker, without scanning unrelated host processes for a matching command.
-  python3 - "$ROOT/bin/fm-record-export.py" "$home" "$export_root" "$outside" <<'PYRACE'
-import os
-import pathlib
-import signal
-import subprocess
-import sys
-import time
-
-engine, home_arg, export_arg, outside_arg = sys.argv[1:]
-home, export_root, outside = map(pathlib.Path, (home_arg, export_arg, outside_arg))
-with (home / "stdout").open("w") as out, (home / "stderr").open("w") as err:
-    child = subprocess.Popen([sys.executable, engine, "archive-task", "task-a"],
-                             env=dict(os.environ, FM_HOME=str(home)), stdout=out, stderr=err)
-    try:
-        deadline = time.monotonic() + 15
-        stage = None
-        while time.monotonic() < deadline and child.poll() is None:
-            stages = list((export_root / "archive/task-a").glob(".archive-stage-*"))
-            if stages:
-                stage = stages[0]
-                child.send_signal(signal.SIGSTOP)
-                break
-            time.sleep(0.001)
-        assert stage is not None and stage.exists(), "archive source-race fixture missed staging"
-        status = home / "state/task-a.status"
-        status.unlink()
-        status.symlink_to(outside / "sentinel")
-        child.send_signal(signal.SIGCONT)
-        assert child.wait(timeout=25) != 0, "archive committed while a source changed during capture"
-    finally:
-        if child.poll() is None:
-            child.kill()
-        child.wait()
-PYRACE
-  [ "$?" -eq 0 ] || fail "archive source replacement scenario failed"
+  run_export "$home" archive-task task-a > "$home/stdout" 2> "$home/stderr" &
+  archive_pid=$!
+  while kill -0 "$archive_pid" 2>/dev/null; do
+    stage=$(find "$export_root/archive/task-a" -maxdepth 1 -name '.archive-stage-*' -print -quit 2>/dev/null || true)
+    [ -z "$stage" ] || break
+    wait_count=$((wait_count + 1))
+    [ "$wait_count" -le 500 ] || break
+    sleep 0.01
+  done
+  [ -n "$stage" ] || { wait "$archive_pid" || true; fail "archive source-race fixture never observed staging"; }
+  worker_pid=$(ps -eo pid=,args= | awk -v pattern="$ROOT/bin/fm-record-export.py archive-task task-a" \
+    'index($0, pattern) { print $1; exit }')
+  [ -n "$worker_pid" ] || { wait "$archive_pid" || true; fail "archive source-race fixture could not identify the filesystem worker"; }
+  kill -STOP "$worker_pid"
+  rm "$home/state/task-a.status"
+  ln -s "$outside/sentinel" "$home/state/task-a.status"
+  kill -CONT "$worker_pid"
+  wait "$archive_pid" || rc=$?
+  [ "$rc" -ne 0 ] || fail "archive committed while a source changed during capture"
   assert_absent "$archive/manifest.v1.json" "source race committed a manifest"
   assert_present "$home/state/task-a.meta" "source race removed live metadata"
   assert_grep 'outside sentinel' "$outside/sentinel" "source race changed the replacement target"
@@ -607,7 +568,7 @@ test_archive_retry_removes_stale_files_from_a_partial_generation() {
 }
 
 test_archive_revalidates_sources_immediately_before_publication() {
-  local home export_root archive archive_pid mutation_pid rc=0 wait_count=0 index
+  local home export_root archive archive_pid rc=0 wait_count=0 index
   home=$(make_home archive-final-revalidate)
   export_root="$TMP_ROOT/export-archive-final-revalidate"
   printf '%s\n' "$export_root" > "$home/config/record-export-root"
@@ -622,38 +583,17 @@ test_archive_revalidates_sources_immediately_before_publication() {
     index=$((index + 1))
   done
 
-  # Directory enumeration order differs across filesystems. Observe the first
-  # deletion instead of assuming that 00000.msg is removed before its siblings.
-  python3 - "$archive/inbox" "$home" <<'PY' &
-import pathlib
-import sys
-import time
-
-inbox, home = map(pathlib.Path, sys.argv[1:])
-before = inbox.stat().st_mtime_ns
-(home / "mutation-ready").touch()
-deadline = time.monotonic() + 15
-while time.monotonic() < deadline:
-    if inbox.stat().st_mtime_ns != before:
-        with (home / "state/task-a.status").open("a") as stream:
-            stream.write("changed after final comparison\n")
-        # A missed window is a setup failure, not evidence of a product bug.
-        assert any(inbox.iterdir()), "stale-generation replacement finished before mutation"
-        break
-    time.sleep(0.001)
-else:
-    raise SystemExit("archive did not begin replacing its stale partial generation")
-PY
-  mutation_pid=$!
-  while [ ! -e "$home/mutation-ready" ]; do
-    kill -0 "$mutation_pid" 2>/dev/null || { wait "$mutation_pid" || true; fail "archive mutation observer exited before readiness"; }
-    wait_count=$((wait_count + 1))
-    [ "$wait_count" -le 1000 ] || { kill "$mutation_pid"; wait "$mutation_pid" || true; fail "archive mutation observer never became ready"; }
-    sleep 0.01
-  done
   run_export "$home" archive-task task-a > "$home/archive.out" 2> "$home/archive.err" &
   archive_pid=$!
-  wait "$mutation_pid" || { wait "$archive_pid" || true; fail "archive source mutation did not occur during replacement"; }
+  while [ -e "$archive/inbox/00000.msg" ]; do
+    kill -0 "$archive_pid" 2>/dev/null || break
+    wait_count=$((wait_count + 1))
+    [ "$wait_count" -le 1000 ] || break
+    sleep 0.01
+  done
+  [ ! -e "$archive/inbox/00000.msg" ] \
+    || { wait "$archive_pid" || true; fail "archive did not begin replacing its stale partial generation"; }
+  printf 'changed after final comparison\n' >> "$home/state/task-a.status"
   wait "$archive_pid" || rc=$?
   [ "$rc" -ne 0 ] || fail "archive committed after a source changed during stale-generation replacement"
   assert_absent "$archive/manifest.v1.json" "archive committed a manifest after its final source comparison"
