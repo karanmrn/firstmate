@@ -122,7 +122,7 @@ set -u
 PI_CODING_AGENT=true PRIME_AGENT_KERNEL_OWNER_PID=$$ "$FM_FAKE_HARNESS_PROBE" > "$FM_FAKE_HARNESS_RESULT"
 SH
   chmod +x "$fakebin/prime-agent"
-  fm_fake_exit0 "$fakebin" treehouse gh-axi gh
+  fm_fake_exit0 "$fakebin" gh-axi gh
   printf '%s\n' "$fakebin"
 }
 
