@@ -1,0 +1,29 @@
+{
+  "target": "54b89d41c21368ac2c582fb4b680ac753b23e9f3",
+  "base": "4869cf58e36b4fe9113cc3684648ed4e9fb4d0dc",
+  "commands": [
+    {
+      "command": "python3 drive-eventwait.py",
+      "exit": 0
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 tests/fm-backend-herdr-eventwait.test.py",
+      "exit": 0
+    },
+    {
+      "command": "bash tests/fm-backend-herdr.test.sh",
+      "exit": 0
+    },
+    {
+      "command": "bin/fm-herdr-lab.sh prepare fm-lab-eventwait-proof (worktree XDG_CONFIG_HOME)",
+      "exit": 1
+    },
+    {
+      "command": "bin/fm-herdr-lab.sh prepare fm-lab-eventwait-proof-relative (relative worktree XDG_CONFIG_HOME)",
+      "exit": 1
+    }
+  ],
+  "peer_type": "disposable AF_UNIX protocol endpoint; production eventwait executable is unmodified",
+  "herdr_integration": "not run: isolated root has no running default tripwire; config-only override leaves sessions outside worktree",
+  "cleanup": "Peer threads joined, reader subprocesses awaited, sockets unlinked, temporary worktree data removed. No Herdr session provisioned."
+}

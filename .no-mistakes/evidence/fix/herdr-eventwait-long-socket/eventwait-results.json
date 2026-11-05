@@ -1,0 +1,66 @@
+[
+  {
+    "scenario": "baseline long-path failure",
+    "socket_path": "~/.no-mistakes/worktrees/c93d27bbbf65/01M6PE3RFXZWW2J3AN8ZVSVNR2/.test-eventwait/deep directory ddddddddddddddddddddddddddddddddddddddddddddd/\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9/herdr.sock",
+    "socket_path_bytes": 233,
+    "exit": 2,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "scenario": "target long-path subscription and event",
+    "socket_path": "~/.no-mistakes/worktrees/c93d27bbbf65/01M6PE3RFXZWW2J3AN8ZVSVNR2/.test-eventwait/deep directory ddddddddddddddddddddddddddddddddddddddddddddd/\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9/herdr.sock",
+    "socket_path_bytes": 233,
+    "exit": 0,
+    "stdout": "@subscribed\npane-live\tworkspace-live\tblocked\tclaude\n",
+    "stderr": ""
+  },
+  {
+    "scenario": "baseline accepts reachable relative socket",
+    "socket_path": "herdr.sock",
+    "socket_path_bytes": 10,
+    "exit": 0,
+    "stdout": "@subscribed\npane-live\tworkspace-live\tblocked\tclaude\n",
+    "stderr": ""
+  },
+  {
+    "scenario": "existing relative socket is refused",
+    "socket_path": "herdr.sock",
+    "socket_path_bytes": 10,
+    "exit": 2,
+    "stdout": "",
+    "stderr": "herdr-eventwait.py: socket path must be absolute; the control socket is connected by basename from its own directory\n"
+  },
+  {
+    "scenario": "relative traversal socket is refused",
+    "socket_path": "../herdr.sock",
+    "socket_path_bytes": 13,
+    "exit": 2,
+    "stdout": "",
+    "stderr": "herdr-eventwait.py: socket path must be absolute; the control socket is connected by basename from its own directory\n"
+  },
+  {
+    "scenario": "ordinary absolute socket still streams",
+    "socket_path": "~/.no-mistakes/worktrees/c93d27bbbf65/01M6PE3RFXZWW2J3AN8ZVSVNR2/.ew.sock",
+    "socket_path_bytes": 93,
+    "exit": 0,
+    "stdout": "@subscribed\npane-live\tworkspace-live\tblocked\tclaude\n",
+    "stderr": ""
+  },
+  {
+    "scenario": "missing absolute directory fails closed",
+    "socket_path": "~/.no-mistakes/worktrees/c93d27bbbf65/01M6PE3RFXZWW2J3AN8ZVSVNR2/.test-eventwait/missing/herdr.sock",
+    "socket_path_bytes": 119,
+    "exit": 2,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "scenario": "missing socket in existing directory fails closed",
+    "socket_path": "~/.no-mistakes/worktrees/c93d27bbbf65/01M6PE3RFXZWW2J3AN8ZVSVNR2/.test-eventwait/herdr.sock",
+    "socket_path_bytes": 111,
+    "exit": 2,
+    "stdout": "",
+    "stderr": ""
+  }
+]
