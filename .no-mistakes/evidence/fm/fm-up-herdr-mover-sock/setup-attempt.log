@@ -1,0 +1,9 @@
+$ ~/.no-mistakes/worktrees/f4015f9d35fc/01M6PDZYA64HDM467VSQB64MAM/bin/fm-herdr-lab.sh prepare fm-lab-mover-8877
+[exit 0]
+$ ~/.no-mistakes/worktrees/f4015f9d35fc/01M6PDZYA64HDM467VSQB64MAM/bin/fm-herdr-lab.sh provision fm-lab-mover-8877
+fm-herdr-lab: tripwire already exists for 'fm-lab-mover-8877'; refusing ambiguous ownership
+[exit 1]
+DRIVER FAILURE: AssertionError('expected exit 0, got 1')
+$ ~/.no-mistakes/worktrees/f4015f9d35fc/01M6PDZYA64HDM467VSQB64MAM/bin/fm-herdr-lab.sh teardown fm-lab-mover-8877
+[exit 0]
+Guarded teardown completed with the default-session tripwire unchanged.

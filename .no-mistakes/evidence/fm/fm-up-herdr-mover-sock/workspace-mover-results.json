@@ -1,0 +1,27 @@
+{
+  "head": "89f7848a532023bad65e127b9cc8570a13851e77",
+  "session": "fm-lab-mover-30237",
+  "scenarios": [
+    {
+      "name": "Move a projected workspace through a socket path longer than the AF_UNIX limit, preserving sibling order and focus",
+      "result": "pass",
+      "live": true,
+      "evidence": "workspace-mover-live.log",
+      "reason": "The base mover returned 2. The target mover returned 0 and the real Herdr workspace list showed the exact requested order."
+    },
+    {
+      "name": "Move through an ordinary short absolute socket path without changing focus",
+      "result": "pass",
+      "live": true,
+      "evidence": "workspace-mover-live.log",
+      "reason": "A short socket alias reached the same real lab server and restored the original order."
+    },
+    {
+      "name": "Reject invalid paths, a negative index, and an unknown workspace without changing the lab layout",
+      "result": "pass",
+      "live": true,
+      "evidence": "workspace-mover-live.log",
+      "reason": "Each rejected request returned its documented error and the real workspace inventory retained every workspace and its focus."
+    }
+  ]
+}
