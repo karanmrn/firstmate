@@ -1,0 +1,52 @@
+Tested head: d2ae3f5ea743d7b1f50a0890a97e66733abb8682
+Product: bin/backends/herdr-eventwait.py, launched as a subprocess without monkeypatches.
+External peer: disposable real AF_UNIX listener implementing the documented subscription boundary.
+
+Long absolute path streams status changes and ends on timeout: socket path is 218 bytes, argument=PosixPath('~/.no-mistakes/worktrees/c93d27bbbf65/01M6PK2DETB7XQAZ2F1YV4X806/.eventwait-live-rde16igm/deep path ddddddddddddddddddddddddddddddddddd/unicode-é-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/herdr.sock')
+Direct full-path AF_UNIX probe: AF_UNIX path too long
+Base reader exit=2, stdout='', stderr=''
+received {"id": "fm-eventwait", "method": "events.subscribe", "params": {"subscriptions": [{"pane_id": "pane-1", "type": "pane.agent_status_changed"}, {"pane_id": "pane-2", "type": "pane.agent_status_changed"}]}}
+peer closed cleanly
+Target reader exit=0, elapsed=0.524s, stdout='@subscribed\npane-1\tworkspace-1\tblocked\tclaude\npane-2\tworkspace-1\tidle\tcodex\n', stderr=''
+Peer exit=0, stderr=''
+
+Descending relative path resolves from caller directory: socket path is 218 bytes, argument='deep path ddddddddddddddddddddddddddddddddddd/unicode-é-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/herdr.sock'
+received {"id": "fm-eventwait", "method": "events.subscribe", "params": {"subscriptions": [{"pane_id": "pane-1", "type": "pane.agent_status_changed"}, {"pane_id": "pane-2", "type": "pane.agent_status_changed"}]}}
+peer closed cleanly
+Target reader exit=0, elapsed=0.522s, stdout='@subscribed\npane-1\tworkspace-1\tblocked\tclaude\npane-2\tworkspace-1\tidle\tcodex\n', stderr=''
+Peer exit=0, stderr=''
+
+Parent-relative path resolves from child directory: socket path is 218 bytes, argument='../herdr.sock'
+received {"id": "fm-eventwait", "method": "events.subscribe", "params": {"subscriptions": [{"pane_id": "pane-1", "type": "pane.agent_status_changed"}, {"pane_id": "pane-2", "type": "pane.agent_status_changed"}]}}
+peer closed cleanly
+Target reader exit=0, elapsed=0.521s, stdout='@subscribed\npane-1\tworkspace-1\tblocked\tclaude\npane-2\tworkspace-1\tidle\tcodex\n', stderr=''
+Peer exit=0, stderr=''
+
+Basename path preserves ordinary relative invocation: socket path is 218 bytes, argument='herdr.sock'
+received {"id": "fm-eventwait", "method": "events.subscribe", "params": {"subscriptions": [{"pane_id": "pane-1", "type": "pane.agent_status_changed"}, {"pane_id": "pane-2", "type": "pane.agent_status_changed"}]}}
+peer closed cleanly
+Target reader exit=0, elapsed=0.522s, stdout='@subscribed\npane-1\tworkspace-1\tblocked\tclaude\npane-2\tworkspace-1\tidle\tcodex\n', stderr=''
+Peer exit=0, stderr=''
+
+Rejected subscription signals exit 3 without readiness: socket path is 218 bytes, argument=PosixPath('~/.no-mistakes/worktrees/c93d27bbbf65/01M6PK2DETB7XQAZ2F1YV4X806/.eventwait-live-rde16igm/deep path ddddddddddddddddddddddddddddddddddd/unicode-é-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/herdr.sock')
+received {"id": "fm-eventwait", "method": "events.subscribe", "params": {"subscriptions": [{"pane_id": "pane-1", "type": "pane.agent_status_changed"}, {"pane_id": "pane-2", "type": "pane.agent_status_changed"}]}}
+peer closed cleanly
+Target reader exit=3, elapsed=0.018s, stdout='', stderr=''
+Peer exit=0, stderr=''
+
+Early stream closure signals exit 4 after readiness: socket path is 218 bytes, argument=PosixPath('~/.no-mistakes/worktrees/c93d27bbbf65/01M6PK2DETB7XQAZ2F1YV4X806/.eventwait-live-rde16igm/deep path ddddddddddddddddddddddddddddddddddd/unicode-é-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/herdr.sock')
+received {"id": "fm-eventwait", "method": "events.subscribe", "params": {"subscriptions": [{"pane_id": "pane-1", "type": "pane.agent_status_changed"}, {"pane_id": "pane-2", "type": "pane.agent_status_changed"}]}}
+peer closed cleanly
+Target reader exit=4, elapsed=0.174s, stdout='@subscribed\n', stderr=''
+Peer exit=0, stderr=''
+Unavailable socket 'herdr.sock': exit=2, stdout='', stderr=''
+Unavailable socket 'absent.sock': exit=2, stdout='', stderr=''
+Unavailable socket 'unicode-é-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee': exit=2, stdout='', stderr=''
+Unavailable socket 'ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss': exit=2, stdout='', stderr=''
+Unavailable socket 'stale.sock': exit=2, stdout='', stderr=''
+Caller working directory remains unchanged after all reader subprocesses.
+
+Real Herdr lab prepare fm-lab-eventwait-gate-90596-11079: exit=1, stdout='', stderr='fm-herdr-lab: fleet-state tripwire requires exactly one running default session\n'
+No lab server was started. Provision/run/teardown lifecycle was not entered after prepare refused.
+
+Cleanup: all disposable listener children were reaped and the workspace scratch directory was removed.

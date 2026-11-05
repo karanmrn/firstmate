@@ -1,0 +1,67 @@
+[
+  {
+    "name": "Long absolute path streams status changes and ends on timeout",
+    "result": "pass",
+    "live": true,
+    "socket_bytes": 218,
+    "reader_exit": 0,
+    "output": "@subscribed\npane-1\tworkspace-1\tblocked\tclaude\npane-2\tworkspace-1\tidle\tcodex\n",
+    "elapsed_seconds": 0.5243820839968976
+  },
+  {
+    "name": "Descending relative path resolves from caller directory",
+    "result": "pass",
+    "live": true,
+    "socket_bytes": 218,
+    "reader_exit": 0,
+    "output": "@subscribed\npane-1\tworkspace-1\tblocked\tclaude\npane-2\tworkspace-1\tidle\tcodex\n",
+    "elapsed_seconds": 0.5218952500144951
+  },
+  {
+    "name": "Parent-relative path resolves from child directory",
+    "result": "pass",
+    "live": true,
+    "socket_bytes": 218,
+    "reader_exit": 0,
+    "output": "@subscribed\npane-1\tworkspace-1\tblocked\tclaude\npane-2\tworkspace-1\tidle\tcodex\n",
+    "elapsed_seconds": 0.5209217499941587
+  },
+  {
+    "name": "Basename path preserves ordinary relative invocation",
+    "result": "pass",
+    "live": true,
+    "socket_bytes": 218,
+    "reader_exit": 0,
+    "output": "@subscribed\npane-1\tworkspace-1\tblocked\tclaude\npane-2\tworkspace-1\tidle\tcodex\n",
+    "elapsed_seconds": 0.5219592089997604
+  },
+  {
+    "name": "Rejected subscription signals exit 3 without readiness",
+    "result": "pass",
+    "live": true,
+    "socket_bytes": 218,
+    "reader_exit": 3,
+    "output": "",
+    "elapsed_seconds": 0.018352624989347532
+  },
+  {
+    "name": "Early stream closure signals exit 4 after readiness",
+    "result": "pass",
+    "live": true,
+    "socket_bytes": 218,
+    "reader_exit": 4,
+    "output": "@subscribed\n",
+    "elapsed_seconds": 0.17441991699161008
+  },
+  {
+    "name": "Unavailable directory, missing socket, directory target, overlong basename and refused socket preserve polling fallback",
+    "result": "pass",
+    "live": true
+  },
+  {
+    "name": "Real named Herdr lab status transition",
+    "result": "untested",
+    "live": false,
+    "reason": "Workspace-local HOME, XDG directories and tripwire were supplied to the real lab helper. Prepare refused because the isolated namespace has no running default session. The required tripwire cannot be satisfied through this helper, which forbids default-session lifecycle. An authorised workspace-contained Herdr environment with its running default tripwire is required. No default session or lab server was started."
+  }
+]
