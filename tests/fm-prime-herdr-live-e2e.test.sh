@@ -98,7 +98,7 @@ EOF
 # faked, and the recorded command then runs in the lab pane.
 FAKEBIN=$(fm_fakebin "$TMP_ROOT/fake")
 fm_test_fake_herdr_spawn "$FAKEBIN"
-fm_fake_exit0 "$FAKEBIN" treehouse gh-axi gh
+fm_fake_exit0 "$FAKEBIN" gh-axi gh
 out=$(FM_FAKE_LAUNCH_LOG="$TMP_ROOT/launch.log" \
   fm_test_run_spawn_herdr "$HOME_DIR" "$WT" "$FAKEBIN" "$ID" "$PROJ" prime --model "$MODEL" --effort low \
   --mode no-mistakes --yolo off) || fail "fm-spawn could not compose the prime launch: $out"
