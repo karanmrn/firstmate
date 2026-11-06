@@ -8,7 +8,7 @@ set -u
 HARNESS="$ROOT/bin/fm-harness.sh"
 SPAWN="$ROOT/bin/fm-spawn.sh"
 TMP_ROOT=$(fm_test_tmproot fm-prime-harness)
-trap 'rm -rf "$TMP_ROOT"' EXIT
+trap fm_test_cleanup EXIT
 
 MARKER_UNSETS=(-u CLAUDECODE -u PI_CODING_AGENT -u FM_PI_HARNESS -u GROK_AGENT
   -u CURSOR_AGENT -u CURSOR_INVOKED_AS
