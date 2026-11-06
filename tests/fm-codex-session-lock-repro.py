@@ -20,6 +20,9 @@ OWNER = '00000000-0000-4000-8000-000000000001'
 OTHER = '00000000-0000-4000-8000-000000000002'
 BASE = {k: v for k, v in os.environ.items() if not k.startswith(
     ('FM_', 'CODEX_', 'CLAUDE_', 'HERDR_', 'TASKS_AXI_', 'CURSOR_', 'PI_'))}
+for name in ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR'):
+    BASE.pop(name, None)
+BASE.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM='1')
 PS = shutil.which('ps')
 
 with tempfile.TemporaryDirectory(prefix='fm-codex-session-') as temp:
@@ -170,7 +173,7 @@ exec '{PS}' "$@"
     descendant_stop = run(stop, payload=owner_stop_payload, thread_identity=OTHER)
     assert descendant_stop.returncode == 0, 'read-only descendant Stop requested impossible supervision repair'
     assert 'OWNED BY ANOTHER LIVE SESSION' in descendant_stop.stdout, 'descendant Stop did not report the foreign owner'
-    checkpoint = '\"$FM_HOME/bin/fm-watch-checkpoint.sh\" --seconds 1'
+    checkpoint = '"$FM_HOME/bin/fm-watch-checkpoint.sh" --seconds 1'
     assert run(checkpoint, OTHER).returncode == 1, 'competitor started a second checkpoint'
     assert run(checkpoint, thread_identity=OTHER).returncode == 1, 'descendant started its root owner checkpoint'
     assert not (home / 'state/checkpoint-ran').exists(), 'read-only checkpoint ran the watcher'
@@ -178,7 +181,7 @@ exec '{PS}' "$@"
     assert (home / 'state/checkpoint-ran').exists(), 'owner checkpoint did not run'
     # Hook identity must work without shell-tool variables. Contradictory or
     # malformed vendor payloads must never refresh another session's sidecar.
-    hook = '\"$FM_HOME/bin/fm-sessionstart-run.sh\"'
+    hook = '"$FM_HOME/bin/fm-sessionstart-run.sh"'
     good_payload = '{"source":"startup","session_id":"' + OWNER + '"}'
     assert 'lock acquired:' in run(hook, None, good_payload).stdout, 'authenticated hook lost its session identity'
     assert 'READ-ONLY SESSION' in run(hook, payload=good_payload, thread_identity=OTHER).stdout, 'hook identity authorized a descendant shell thread'

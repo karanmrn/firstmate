@@ -14,7 +14,8 @@ TMP_ROOT=$(fm_test_tmproot fm-watch-checkpoint)
 # is never a shared server and the verdicts stay independent of the runner.
 mkdir -p "$TMP_ROOT/bin"
 FIXTURE_CODEX="$TMP_ROOT/bin/codex"
-ln -s /bin/bash "$FIXTURE_CODEX"
+BASH_BIN=$(command -v bash) || fail "could not locate bash for the checkpoint fixture"
+ln -s "$BASH_BIN" "$FIXTURE_CODEX"
 run_checkpoint() {
   "$FIXTURE_CODEX" -c '"$@"; exit $?' bash "$@"
 }
