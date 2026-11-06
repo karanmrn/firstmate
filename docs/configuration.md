@@ -909,6 +909,8 @@ The optional local, gitignored `config/record-export-root` file contains exactly
 The setting is off by default and is not inherited by secondmate homes.
 When the file is absent, sync exits without export work, teardown follows its existing path, and spawn, watcher, presentation, classification, and snapshot readers remain unaware of exports.
 When the file is present, `python3` is required and an unreadable config directory or file is a hard failure rather than an opt-out.
+Record export treats empty `FM_HOME`, `FM_ROOT_OVERRIDE`, `FM_CONFIG_OVERRIDE`, `FM_DATA_OVERRIDE`, and `FM_STATE_OVERRIDE` values as unset.
+The [home and directory reference](#fm_home) defines their defaults.
 
 The configured path must name a dedicated root outside and disjoint from the effective home, config, data, and state trees.
 Its parent must already exist, while the final root may be absent so the exporter can create it.
@@ -3178,7 +3180,10 @@ KNOWN LIMIT: while any activity continues in a home whose original owning sessio
 
 Detaching a runner into its own process group is what lets a persistent source outlive the turn that armed it, and on its own it is also what lets a runner outlive its whole home: reparented to init, it keeps its blocking child - and every process that child spawns - running with nothing left to reap it.
 
-- So a home's process-event state carries a lease that registration, attached start, reconciliation, acknowledgement, listing, and detached launch by a non-runner caller through `reconcile` or `ensure-listening` refresh, and the watcher's reconcile cycle is what keeps it fresh in a live home.
+- The home's process-event state carries an owner lease.
+  Registration, attached start, reconciliation, acknowledgement, and listing refresh the lease.
+  Non-runner callers also refresh it immediately before detached launch through `reconcile` or `ensure-listening`.
+  The watcher's reconcile cycle keeps the lease fresh in a live home.
 - An attached public `start` continues refreshing the lease while its caller remains attached.
 - Each runner fails closed unless a small guard starts successfully beside it in a separate process group.
 - That guard accepts the lease only while the state root retains the device/inode identity recorded by the runner's claim, and initiates the verified stop after two consecutive reads cannot prove that identity and lease freshness, so one unreadable read cannot kill a live runner.
