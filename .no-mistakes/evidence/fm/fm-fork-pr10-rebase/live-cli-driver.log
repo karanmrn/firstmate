@@ -1,0 +1,3 @@
+~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/native-live-9omcsivh
+Real Codex CLI startup, lock reentry, and ownership passed without a native sidecar.
+Stopped the disposable CLI after the hook probe. Exit status: -15

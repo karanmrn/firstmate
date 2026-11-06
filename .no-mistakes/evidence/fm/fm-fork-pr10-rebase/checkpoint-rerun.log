@@ -1,0 +1,21 @@
+FM_TEST_BEGIN 2026-11-06T13:33:52Z tests/fm-watch-checkpoint.test.sh family=watcher-wake-lock expected_gate_skip=none
+ok - quiet checkpoint exits 124 with a clean checkpoint line and no live lock
+ok - GNU timeout runs the watcher with the INT signal and kill-after bound
+ok - non-GNU timeout yields to GNU gtimeout with the INT signal and kill-after bound
+ok - non-GNU timeout falls back to Perl and honors the cleanup bound before escalating
+ok - an announced recovery is not reannounced by the next foreground checkpoint
+ok - a never-announced recovery still surfaces once from a foreground checkpoint
+ok - a queue append during a foreground checkpoint still resurfaces
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 15607.1793972059.YgEVcl
+ok - checkpoint passes through a real watcher wake and leaves the queue for drain
+ok - checkpoint preserves watcher environment for registered custom checks
+ok - checkpoint rejects an existing watcher singleton as unowned
+ok - checkpoint: an opted-in home runs the host for the checkpoint's bound, raised only while away
+ok - checkpoint: a handed-back wake passes through, and a host stand-down is a failure
+ok - checkpoint: a Codex home without config/supervision-host, or with an off file, never runs the host
+ok - checkpoint: the real host ends its park at the checkpoint bound as a quiet checkpoint
+FM_TEST_END 2026-11-06T13:34:35Z tests/fm-watch-checkpoint.test.sh exit=0 duration_ms=42878 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=43143
+FM_TEST_SUMMARY_FAMILY family=watcher-wake-lock count=1 duration_ms=42878 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-watch-checkpoint.test.sh duration_ms=42878
+fm-test-run: wrote timing artifact: ~/.no-mistakes/evidence/01M6RF5MKEHX33BP21ENCYD6C0/checkpoint-rerun-results.json

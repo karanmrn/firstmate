@@ -1,0 +1,3 @@
+~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-adapter-validation-tzooze00
+Actual native park adapter preserves startup ownership and read-only Stop. With ps denied, real OS provider still accepts only the owner.
+ok - fm-isolated-regression/0.167.0 (Mac OS 27.2.0; arm64) dumb (fm-isolated-regression; 1): distinct native hook identities sharing one server preserve one lock owner

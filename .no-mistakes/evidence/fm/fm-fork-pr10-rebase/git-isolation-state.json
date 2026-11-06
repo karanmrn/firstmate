@@ -1,0 +1,11 @@
+{
+  "inherited_repository_variables": [
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_COMMON_DIR"
+  ],
+  "global_and_system_config": "intentionally malformed disposable configuration",
+  "fixture_exit": 0,
+  "redirected_git_paths_created": false
+}

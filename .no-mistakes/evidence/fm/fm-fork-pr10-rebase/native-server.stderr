@@ -1,0 +1,5 @@
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp" (codex_home: AbsolutePathBuf("~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/native-live-wfg_n2e8/codex-home"))
+2026-11-06T13:16:42.492349Z ERROR codex_app_server: Project-local config, hooks, and exec policies are disabled in the following folders until the project is trusted, but skills still load.
+    1. ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.codex
+       To load project-local config, hooks, and exec policies, add ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0 as a trusted project in ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/native-live-wfg_n2e8/codex-home/config.toml.
+

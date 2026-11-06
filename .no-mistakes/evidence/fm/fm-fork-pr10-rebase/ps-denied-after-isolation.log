@@ -1,0 +1,26 @@
+ok - live owner with unreadable identity returns a successful verdict
+ok - partial identity reads block reclaim; successfully empty args remain readable
+ok - denied-ps route reads native Codex server identity and keeps the CLI contract
+ok - empty, whitespace and non-numeric lock records allow acquisition
+ok - unreadable owner acquisition: Linux fixture only, skipped
+ok - 126-route parse assigns each field and refuses a blank ppid
+ok - provider records off the defined shape are refused, not parsed
+ok - a provider record with an empty comm field reports a present pid
+ok - ps 1 stays a stop with the provider untouched; ps 127 routes to it
+ok - refused -p with a live ps -V stays a stop; the denial check is cached once
+ok - the denied-ps diagnostic prints once per shell, whatever reads follow
+ok - ps returning no name stays a present pid, never a reclaimable stale one
+ok - denied ps: own lock is owned, foreign live harness is refused and named
+ok - linux stat seam pinned (fixture /proc tree is Linux-only)
+ok - Unicode owner: Linux-only, skipped
+ok - ps denied: ancestry and liveness still resolve through the OS provider
+ok - ps denied with no provider data: the walk refuses, it never guesses
+ok - ps denied: a chain containing no harness is still no harness
+ok - ps works: the fallback provider is never consulted
+ok - e2e blocked ps: the real platform provider identified a real harness tree, identity included
+ok - fm-procinfo.py: ppid verified exact and identity reported for a real process
+ok - fm-procinfo.py: dead pid and broken offsets both produce an empty refusal
+ok - renamed process: the ps route and the ps-free route report one identity
+not ok - control-byte routes disagree: provider '61465	/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python	/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python -c import sys,time; open(sys.argv[1], chr(119)).close(); time.sleep(40) ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/fm-session-lock-ps-denied.htJWUN/control-ready tab^Inewline^JhighM-CM-)', ps '61465	/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python	/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python -c import sys,time; open(sys.argv[1], chr(119)).close(); time.sleep(40) ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/fm-session-lock-ps-denied.htJWUN/control-ready tab\011newline\012highé'
+
+Exit status: 1

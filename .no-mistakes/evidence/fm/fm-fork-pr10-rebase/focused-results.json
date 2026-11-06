@@ -1,0 +1,70 @@
+{
+  "families": [
+    {
+      "count": 1,
+      "duration_ms": 10749,
+      "failed": 0,
+      "name": "live-harness-optin"
+    },
+    {
+      "count": 1,
+      "duration_ms": 10298,
+      "failed": 0,
+      "name": "unclassified"
+    },
+    {
+      "count": 2,
+      "duration_ms": 92831,
+      "failed": 1,
+      "name": "watcher-wake-lock"
+    }
+  ],
+  "finished_at": "2026-11-06T13:30:47Z",
+  "run_id": "fm-test-run-1793971733191-88622",
+  "scripts": [
+    {
+      "duration_ms": 64908,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "gate_skip_reason": "",
+      "path": "tests/fm-codex-session-lock.test.sh"
+    },
+    {
+      "duration_ms": 10749,
+      "exit": 0,
+      "expected_gate_skip": "live-capability",
+      "family": "live-harness-optin",
+      "gate_skip": false,
+      "gate_skip_reason": "",
+      "path": "tests/fm-codex-session-identity-live-e2e.test.sh"
+    },
+    {
+      "duration_ms": 10298,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "unclassified",
+      "gate_skip": false,
+      "gate_skip_reason": "",
+      "path": "tests/fm-session-lock-ps-denied.test.sh"
+    },
+    {
+      "duration_ms": 27923,
+      "exit": 1,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "gate_skip_reason": "",
+      "path": "tests/fm-watch-checkpoint.test.sh"
+    }
+  ],
+  "selection": "scripts;jobs=1",
+  "started_at": "2026-11-06T13:28:53Z",
+  "summary": {
+    "duration_ms": 114236,
+    "failed": 1,
+    "skipped_gate": 0,
+    "total": 4
+  }
+}

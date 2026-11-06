@@ -1,0 +1,15 @@
+[
+  {
+    "type": "function_call",
+    "id": "fc_cli_probe",
+    "name": "exec_command",
+    "arguments": "{\"cmd\": \"printf '%s' '{\\\"session_id\\\":\\\"cli-tool\\\"}' | env FM_HOME=~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-xdw_x1gb FM_ROOT_OVERRIDE=~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-xdw_x1gb FM_VALIDATION_CLI=1 python3 ~/.no-mistakes/evidence/01M6RF5MKEHX33BP21ENCYD6C0/native-hook-probe.py\", \"yield_time_ms\": 10000, \"max_output_tokens\": 3000}",
+    "call_id": "call_cli_probe"
+  },
+  {
+    "type": "function_call_output",
+    "id": "fco_01a1b114-be5b-7663-8c9e-fbae8ac835f7",
+    "call_id": "call_cli_probe",
+    "output": "Chunk ID: f95ad7\nWall time: 1.8166 seconds\nProcess exited with code 0\nOriginal token count: 99\nOutput:\n[{\"name\": \"Ordinary CLI acquires without native identity\", \"exit\": 0, \"stdout\": \"lock acquired: harness pid 42658\\n\", \"stderr\": \"\", \"pass_\": true}, {\"name\": \"Ordinary CLI reenters without native identity\", \"exit\": 0, \"stdout\": \"lock acquired: harness pid 42658\\n\", \"stderr\": \"\", \"pass_\": true}, {\"name\": \"Ordinary CLI proves PID ownership\", \"exit\": 0, \"stdout\": \"\", \"stderr\": \"\", \"pass_\": true}]\n"
+  }
+]

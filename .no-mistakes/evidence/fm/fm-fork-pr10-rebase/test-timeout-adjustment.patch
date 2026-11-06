@@ -1,0 +1,16 @@
+diff --git a/tests/fm-watch-checkpoint.test.sh b/tests/fm-watch-checkpoint.test.sh
+index 83dedeab..8735fd86 100755
+--- a/tests/fm-watch-checkpoint.test.sh
++++ b/tests/fm-watch-checkpoint.test.sh
+@@ -249,8 +249,10 @@ test_queue_append_during_checkpoint_still_resurfaces() {
+   out="$home/out.txt"
+   err="$home/err.txt"
+ 
++  # This checks delivery, not five-second latency. Leave time for the real
++  # watcher's startup and next poll on a loaded host.
+   FM_HOME="$home" FM_POLL=1 FM_SIGNAL_GRACE=1 FM_CHECK_INTERVAL=999999 \
+-    run_checkpoint "$CHECKPOINT" --seconds 5 >"$out" 2>"$err" &
++    run_checkpoint "$CHECKPOINT" --seconds 20 >"$out" 2>"$err" &
+   checkpoint_pid=$!
+   wait_for_checkpoint_lock "$home" || {
+     kill "$checkpoint_pid" 2>/dev/null || true

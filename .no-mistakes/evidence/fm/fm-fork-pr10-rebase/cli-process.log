@@ -1,0 +1,25 @@
+Reading additional input from stdin...
+OpenAI Codex v0.167.0
+--------
+workdir: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-xdw_x1gb
+model: fixture
+provider: fixture
+approval: never
+sandbox: danger-full-access
+reasoning effort: none
+reasoning summaries: none
+session id: 01a1b114-b5c4-71a2-a8dd-1552d5cc41d5
+--------
+user
+Isolated CLI ownership check.
+warning: Model metadata for `fixture` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.
+exec
+/bin/zsh -lc "printf '%s' '{\"session_id\":\"cli-tool\"}' | env FM_HOME=~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-xdw_x1gb FM_ROOT_OVERRIDE=~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-xdw_x1gb FM_VALIDATION_CLI=1 python3 ~/.no-mistakes/evidence/01M6RF5MKEHX33BP21ENCYD6C0/native-hook-probe.py" in ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-xdw_x1gb
+ succeeded in 1816ms:
+[{"name": "Ordinary CLI acquires without native identity", "exit": 0, "stdout": "lock acquired: harness pid 42658\n", "stderr": "", "pass_": true}, {"name": "Ordinary CLI reenters without native identity", "exit": 0, "stdout": "lock acquired: harness pid 42658\n", "stderr": "", "pass_": true}, {"name": "Ordinary CLI proves PID ownership", "exit": 0, "stdout": "", "stderr": "", "pass_": true}]
+
+codex
+CLI ownership probe finished.
+tokens used
+4
+CLI ownership probe finished.

@@ -1,0 +1,100 @@
+Native owner reenters
+exit: 0
+stdout: lock acquired: harness pid 95658
+
+Native owner proves ownership
+exit: 0
+
+Resume hook preserves owner without tool identity
+exit: 0
+
+Compact hook preserves owner without tool identity
+exit: 0
+stdout: lock acquired: harness pid 95658
+stderr: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-g3mktpm7/bin/fm-supervision-instructions.sh: line 170: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-g3mktpm7/docs/supervision-protocols/codex-checkpoint.md: No such file or directory
+
+Missing identity cannot use shared PID
+exit: 1
+stderr: error: native Codex server is shared by many threads and this thread proves no trusted session identity (CODEX_SESSION_ID, CODEX_THREAD_ID, or hook session_id; see bin/fm-session-lock-lib.sh); operate read-only until resolved
+
+Malformed identity cannot use shared PID
+exit: 1
+stderr: error: native Codex server is shared by many threads and this thread proves no trusted session identity (CODEX_SESSION_ID, CODEX_THREAD_ID, or hook session_id; see bin/fm-session-lock-lib.sh); operate read-only until resolved
+
+Owner runs the real bounded watcher
+exit: 124
+stdout: checkpoint: no actionable wake within 1s
+
+Adversarial attempts preserve original lock and sidecar
+
+Competing real thread cannot acquire
+exit: 1
+stderr: error: another live firstmate session holds the lock (pid 95658, session codex-native:01a1b10e-2102-7500-b55d-0475c5bffd31); operate read-only until resolved
+
+Competing real thread cannot prove ownership
+exit: 1
+
+Root identity with conflicting current thread cannot acquire
+exit: 1
+stderr: error: native Codex server is shared by many threads and this thread proves no trusted session identity (CODEX_SESSION_ID, CODEX_THREAD_ID, or hook session_id; see bin/fm-session-lock-lib.sh); operate read-only until resolved
+
+Root identity with conflicting current thread cannot prove ownership
+exit: 1
+
+Competing thread cannot start checkpoint
+exit: 1
+stderr: error: native Codex session does not own the home lock; operate read-only until resolved
+
+Conflicting descendant identity cannot start checkpoint
+exit: 1
+stderr: error: native Codex session does not own the home lock; operate read-only until resolved
+
+Refused checkpoints do not start a watcher
+
+Foreign Stop exits with read-only diagnostic
+exit: 0
+stdout: {"systemMessage":"FIRSTMATE SUPERVISION IS OWNED BY ANOTHER LIVE SESSION: this read-only session cannot and should not arm or repair the watcher (lock owner pid 95658). Allowing this turn to end safely; the owning session must restore supervision."}
+
+Conflicting descendant Stop exits with read-only diagnostic
+exit: 0
+stdout: {"systemMessage":"FIRSTMATE SUPERVISION IS OWNED BY ANOTHER LIVE SESSION: this read-only session cannot and should not arm or repair the watcher (lock owner pid 95658). Allowing this turn to end safely; the owning session must restore supervision."}
+
+Contradictory hook identity stays read-only
+exit: 0
+stdout: error: native Codex server is shared by many threads and this thread proves no trusted session identity (CODEX_SESSION_ID, CODEX_THREAD_ID, or hook session_id; see bin/fm-session-lock-lib.sh); operate read-only until resolved
+●  READ-ONLY SESSION - FLEET LOCK OWNERSHIP WAS NOT VERIFIED
+●  error: native Codex server is shared by many threads and this thread proves no trusted session identity (CODEX_SESSION_ID, CODEX_THREAD_ID, or hook session_id; see bin/fm-session-lock-lib.sh); operate read-only until resolved
+stderr: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-g3mktpm7/bin/fm-supervision-instructions.sh: line 170: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-g3mktpm7/docs/supervision-protocols/codex-checkpoint.md: No such file or directory
+
+Missing hook identity cannot use retained environment
+exit: 0
+stdout: error: native Codex server is shared by many threads and this thread proves no trusted session identity (CODEX_SESSION_ID, CODEX_THREAD_ID, or hook session_id; see bin/fm-session-lock-lib.sh); operate read-only until resolved
+●  READ-ONLY SESSION - FLEET LOCK OWNERSHIP WAS NOT VERIFIED
+●  error: native Codex server is shared by many threads and this thread proves no trusted session identity (CODEX_SESSION_ID, CODEX_THREAD_ID, or hook session_id; see bin/fm-session-lock-lib.sh); operate read-only until resolved
+stderr: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-g3mktpm7/bin/fm-supervision-instructions.sh: line 170: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-g3mktpm7/docs/supervision-protocols/codex-checkpoint.md: No such file or directory
+
+Resume nudges foreign thread
+exit: 0
+stdout: ⁣FIRSTMATE_OP: v1 session-start: Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.
+
+Compact cannot reacquire foreign lock
+exit: 0
+stdout: error: another live firstmate session holds the lock (pid 95658, session codex-native:01a1b10e-2102-7500-b55d-0475c5bffd31); operate read-only until resolved
+●  READ-ONLY SESSION - FLEET LOCK OWNERSHIP WAS NOT VERIFIED
+●  error: another live firstmate session holds the lock (pid 95658, session codex-native:01a1b10e-2102-7500-b55d-0475c5bffd31); operate read-only until resolved
+stderr: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-g3mktpm7/bin/fm-supervision-instructions.sh: line 170: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-live-validation-g3mktpm7/docs/supervision-protocols/codex-checkpoint.md: No such file or directory
+
+Legacy native PID-only lock stays read-only
+exit: 1
+stderr: error: another live firstmate session holds the lock (pid 95658); operate read-only until resolved
+
+Legacy check does not invent sidecar
+
+Symlink lock cannot prove native ownership
+exit: 1
+
+Symlink lock cannot be acquired
+exit: 1
+stderr: error: session lock is not a regular file; operate read-only until resolved
+
+Adversarial attempts preserve original lock and sidecar

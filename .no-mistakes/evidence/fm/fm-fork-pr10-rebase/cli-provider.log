@@ -1,0 +1,21 @@
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp" (codex_home: AbsolutePathBuf("~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/native-live-9omcsivh/codex-home"))
+Reading additional input from stdin...
+OpenAI Codex v0.167.0
+--------
+workdir: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/native-live-9omcsivh
+model: fixture
+provider: fixture
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: none
+session id: 01a1b105-c8d0-77c0-bc3f-9a92a79a9743
+--------
+user
+Isolated CLI SessionStart probe.
+warning: `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.
+warning: `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.
+warning: Model metadata for `fixture` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.
+hook: SessionStart
+hook: SessionStart Completed
+ERROR: Reconnecting... waiting for network

@@ -1,0 +1,56 @@
+Target: bd7df6622636b085b00ad3b03a3095e603162a53
+Runtime: Codex 0.167.0, macOS 27.2.0 arm64
+Native probes used real app-server ancestry. External fleet/network startup leaves were inert. The bounded watcher was real.
+
+owner: session 01a1b101-1c90-7911-9d55-4fafe9046b3d, result pass
+persisted lock PID: 15652
+persisted session sidecar: codex-native:01a1b101-1c90-7911-9d55-4fafe9046b3d
+native SessionStart owner acquires -> exit 0
+  lock acquired: harness pid 15652
+same native owner reenters -> exit 0
+  lock acquired: harness pid 15652
+same native owner proves ownership -> exit 0
+resume owner hook suppresses nudge -> exit 0
+missing payload identity refuses retained environment -> exit 0
+  ●  READ-ONLY SESSION - FLEET LOCK OWNERSHIP WAS NOT VERIFIED
+invalid native identity is refused -> exit 1
+missing native identity is refused -> exit 1
+descendant ownership is refused -> exit 1
+descendant lock acquisition is refused -> exit 1
+descendant startup is read-only -> exit 0
+  ●  READ-ONLY SESSION - FLEET LOCK OWNERSHIP WAS NOT VERIFIED
+descendant checkpoint is refused -> exit 1
+  error: native Codex session does not own the home lock; operate read-only until resolved
+descendant Stop permits read-only exit -> exit 0
+  {"systemMessage":"FIRSTMATE SUPERVISION IS OWNED BY ANOTHER LIVE SESSION: this read-only session cannot and should not arm or repair the watcher (lock owner pid 15652). Allowing this turn to end safely; the owning session must restore supervision."}
+legacy PID-only native lock is refused -> exit 1
+legacy PID-only checkpoint is refused -> exit 1
+  error: native Codex session does not own the home lock; operate read-only until resolved
+native owner runs a real bounded watcher -> exit 124
+  checkpoint: no actionable wake within 1s
+
+competitor: session 01a1b101-4587-7b20-8c77-f698c825da2b, result pass
+persisted lock PID: 15652
+persisted session sidecar: codex-native:01a1b101-1c90-7911-9d55-4fafe9046b3d
+second native SessionStart is read-only -> exit 0
+  ●  READ-ONLY SESSION - FLEET LOCK OWNERSHIP WAS NOT VERIFIED
+second native session cannot acquire -> exit 1
+second native session cannot prove ownership -> exit 1
+second native resume receives startup nudge -> exit 0
+  ⁣FIRSTMATE_OP: v1 session-start: Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.
+contradictory native hook is read-only -> exit 0
+  ●  READ-ONLY SESSION - FLEET LOCK OWNERSHIP WAS NOT VERIFIED
+second native checkpoint is refused -> exit 1
+  error: native Codex session does not own the home lock; operate read-only until resolved
+second native Stop permits read-only exit -> exit 0
+  {"systemMessage":"FIRSTMATE SUPERVISION IS OWNED BY ANOTHER LIVE SESSION: this read-only session cannot and should not arm or repair the watcher (lock owner pid 15652). Allowing this turn to end safely; the owning session must restore supervision."}
+
+cli: session 01a1b105-c8d0-77c0-bc3f-9a92a79a9743, result pass
+persisted lock PID: 93762
+ordinary CLI SessionStart -> exit 0
+  lock acquired: harness pid 93762
+ordinary CLI reentry -> exit 0
+  lock acquired: harness pid 93762
+ordinary CLI ownership -> exit 0
+
+The native server exited after its probes. The CLI was deliberately terminated after its hook probe and reaped with exit -15. No model success was required.

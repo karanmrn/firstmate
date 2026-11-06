@@ -1,0 +1,5 @@
+ok - live owner with unreadable identity returns a successful verdict
+ok - partial identity reads block reclaim; successfully empty args remain readable
+not ok - denied-ps route anchored a native thread that proves no identity
+
+Exit status: 1

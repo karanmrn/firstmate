@@ -1,0 +1,5 @@
+{"name": "Ordinary CLI acquires without native identity", "exit": 0, "stdout": "lock acquired: harness pid 42658\n", "stderr": "", "pass_": true}
+{"name": "Ordinary CLI reenters without native identity", "exit": 0, "stdout": "lock acquired: harness pid 42658\n", "stderr": "", "pass_": true}
+{"name": "Ordinary CLI proves PID ownership", "exit": 0, "stdout": "", "stderr": "", "pass_": true}
+Ordinary CLI retained PID ownership.
+CLI process exit: 0

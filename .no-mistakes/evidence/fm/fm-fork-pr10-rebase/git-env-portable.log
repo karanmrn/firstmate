@@ -1,0 +1,6 @@
+shared server PID: 26099
+owner startup: True
+competing startup read-only: True
+ok - distinct native sessions sharing a server cannot acquire or trust its owner lock
+
+Exit status: 0

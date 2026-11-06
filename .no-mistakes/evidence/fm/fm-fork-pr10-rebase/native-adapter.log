@@ -1,0 +1,5 @@
+~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.fm-adapter-validation-gd7bogzk
+Traceback (most recent call last):
+  File "~/.no-mistakes/evidence/01M6RF5MKEHX33BP21ENCYD6C0/native-adapter-driver.py", line 139, in <module>
+    raise AssertionError('installed native SessionStart hook did not complete')
+AssertionError: installed native SessionStart hook did not complete

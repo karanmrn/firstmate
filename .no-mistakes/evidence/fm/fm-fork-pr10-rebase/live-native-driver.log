@@ -1,0 +1,27 @@
+~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/native-live-wfg_n2e8
+Installed product: fm-live-probe/0.167.0 (Mac OS 27.2.0; arm64) dumb (fm-live-probe; 1)
+Native session 01a1b101-1c90-7911-9d55-4fafe9046b3d probe passed
+Native session 01a1b101-4587-7b20-8c77-f698c825da2b probe passed
+Both native sessions preserved one owner. No process-table substitution was used.
+Native server terminated with exit 0
+Traceback (most recent call last):
+  File "~/.no-mistakes/evidence/01M6RF5MKEHX33BP21ENCYD6C0/live-native-driver.py", line 64, in <module>
+    cli=subprocess.run(['codex','exec','--skip-git-repo-check','--sandbox','read-only','Isolated CLI SessionStart probe.'],cwd=home,env=env,stdout=log,stderr=subprocess.STDOUT,timeout=100)
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 671, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 1395, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 2431, in _communicate
+    self.wait(timeout=_deadline_remaining(endtime))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 1445, in wait
+    return self._wait(timeout=timeout)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 2310, in _wait
+    if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
+                                    ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 2286, in _wait_kqueue
+    raise TimeoutExpired(self.args, timeout)
+subprocess.TimeoutExpired: Command '['codex', 'exec', '--skip-git-repo-check', '--sandbox', 'read-only', 'Isolated CLI SessionStart probe.']' timed out after 100 seconds

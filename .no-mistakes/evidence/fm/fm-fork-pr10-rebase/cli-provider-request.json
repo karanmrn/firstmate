@@ -1,0 +1,14 @@
+{
+  "tools": [
+    "exec_command",
+    "write_stdin",
+    "request_user_input",
+    "view_image",
+    "multi_agent_v1",
+    "get_goal",
+    "create_goal",
+    "update_goal",
+    null
+  ],
+  "path": "/v1/responses"
+}

@@ -1,0 +1,2 @@
+Dead native server PID: 95658
+ok - fm-isolated-regression/0.167.0 (Mac OS 27.2.0; arm64) dumb (fm-isolated-regression; 1): distinct native hook identities sharing one server preserve one lock owner

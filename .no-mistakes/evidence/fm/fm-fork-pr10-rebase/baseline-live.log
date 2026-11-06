@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "~/.no-mistakes/worktrees/48f6cc4ba3af/01M6RF5MKEHX33BP21ENCYD6C0/.gate-test-tmp/baseline-i22mdrlf/tests/fm-codex-session-lock-repro.py", line 135, in <module>
+    assert 'READ-ONLY SESSION' in (home / ('state/'+identities[1]+'.startup')).read_text()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+
+Baseline exit status: 1

@@ -1,0 +1,10 @@
+shared server PID: 13724
+owner startup: True
+competing startup read-only: False
+Traceback (most recent call last):
+  File "~/.no-mistakes/evidence/01M6RF5MKEHX33BP21ENCYD6C0/baseline-driver.py", line 157, in <module>
+    assert 'READ-ONLY SESSION' in second.stdout, 'different native threads both acquired one home lock'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: different native threads both acquired one home lock
+
+exit=1

@@ -1,0 +1,1 @@
+{"systemMessage":"FIRSTMATE SUPERVISION IS OWNED BY ANOTHER LIVE SESSION: this read-only session cannot and should not arm or repair the watcher (lock owner pid 15615). Allowing this turn to end safely; the owning session must restore supervision."}

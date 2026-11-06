@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "~/.no-mistakes/evidence/01M6RF5MKEHX33BP21ENCYD6C0/baseline-driver.py", line 135, in <module>
+    assert 'READ-ONLY SESSION' in (home / ('state/'+identities[1]+'.startup')).read_text()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+
+exit=1

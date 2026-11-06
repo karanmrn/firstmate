@@ -1,0 +1,6 @@
+CLI process exit: -15
+Traceback (most recent call last):
+  File "~/.no-mistakes/evidence/01M6RF5MKEHX33BP21ENCYD6C0/cli-live-driver.py", line 91, in <module>
+    assert observed.exists(), 'CLI did not emit SessionStart, see cli-process.log'
+           ~~~~~~~~~~~~~~~^^
+AssertionError: CLI did not emit SessionStart, see cli-process.log
