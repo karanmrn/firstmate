@@ -1,0 +1,30 @@
+{
+  "hook_payload": {
+    "session_id": "01a1b24c-187e-7461-8f5f-bef0d33c0f36",
+    "transcript_path": "~/.no-mistakes/worktrees/d2981947b549/01M6RYVFH7BH12KJMDCASDZAXK/.test-tmp/embedded-cli-with-id/provider/sessions/2026/11/06/rollout-2026-11-06T19-18-13-01a1b24c-187e-7461-8f5f-bef0d33c0f36.jsonl",
+    "cwd": "~/.no-mistakes/worktrees/d2981947b549/01M6RYVFH7BH12KJMDCASDZAXK/.test-tmp/embedded-cli-with-id",
+    "hook_event_name": "SessionStart",
+    "model": "fixture",
+    "permission_mode": "bypassPermissions",
+    "source": "startup"
+  },
+  "returncode": 0,
+  "stdout": "lock acquired: harness pid 38409\n",
+  "stderr": "",
+  "lock": "38409\n",
+  "identity": null,
+  "launch": [
+    "codex",
+    "--no-daemon",
+    "--no-alt-screen",
+    "-a",
+    "never",
+    "-s",
+    "danger-full-access",
+    "--dangerously-bypass-hook-trust",
+    "-C",
+    "~/.no-mistakes/worktrees/d2981947b549/01M6RYVFH7BH12KJMDCASDZAXK/.test-tmp/embedded-cli-with-id",
+    "FIRSTMATE_OP: Inspect codex app-server ownership"
+  ],
+  "pty_grid": "40 rows x 120 columns"
+}

@@ -1,0 +1,28 @@
+{
+  "hook_payload": {
+    "session_id": "01a1b24c-1314-7f52-bd39-f99ab2c154f3",
+    "transcript_path": "~/.no-mistakes/worktrees/d2981947b549/01M6RYVFH7BH12KJMDCASDZAXK/.test-tmp/secondmate-cli/provider/sessions/2026/11/06/rollout-2026-11-06T19-18-12-01a1b24c-1314-7f52-bd39-f99ab2c154f3.jsonl",
+    "cwd": "~/.no-mistakes/worktrees/d2981947b549/01M6RYVFH7BH12KJMDCASDZAXK/.test-tmp/secondmate-cli",
+    "hook_event_name": "SessionStart",
+    "model": "fixture",
+    "permission_mode": "default",
+    "source": "startup"
+  },
+  "returncode": 0,
+  "stdout": "lock acquired: harness pid 37765\n",
+  "stderr": "",
+  "lock": "37765\n",
+  "identity": null,
+  "launch": [
+    "codex",
+    "--no-daemon",
+    "-m",
+    "fixture",
+    "--approve-for-me",
+    "--dangerously-bypass-hook-trust",
+    "-C",
+    "~/.no-mistakes/worktrees/d2981947b549/01M6RYVFH7BH12KJMDCASDZAXK/.test-tmp/secondmate-cli",
+    "FIRSTMATE_OP: Inspect codex app-server ownership"
+  ],
+  "pty_grid": "40 rows x 120 columns"
+}

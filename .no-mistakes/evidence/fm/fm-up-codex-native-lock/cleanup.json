@@ -1,0 +1,41 @@
+{
+  "owned_process_checks": [
+    {
+      "pid": 5352,
+      "ps_exit": 1,
+      "comm": ""
+    },
+    {
+      "pid": 35897,
+      "ps_exit": 1,
+      "comm": ""
+    },
+    {
+      "pid": 36977,
+      "ps_exit": 1,
+      "comm": ""
+    },
+    {
+      "pid": 37765,
+      "ps_exit": 1,
+      "comm": ""
+    },
+    {
+      "pid": 38409,
+      "ps_exit": 1,
+      "comm": ""
+    },
+    {
+      "pid": 61350,
+      "ps_exit": 1,
+      "comm": ""
+    },
+    {
+      "pid": 74215,
+      "ps_exit": 1,
+      "comm": ""
+    }
+  ],
+  "private_tmux_socket_absent": true,
+  "workspace_fixture_removed": true
+}

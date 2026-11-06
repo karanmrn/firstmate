@@ -1,0 +1,6 @@
+baseline native acquisitions: [True, True]
+Traceback (most recent call last):
+  File "~/.no-mistakes/evidence/01M6RYVFH7BH12KJMDCASDZAXK/base-reproduction-driver.py", line 139, in <module>
+    assert 'READ-ONLY SESSION' in (home / ('state/'+identities[1]+'.startup')).read_text()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "~/.no-mistakes/evidence/01M6RYVFH7BH12KJMDCASDZAXK/live-guard-driver.py", line 133, in <module>
+    raise AssertionError('installed native SessionStart hook did not complete')
+AssertionError: installed native SessionStart hook did not complete

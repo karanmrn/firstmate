@@ -1,0 +1,11 @@
+{
+  "error": "[{'label': 'native server without identity refuses empty home', 'returncode': 0, 'stdout': 'lock acquired: harness pid 61530\\n', 'stderr': ''}]",
+  "results": [
+    {
+      "label": "native server without identity refuses empty home",
+      "returncode": 0,
+      "stdout": "lock acquired: harness pid 61530\n",
+      "stderr": ""
+    }
+  ]
+}

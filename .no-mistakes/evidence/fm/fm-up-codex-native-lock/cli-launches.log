@@ -1,0 +1,4 @@
+plain-cli: lock acquired: harness pid 35897; native sidecar absent
+crewmate-cli: lock acquired: harness pid 36977; native sidecar absent
+secondmate-cli: lock acquired: harness pid 37765; native sidecar absent
+embedded-cli-with-id: lock acquired: harness pid 38409; native sidecar absent

@@ -1,0 +1,15 @@
+ok - plain CLI retains ordinary CLI lock ownership
+ok - fm-spawn crewmate retains ordinary CLI lock ownership
+ok - option-first secondmate retains ordinary CLI lock ownership
+ok - approval-review secondmate retains ordinary CLI lock ownership
+ok - secondmate with server prompt text retains ordinary CLI lock ownership
+ok - config value names server retains ordinary CLI lock ownership
+ok - split config without server token retains ordinary CLI lock ownership
+ok - long option values name server retains ordinary CLI lock ownership
+ok - attached option values name server retains ordinary CLI lock ownership
+ok - embedded CLI primary retains ordinary CLI lock ownership
+shared server PID: 64021
+owner startup: True
+competing startup read-only: True
+ok - distinct native sessions sharing a server cannot acquire or trust its owner lock
+ALL PASS

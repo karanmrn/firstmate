@@ -1,0 +1,16 @@
+{
+  "hook_payload": {
+    "session_id": "01a1b24a-dac4-7273-a227-a31810b22003",
+    "transcript_path": "~/.no-mistakes/worktrees/d2981947b549/01M6RYVFH7BH12KJMDCASDZAXK/.test-tmp/c/codex/sessions/2026/11/06/rollout-2026-11-06T19-16-52-01a1b24a-dac4-7273-a227-a31810b22003.jsonl",
+    "cwd": "~/.no-mistakes/worktrees/d2981947b549/01M6RYVFH7BH12KJMDCASDZAXK/.test-tmp/c",
+    "hook_event_name": "SessionStart",
+    "model": "fixture",
+    "permission_mode": "bypassPermissions",
+    "source": "startup"
+  },
+  "returncode": 0,
+  "stdout": "lock acquired: harness pid 61350\n",
+  "stderr": "",
+  "lock": "61350\n",
+  "identity": null
+}
