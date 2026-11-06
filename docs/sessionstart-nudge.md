@@ -64,6 +64,9 @@ The run wrapper learns the source in one of two ways:
 - It takes `--source <name>` when the adapter knows the source natively.
 - Otherwise it reads the `source` field from a Claude/Codex-shaped JSON hook payload on stdin.
 
+For native Codex, the run wrapper binds the payload's `session_id` through `fm_session_lock_codex_hook_identity` before any lock check or nudge delegation.
+[`bin/fm-session-lock-lib.sh`](../bin/fm-session-lock-lib.sh) owns identity validation and the read-only boundary for legacy native locks.
+
 A re-emit (`--reemit`) reprints the digest for a process that already has the helm and lost only its context.
 
 | Source | Action | Why |
@@ -96,7 +99,6 @@ The full digest updates the completion record in this order:
 So `clear` or `compact` cannot skip startup sweeps after a truncated run.
 
 `bin/fm-lock.sh` treats a lock as this session's own only under the shared `fm_session_lock_owned_by_self` verdict in [`bin/fm-session-lock-lib.sh`](../bin/fm-session-lock-lib.sh), which owns each harness's ownership signals.
-A native Codex thread shares its app-server pid with every other thread, so that verdict also requires its trusted session id.
 
 So a proven `clear` or `compact` re-emit re-verifies ownership and proceeds.
 A lock another live session took meanwhile still produces the ordinary read-only digest.
@@ -104,7 +106,7 @@ A lock another live session took meanwhile still produces the ordinary read-only
 ### Nudge wrapper on a run-tier harness
 
 On a run-tier harness, only `resume`, `reload`, and `fork` are routed to the nudge wrapper.
-Outside native Codex, the nudge wrapper has its own separate ancestry-only check, which normally stays silent when this process already holds the lock.
+The [nudge lock check](#nudge-wrapper-lock-check) normally stays silent when this process already holds the lock.
 A background Claude helper-chain recycle can break that ancestry.
 The wrapper may then emit a redundant nudge even though the shared same-session verdict still owns the lock.
 The requested session start remains idempotent.
@@ -202,7 +204,8 @@ The Ahoy skill's own step 0 helm check is the fallback that protects a nudge-tie
 
 ### Nudge wrapper lock check
 
-Under a native Codex app-server or code-mode host, the wrapper asks the library's `fm_session_lock_owned_by_self` instead, because the shared server pid is in every thread's ancestry and cannot suppress the nudge on its own.
+Under native Codex, the wrapper uses `fm_session_lock_owned_by_self` from the library linked above.
+The shared server pid alone cannot suppress a nudge for another thread.
 Otherwise, before printing, the nudge wrapper reads `state/.lock` and walks at most eight parents from its own pid.
 It does this in its own separate, hard-coded loop, independent of two other ownership checks:
 

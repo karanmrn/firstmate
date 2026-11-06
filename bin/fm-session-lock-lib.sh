@@ -7,8 +7,8 @@
 # state/.lock-session sidecar; bin/fm-claude-stop-autoarm.sh uses it to prove a
 # Stop hook fires inside the lock-owning primary session before it may arm or
 # rewake. A native Codex server is shared by many threads, so the native Codex
-# trust contract below rejects PID-only ownership there. For every other
-# harness two signals decide ownership, either one sufficient: the recorded pid
+# trust contract below rejects PID-only ownership there. Outside that contract,
+# two signals decide ownership, either one sufficient: the recorded pid
 # is a member of this process's contiguous harness ancestry, or the trusted
 # Claude session id below matches the id recorded beside a live lock. Neither
 # signal ever fails open: no id, no sidecar, an untrusted id, or a different

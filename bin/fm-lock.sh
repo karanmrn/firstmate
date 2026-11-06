@@ -30,7 +30,7 @@
 # anchor in that same section (fm_lease_rekey_holder in bin/fm-lease-lib.sh),
 # as does a Claude auto-arm rewake bound to the old pid, under
 # state/.claude-autoarm.lock (fm_autoarm_rekey_session in bin/fm-wake-lib.sh).
-# A later /clear re-key in the same process is then still proven by ancestry
+# A later Claude /clear re-key in the same process is still proven by ancestry
 # after the id changes, a held lease stays live, and the mid-turn guard still
 # accepts that rewake. A lease or rewake that cannot be moved, including when
 # the auto-arm lock stays busy past LEASE_LOCK_WAIT seconds, is reported as a
