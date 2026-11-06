@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Retire a listed live ID without retiring its double-prefixed sibling",
+    "result": "pass",
+    "live": true
+  },
+  {
+    "name": "Retire by bare name and repeat retirement of absent watches",
+    "result": "pass",
+    "live": true
+  },
+  {
+    "name": "Retire and retry the maximum-length listed ID",
+    "result": "pass",
+    "live": true
+  },
+  {
+    "name": "Reject unsafe and oversized IDs without changing watch state",
+    "result": "pass",
+    "live": true
+  },
+  {
+    "name": "Retire a completed watch while retaining its outcome and acknowledgement",
+    "result": "pass",
+    "live": true
+  }
+]

@@ -1,0 +1,217 @@
+$ FM_HOME=.test-when-validation/baseline fm-lab-home.sh create ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/baseline
+~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/baseline
+exit=0
+$ FM_HOME=.test-when-validation/baseline .fm-when-base-validation.sh arm listed --interval 0.1 --stable 1 --condition ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/condition.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/baseline/listed.poll ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/baseline/listed.trigger --action ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/action.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/baseline/listed.action
+armed: when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit=0
+$ FM_HOME=.test-when-validation/baseline fm-procevent.sh list
+SOURCE                       ADAPTER      OWNER      PENDING
+when-listed                  when         none       0
+exit=0
+$ FM_HOME=.test-when-validation/baseline .fm-when-base-validation.sh retire when-listed
+retired: when-when-listed
+retired: when-when-listed
+exit=0
+Verified: base retires the wrong double-prefixed ID
+Verified: base leaves the listed watch registered
+Baseline reproduces the reported failure.
+
+SCENARIO: Retire a listed live ID without retiring its double-prefixed sibling
+$ FM_HOME=.test-when-validation/collision fm-lab-home.sh create ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/collision
+~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/collision
+exit=0
+$ FM_HOME=.test-when-validation/collision fm-procevent-when.sh arm listed --interval 0.1 --stable 1 --condition ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/condition.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/collision/listed.poll ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/collision/listed.trigger --action ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/action.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/collision/listed.action
+armed: when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit=0
+$ FM_HOME=.test-when-validation/collision fm-procevent-when.sh arm when-listed --interval 0.1 --stable 1 --condition ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/condition.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/collision/when-listed.poll ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/collision/when-listed.trigger --action ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/action.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/collision/when-listed.action
+armed: when-when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit=0
+$ FM_HOME=.test-when-validation/collision fm-procevent.sh reconcile
+reconciled: published=0 started=2 stopped=0 uncertain=0 failed=0
+exit=0
+$ FM_HOME=.test-when-validation/collision fm-procevent.sh list
+SOURCE                       ADAPTER      OWNER      PENDING
+when-listed                  when         live       0
+when-when-listed             when         live       0
+exit=0
+Verified: both overlapping watches have live owners
+$ FM_HOME=.test-when-validation/collision fm-procevent-when.sh retire when-listed
+retired: when-listed
+retired: when-listed
+exit=0
+Verified: when-listed.spec is absent
+Verified: when-listed.trust is absent
+Verified: when-listed.fired is absent
+Verified: when-listed.source is absent
+Verified: when-listed.runner is absent
+$ FM_HOME=.test-when-validation/collision fm-procevent-when.sh retire when-listed
+retired: when-listed
+retired: when-listed
+exit=0
+$ FM_HOME=.test-when-validation/collision fm-procevent.sh list
+SOURCE                       ADAPTER      OWNER      PENDING
+when-when-listed             when         live       0
+exit=0
+Verified: exact-ID retirement and retry preserve the double-prefixed sibling
+Verified: retired watch never executes after its condition becomes true
+$ FM_HOME=.test-when-validation/collision fm-procevent-when.sh retire when-when-listed
+retired: when-when-listed
+retired: when-when-listed
+exit=0
+Verified: when-when-listed.spec is absent
+Verified: when-when-listed.trust is absent
+Verified: when-when-listed.fired is absent
+Verified: when-when-listed.source is absent
+Verified: when-when-listed.runner is absent
+
+SCENARIO: Retire by bare name and repeat retirement of absent watches
+$ FM_HOME=.test-when-validation/bare fm-lab-home.sh create ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/bare
+~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/bare
+exit=0
+$ FM_HOME=.test-when-validation/bare fm-procevent-when.sh arm plain --interval 0.1 --stable 1 --condition ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/condition.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/bare/plain.poll ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/bare/plain.trigger --action ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/action.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/bare/plain.action
+armed: when-plain
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit=0
+$ FM_HOME=.test-when-validation/bare fm-procevent-when.sh retire plain
+retired: when-plain
+retired: when-plain
+exit=0
+Verified: when-plain.spec is absent
+Verified: when-plain.trust is absent
+Verified: when-plain.fired is absent
+Verified: when-plain.source is absent
+Verified: when-plain.runner is absent
+$ FM_HOME=.test-when-validation/bare fm-procevent-when.sh retire plain
+retired: when-plain
+retired: when-plain
+exit=0
+$ FM_HOME=.test-when-validation/bare fm-procevent-when.sh retire when-absent
+retired: when-absent
+retired: when-absent
+exit=0
+$ FM_HOME=.test-when-validation/bare fm-procevent.sh list
+no sources registered
+exit=0
+Verified: bare retirement and absent-ID retries leave no registrations
+
+SCENARIO: Retire and retry the maximum-length listed ID
+$ FM_HOME=.test-when-validation/length fm-lab-home.sh create ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/length
+~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/length
+exit=0
+$ FM_HOME=.test-when-validation/length fm-procevent-when.sh arm aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --interval 0.1 --stable 1 --condition ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/condition.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/length/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.poll ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/length/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.trigger --action ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/action.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/length/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.action
+armed: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit=0
+$ FM_HOME=.test-when-validation/length fm-procevent.sh list
+SOURCE                       ADAPTER      OWNER      PENDING
+when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa when         none       0
+exit=0
+Verified: list exposes the full 64-character ID
+$ FM_HOME=.test-when-validation/length fm-procevent-when.sh retire when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+retired: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+retired: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+exit=0
+Verified: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.spec is absent
+Verified: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.trust is absent
+Verified: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.fired is absent
+Verified: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.source is absent
+Verified: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.runner is absent
+$ FM_HOME=.test-when-validation/length fm-procevent-when.sh retire when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+retired: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+retired: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+exit=0
+
+SCENARIO: Reject unsafe and oversized IDs without changing watch state
+$ FM_HOME=.test-when-validation/invalid fm-lab-home.sh create ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/invalid
+~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/invalid
+exit=0
+$ FM_HOME=.test-when-validation/invalid fm-procevent-when.sh arm guard --interval 0.1 --stable 1 --condition ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/condition.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/invalid/guard.poll ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/invalid/guard.trigger --action ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/action.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/invalid/guard.action
+armed: when-guard
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit=0
+$ FM_HOME=.test-when-validation/invalid fm-procevent-when.sh retire when-
+error: invalid source id: when-
+exit=1
+Verified: unsafe or oversized argument is refused: when-
+$ FM_HOME=.test-when-validation/invalid fm-procevent-when.sh retire when-../guard
+error: invalid source id: when-../guard
+exit=1
+Verified: unsafe or oversized argument is refused: when-../guard
+$ FM_HOME=.test-when-validation/invalid fm-procevent-when.sh retire ../guard
+error: name must be path-safe and at most 59 characters: ../guard
+exit=1
+Verified: unsafe or oversized argument is refused: ../guard
+$ FM_HOME=.test-when-validation/invalid fm-procevent-when.sh retire when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+error: invalid source id: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+exit=1
+Verified: unsafe or oversized argument is refused: when-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Verified: invalid retirement arguments leave all persisted home files unchanged
+
+SCENARIO: Retire a completed watch while retaining its outcome and acknowledgement
+$ FM_HOME=.test-when-validation/preserve fm-lab-home.sh create ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/preserve
+~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/preserve
+exit=0
+$ FM_HOME=.test-when-validation/preserve fm-procevent-when.sh arm done --interval 0.1 --stable 1 --condition ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/condition.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/preserve/done.poll ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/preserve/done.trigger --action ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/action.sh ~/.no-mistakes/worktrees/35d973b0e580/01M6R6KB9XA7SCMD2KK68R7TZJ/.test-when-validation/preserve/done.action
+armed: when-done
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit=0
+$ FM_HOME=.test-when-validation/preserve fm-procevent.sh reconcile
+reconciled: published=0 started=1 stopped=0 uncertain=0 failed=0
+exit=0
+$ FM_HOME=.test-when-validation/preserve fm-procevent.sh handled when-done 1
+handled: when-done 1
+exit=0
+Captured result:
+when: when-done
+status: fired
+detail: the condition held and the action exited 0
+condition_polls: 1
+action_exit: 0
+output:
+action-completed
+
+Verified: a durable handled acknowledgement exists
+$ FM_HOME=.test-when-validation/preserve fm-procevent-when.sh retire when-done
+retired: when-done
+retired: when-done
+exit=0
+Verified: when-done.spec is absent
+Verified: when-done.trust is absent
+Verified: when-done.fired is absent
+Verified: when-done.source is absent
+Verified: when-done.runner is absent
+$ FM_HOME=.test-when-validation/preserve fm-procevent-when.sh retire when-done
+retired: when-done
+retired: when-done
+exit=0
+Verified: exact-ID retirement preserves captured results and handled acknowledgements byte-for-byte
+$ FM_HOME=.test-when-validation/baseline fm-procevent.sh sweep-home
+retired: when-listed
+swept: attempted=1
+exit=0
+$ FM_HOME=.test-when-validation/collision fm-procevent.sh sweep-home
+swept: attempted=0
+exit=0
+$ FM_HOME=.test-when-validation/bare fm-procevent.sh sweep-home
+swept: attempted=0
+exit=0
+$ FM_HOME=.test-when-validation/length fm-procevent.sh sweep-home
+swept: attempted=0
+exit=0
+$ FM_HOME=.test-when-validation/invalid fm-procevent.sh sweep-home
+retired: when-guard
+swept: attempted=1
+exit=0
+$ FM_HOME=.test-when-validation/preserve fm-procevent.sh sweep-home
+swept: attempted=0
+exit=0
