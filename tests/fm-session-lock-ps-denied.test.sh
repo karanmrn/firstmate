@@ -950,8 +950,44 @@ test_unreadable_verdict_returns_success() {
   pass "live owner with unreadable identity returns a successful verdict"
 }
 
+test_denied_ps_reads_native_codex_identity() {
+  # The native Codex server check reads identity through the same denied-ps
+  # route as every other read here, so a host that blocks ps still tells a
+  # shared app-server thread from an ordinary CLI session.
+  local dir fakebin table uuid=00000000-0000-4000-8000-000000000001 got
+  dir="$TMP_ROOT/native-codex"
+  fakebin=$(fm_fakebin "$dir"); make_denied_ps "$fakebin"
+  table="$dir/t"
+  write_native_table() {  # <comm> <args>
+    printf '800|1|%s|%s\ndefault|800|bash|bash run.sh\n' "$1" "$2" > "$table"
+  }
+  write_native_table /opt/codex '/opt/codex -c features.hooks=true app-server --listen stdio://'
+  got=$(lib_eval_denied "$fakebin" "$table" \
+    "export CODEX_SESSION_ID=$uuid CODEX_THREAD_ID=$uuid; fm_session_lock_trusted_session_id") \
+    || fail "denied-ps route did not read a native app-server identity"
+  [ "$got" = "codex-native:$uuid" ] || fail "denied-ps native identity was '$got'"
+  if lib_eval_denied "$fakebin" "$table" \
+    "export CODEX_SESSION_ID=$uuid CODEX_THREAD_ID=00000000-0000-4000-8000-000000000002; fm_session_lock_trusted_session_id" >/dev/null 2>&1; then
+    fail "denied-ps route trusted a descendant thread as its root session"
+  fi
+  if lib_eval_denied "$fakebin" "$table" 'fm_session_lock_anchor_pid' >/dev/null 2>&1; then
+    fail "denied-ps route anchored a native thread that proves no identity"
+  fi
+  write_native_table codex-code-mode /opt/codex-code-mode-host
+  lib_eval_denied "$fakebin" "$table" 'fm_session_lock_codex_native_pid 800' \
+    || fail "denied-ps route missed a truncated code-mode host comm"
+  write_native_table /opt/codex '/opt/codex exec app-server'
+  if lib_eval_denied "$fakebin" "$table" 'fm_session_lock_codex_native_ancestry' >/dev/null 2>&1; then
+    fail "denied-ps route read an exec prompt as a native app-server"
+  fi
+  [ "$(lib_eval_denied "$fakebin" "$table" 'fm_session_lock_anchor_pid')" = 800 ] \
+    || fail "denied-ps route lost the ordinary Codex CLI anchor"
+  pass "denied-ps route reads native Codex server identity and keeps the CLI contract"
+}
+
 test_unreadable_verdict_returns_success
 test_partial_identity_reads_refuse
+test_denied_ps_reads_native_codex_identity
 test_nonpid_records_allow_acquisition
 
 test_unreadable_owner_refuses_acquisition
