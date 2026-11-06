@@ -6658,12 +6658,8 @@ test_wait_transition_clean_timeout_returns_1() {
 
 # shellcheck source=bin/fm-backend.sh
 . "$ROOT/bin/fm-backend.sh"
-# fm_backend_herdr_canonical_socket_path folds a Windows drive-letter spelling
-# into the POSIX spelling of the same socket, so the launcher's claimed socket
-# and the session list's socket_path compare equal on native Windows. `cygpath`
-# ships only with Git for Windows, so these cases stub it and therefore run
-# everywhere; the guard in the adapter matches only `[A-Za-z]:[\/]*`, a shape
-# that cannot occur on Linux or macOS.
+# Stub cygpath so Windows socket-path regressions run without a Windows host.
+# bin/backends/herdr.sh owns the socket-identity normalization contract.
 # make_cygpath_fakebin <dir> <map|fail|empty> [mapped-path] -> echoes fakebin dir
 make_cygpath_fakebin() {
   local dir=$1 mode=$2 mapped=${3-} fb="$1/cygpath-fakebin"
