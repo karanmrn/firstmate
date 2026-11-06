@@ -1,0 +1,17 @@
+{
+  "tested_head": "d749b53e8f9ab03073f63d2fa09ec4e3f578a0ad",
+  "base": "fadd59641a5d0162c2ed5d1ec94d7eb7db6cdaee",
+  "upstream_ancestors": {
+    "b77b66cb": true,
+    "8b1618a4": true
+  },
+  "merge_parents": [
+    "fadd59641a5d0162c2ed5d1ec94d7eb7db6cdaee",
+    "8b1618a49511d67b247f5f8091868b812bfcae2d"
+  ],
+  "test_only_worktree_change": {
+    "path": "tests/fm-procevent.test.sh",
+    "reason": "Use the existing Perl POSIX setsid route on macOS, where the setsid executable is unavailable.",
+    "sha256": "d09b2433cd88496c8fa9055923f91f7fbbcf6375526ebbbd382f5b32f779ae1a"
+  }
+}

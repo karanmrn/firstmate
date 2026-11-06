@@ -1,0 +1,80 @@
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-record-export.sh sync
+exit=0
+
+Exported public snapshot: ["data", "data/projects.md", "state", "state/task-a.status"]
+Task status: working: export fixture
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-record-export.sh sync
+exit=0
+
+Explicit nonempty data override exported: Explicit override project
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh register when live-source -- /opt/homebrew/opt/python@3.15/bin/python3.15 -c import pathlib,time; pathlib.Path(__import__('sys').argv[1]).write_text('source command executed'); time.sleep(30) ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/.validation/live/ensure-listening/command-started
+exit=0
+registered: live-source (when)
+
+ensure-listening lease age before request: 7.59 seconds
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh ensure-listening live-source
+exit=0
+
+ensure-listening request duration: 0.695 seconds
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh list
+exit=0
+SOURCE                       ADAPTER      OWNER      PENDING
+live-source                  when         live       0
+
+ensure-listening source executed and runner 85197 stopped after owner renewal ceased.
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh retire live-source
+exit=0
+retired: live-source
+
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh sweep-home
+exit=0
+swept: attempted=0
+
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh register when live-source -- /opt/homebrew/opt/python@3.15/bin/python3.15 -c import pathlib,time; pathlib.Path(__import__('sys').argv[1]).write_text('source command executed'); time.sleep(30) ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/.validation/live/reconcile/command-started
+exit=0
+registered: live-source (when)
+
+reconcile lease age before request: 7.657 seconds
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh reconcile
+exit=0
+reconciled: published=90 started=1 stopped=0 uncertain=0 failed=0
+
+reconcile request duration: 13.315 seconds
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh list
+exit=0
+SOURCE                       ADAPTER      OWNER      PENDING
+live-source                  when         live       0
+
+reconcile source executed and runner 7829 stopped after owner renewal ceased.
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh retire live-source
+exit=0
+retired: live-source
+
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh sweep-home
+exit=0
+swept: attempted=0
+
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh register when live-source -- /opt/homebrew/opt/python@3.15/bin/python3.15 -c import pathlib,time; pathlib.Path(__import__('sys').argv[1]).write_text('source command executed'); time.sleep(30) ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/.validation/live/inherited/command-started
+exit=0
+registered: live-source (when)
+
+inherited lease age before request: 7.654 seconds
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh ensure-listening live-source
+exit=0
+
+Inherited runner refused startup and left the expired owner lease unchanged.
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh retire live-source
+exit=0
+retired: live-source
+
+$ ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6QTN1QRJBQB6CZV1FA5ZVZJ/bin/fm-procevent.sh sweep-home
+exit=0
+swept: attempted=0
+
+All live CLI scenarios passed. All disposable process-event homes were swept.
+Final cleanup ensure-listening: exit=0 swept: attempted=0
+
+Final cleanup reconcile: exit=0 swept: attempted=0
+
+Final cleanup inherited: exit=0 swept: attempted=0
+

@@ -1,0 +1,13 @@
+{
+  "runner_process_groups": [
+    7829,
+    85197
+  ],
+  "remaining_processes": [],
+  "disposable_live_directory_exists": false,
+  "baseline_lease_fixture_remaining_processes": [],
+  "baseline_lease_fixture_exists": false,
+  "all_validation_remaining_processes": [],
+  "transient_validation_directory_removed": true,
+  "final_status": "M tests/fm-procevent.test.sh"
+}

@@ -1,0 +1,6 @@
+base ensure-listening after lease expiry: exit=0, command_executed=False, lease_refreshed=False
+base cleanup: retired: regression
+swept: attempted=1
+target ensure-listening after lease expiry: exit=0, command_executed=True, lease_refreshed=True
+target cleanup: retired: regression
+swept: attempted=1
