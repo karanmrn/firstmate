@@ -1,0 +1,3 @@
+ok - arm posts and confirms the staged reply before reporting listener readiness
+tests/.gate-base-procevent-focused.sh: line 233: setsid: command not found
+not ok - could not read the draining holder's identity

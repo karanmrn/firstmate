@@ -1,0 +1,34 @@
+[
+  {
+    "name": "remote-doctor",
+    "exit": 0,
+    "command": [
+      "/bin/bash",
+      "tests/fm-remote-doctor.test.sh"
+    ]
+  },
+  {
+    "name": "remote-guard",
+    "exit": 0,
+    "command": [
+      "/bin/bash",
+      "tests/fm-remote-herdr-guard.test.sh"
+    ]
+  },
+  {
+    "name": "omp-detection",
+    "exit": 0,
+    "command": [
+      "/bin/bash",
+      "tests/.gate-omp-focused.sh"
+    ]
+  },
+  {
+    "name": "procevent-draining",
+    "exit": 0,
+    "command": [
+      "/bin/bash",
+      "tests/.gate-procevent-focused.sh"
+    ]
+  }
+]

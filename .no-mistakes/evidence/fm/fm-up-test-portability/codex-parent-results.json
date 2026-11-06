@@ -1,0 +1,10 @@
+[
+  {
+    "name": "base-omp-codex-parent",
+    "exit": 1
+  },
+  {
+    "name": "omp-codex-parent",
+    "exit": 0
+  }
+]

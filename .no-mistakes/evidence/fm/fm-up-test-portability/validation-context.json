@@ -1,0 +1,23 @@
+{
+  "head": "0d84aca609264f09ca1f53fcfbc19084fb87baf5",
+  "platform": "Darwin",
+  "bash": "/bin/bash",
+  "jq": "/usr/bin/jq",
+  "setsid_on_path": false,
+  "focused_selection": {
+    "omp": "test_detection_anchored_name_and_marker_precedence from tests/fm-omp-harness.test.sh",
+    "procevent": "shared setup and wait_for_lines, then draining-rearm scenario from tests/fm-procevent.test.sh"
+  },
+  "oracles": {
+    "remote": "Aqua GUI-domain proof is required. Foreign, inherited or unprovable owner markers cannot establish trust.",
+    "omp": "FM_OMP_HARNESS requires OMP ancestry. CLAUDECODE remains claude with ancestry hidden.",
+    "procevent": "A released earlier claim permits exactly one next-generation reply and result."
+  },
+  "baseline_results": {
+    "remote-doctor": 1,
+    "remote-guard": 1,
+    "procevent-draining": 1
+  },
+  "mutation": "Temporary harness executable accepted FM_OMP_HARNESS without ancestry. The focused assertion rejected it with exit 1.",
+  "live_validation": "No changed runtime surface. All checks are isolated automated fixtures, not live harness validation."
+}

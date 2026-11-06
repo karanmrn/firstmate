@@ -1,0 +1,18 @@
+[
+  {
+    "name": "omp-inherited-markers",
+    "exit": 0
+  },
+  {
+    "name": "omp-marker-mutant",
+    "exit": 1
+  },
+  {
+    "name": "base-remote-guard",
+    "exit": 1
+  },
+  {
+    "name": "base-remote-doctor",
+    "exit": 1
+  }
+]
