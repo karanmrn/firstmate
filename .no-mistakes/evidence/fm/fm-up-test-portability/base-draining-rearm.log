@@ -1,0 +1,3 @@
+ok - arm posts and confirms the staged reply before reporting listener readiness
+.portability-check/base-draining-rearm.sh: line 234: setsid: command not found
+not ok - could not read the draining holder's identity

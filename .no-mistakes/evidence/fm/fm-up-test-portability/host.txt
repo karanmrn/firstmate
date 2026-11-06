@@ -1,0 +1,6 @@
+Darwin
+GNU bash, version 3.2.57(1)-release (arm64-apple-darwin26)
+/usr/bin/jq
+/usr/bin/perl
+/usr/bin/codesign
+setsid is absent from PATH
