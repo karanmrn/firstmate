@@ -1,0 +1,60 @@
+$ fm-procevent-when.sh arm listed --interval 0.1 --stable 1 --condition ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6R125YDH26CWCR4BNVR866K/.test-phase-tmp/live-watch/condition.sh ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6R125YDH26CWCR4BNVR866K/.test-phase-tmp/live-watch/polls ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6R125YDH26CWCR4BNVR866K/.test-phase-tmp/live-watch/trigger --action ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6R125YDH26CWCR4BNVR866K/.test-phase-tmp/live-watch/action.sh ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6R125YDH26CWCR4BNVR866K/.test-phase-tmp/live-watch/actions
+armed: when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit: 0
+$ fm-procevent.sh reconcile
+reconciled: published=0 started=1 stopped=0 uncertain=0 failed=0
+exit: 0
+$ fm-procevent.sh list
+SOURCE                       ADAPTER      OWNER      PENDING
+when-listed                  when         live       0
+exit: 0
+$ fm-procevent-when.sh retire when-listed
+retired: when-listed
+retired: when-listed
+exit: 0
+$ fm-procevent.sh reconcile
+reconciled: published=0 started=0 stopped=0 uncertain=0 failed=0
+exit: 0
+OBSERVED: the live watch polled before retire and did not fire after its condition became true.
+$ fm-procevent.sh list
+no sources registered
+exit: 0
+$ fm-procevent-when.sh arm when-collision --condition false --action true
+armed: when-when-collision
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit: 0
+$ fm-procevent-when.sh retire when-collision
+error: no watch registered as when-collision (run list for the registered source ids)
+exit: 1
+$ fm-procevent-when.sh retire when-when-collision
+retired: when-when-collision
+retired: when-when-collision
+exit: 0
+$ fm-procevent-when.sh arm xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx --condition false --action true
+armed: when-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit: 0
+$ fm-procevent-when.sh retire when-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+retired: when-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+retired: when-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+exit: 0
+$ fm-procevent-when.sh retire when-../escape
+error: invalid source id: when-../escape
+exit: 1
+$ fm-procevent-when.sh retire ordinary
+retired: when-ordinary
+retired: when-ordinary
+exit: 0
+$ fm-procevent-when.sh retire ordinary
+retired: when-ordinary
+retired: when-ordinary
+exit: 0
+OBSERVED: exact prefixed IDs, maximum-length IDs, missing IDs, path rejection, and bare-name idempotence match the contract.
+$ fm-procevent.sh sweep-home
+swept: attempted=0
+exit: 0
+Disposable watch home removed.

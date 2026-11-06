@@ -1,0 +1,15 @@
+ok - a default-on guard runs wherever its tools are installed
+ok - an absent tool is a named capability skip, not a silent pass
+ok - a prompt-submitting guard stays off until it is asked for
+ok - a guard's own variable turns it on
+ok - a demanded run refuses to pass as a skip
+ok - FM_LIVE switches the whole family
+ok - a guard's own setting wins over FM_LIVE
+ok - any entry point of a multi-mode guard turns it on
+ok - the shared gate carries the gate-refusal bypass into every live guard
+ok - a proceeding live run exports DISABLE_AUTOUPDATER=1
+ok - DISABLE_AUTOUPDATER rides fm-spawn's claude launch through to the harness pane
+ok - DISABLE_AUTOUPDATER is embedded in the launch so a daemon-built pane keeps it
+ok - all 60 live guards refuse together on FM_LIVE=0
+
+PROCESS_EXIT_STATUS=0

@@ -1,0 +1,3 @@
+Owned fixture processes remaining before cleanup: []
+Transient worktree testing directory exists after cleanup: False
+Baseline read-only fixtures were removed after recording the regression.

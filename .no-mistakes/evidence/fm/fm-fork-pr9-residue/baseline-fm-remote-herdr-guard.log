@@ -1,0 +1,3 @@
+not ok - this host does not expose a holder's environment (macOS hides platform-binary environments; jq at /usr/bin/jq must be a non-platform binary): 
+
+PROCESS_EXIT_STATUS=1

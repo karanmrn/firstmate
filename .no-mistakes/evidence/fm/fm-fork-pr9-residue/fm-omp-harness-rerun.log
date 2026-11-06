@@ -1,0 +1,21 @@
+ok - fm-harness: omp detects by its anchored name; the marker is a precedence override that needs real omp ancestry
+ok - session lock and tmux liveness: omp is anchored, decoys stay out
+ok - fm-spawn: the omp launch line clears markers, pins posture, and wires the state-resident extension
+ok - fm-spawn: omp model validation is scoped to providers the listing can prove
+ok - fm-spawn: a real omp secondmate launch loads only the busy -e and auto-discovers its primary extensions
+ok - fm-spawn: the config/secondmate-harness model pin is validated against the omp catalog before launch
+ok - fm-spawn: a pinned local omp secondmate launches with --profile and validates its model under that profile
+ok - fm-spawn: an absent pin, or only another secondmate's pin, leaves the omp launch unchanged
+ok - fm-spawn: a malformed or reserved omp profile pin refuses before any record or launch
+ok - omp extension: agent_start busy, willContinue stays busy, plain agent_end idle, turn_end a notification
+ok - control, composer, and supervision-model tables carry omp's verified values
+ok - fm-wake-lib: the omp ownership proof is keyed on its own extensions and gates the hand-off tolerance
+ok - .omp turn-end guard: digest delivery, seatbelt block, one compelled continuation, flagged stop stands down
+ok - .omp watch extension: fm_watch_arm_omp arms once, repeats as a no-op, and delivers an actionable close as one follow-up
+ok - .omp watch extension: an opted-in home runs the supervision host and relays every host line (away record)
+ok - .omp watch extension: an opted-in home runs the supervision host and relays every host line (quiet record)
+ok - .omp watch extension: a home without config/supervision-host or with an off file keeps the plain arm
+ok - .omp watch extension: a host-only boundary rides the replacement handoff and replays in the successor session
+ok - .omp watch extension: a host close split across stream chunks reaches main as one whole follow-up
+
+PROCESS_EXIT_STATUS=0

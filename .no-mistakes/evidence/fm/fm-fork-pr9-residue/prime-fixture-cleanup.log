@@ -1,0 +1,14 @@
+Baseline fixture roots remaining after suite exit:
+.fm-test-watcher.47619.hKIAeE
+.fm-test-procevent.47619.OcbZPM
+.fm-test-cleanup.47619.AbGFDw
+fm-prime-harness.KrrWcC
+Read-only directories remaining in baseline fixture:
+fm-prime-harness.KrrWcC/effort-max/home/state/prime-effort-max-x1.git-hooks
+fm-prime-harness.KrrWcC/effort-medium/home/state/prime-effort-medium-x1.git-hooks
+fm-prime-harness.KrrWcC/launch/home/state/prime-launch-x1.git-hooks
+fm-prime-harness.KrrWcC/inherited-markers/home/state/prime-inherited-markers-x1.git-hooks
+fm-prime-harness.KrrWcC/effort-low/home/state/prime-effort-low-x1.git-hooks
+fm-prime-harness.KrrWcC/effort-high/home/state/prime-effort-high-x1.git-hooks
+fm-prime-harness.KrrWcC/effort-xhigh/home/state/prime-effort-xhigh-x1.git-hooks
+Target fixture directory entries after suite exit: []

@@ -1,0 +1,5 @@
+ok - a missing session backend is a human gap that --fix never claims to close
+ok - an absent launch agent is a fixable gap and the read-only run changes nothing
+not ok - --fix left a repairable host unready: expected exit 0, got 1
+
+PROCESS_EXIT_STATUS=1

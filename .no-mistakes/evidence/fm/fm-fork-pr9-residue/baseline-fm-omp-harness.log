@@ -1,0 +1,3 @@
+not ok - a leaked FM_OMP_HARNESS without an omp ancestor must not relabel a claude worker, got 'codex'
+
+PROCESS_EXIT_STATUS=1

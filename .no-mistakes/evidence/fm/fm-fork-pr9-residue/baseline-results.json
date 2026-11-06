@@ -1,0 +1,27 @@
+[
+  {
+    "suite": "fm-remote-doctor",
+    "exit": 1,
+    "remaining": []
+  },
+  {
+    "suite": "fm-remote-herdr-guard",
+    "exit": 1,
+    "remaining": []
+  },
+  {
+    "suite": "fm-prime-harness",
+    "exit": 0,
+    "remaining": [
+      ".fm-test-watcher.47619.hKIAeE",
+      ".fm-test-procevent.47619.OcbZPM",
+      ".fm-test-cleanup.47619.AbGFDw",
+      "fm-prime-harness.KrrWcC"
+    ]
+  },
+  {
+    "suite": "fm-omp-harness",
+    "exit": 1,
+    "remaining": []
+  }
+]

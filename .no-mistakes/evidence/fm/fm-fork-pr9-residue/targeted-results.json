@@ -1,0 +1,47 @@
+[
+  {
+    "suite": "fm-remote-doctor",
+    "exit": 0,
+    "remaining": [],
+    "evidence": "fm-remote-doctor.log"
+  },
+  {
+    "suite": "fm-remote-herdr-guard",
+    "exit": 0,
+    "remaining": [],
+    "evidence": "fm-remote-herdr-guard.log"
+  },
+  {
+    "suite": "fm-live-gate",
+    "exit": 0,
+    "remaining": [
+      ".fm-test-procevent.22404.GSoLMA",
+      ".fm-test-watcher.23982.vhsJNS",
+      ".fm-test-cleanup.22404.xt963A",
+      ".fm-test-watcher.22404.3SUP9h",
+      ".fm-test-cleanup.23982.XSRaFL",
+      ".fm-test-procevent.23982.ORbQQT"
+    ],
+    "evidence": "fm-live-gate.log"
+  },
+  {
+    "suite": "fm-omp-harness",
+    "exit": 0,
+    "remaining": [],
+    "initial_setup_exit": 1,
+    "evidence": "fm-omp-harness-rerun.log",
+    "setup_resolution": "Used ordinary disposable toolchain TMPDIR because secondmate fixtures refuse repository-contained homes."
+  },
+  {
+    "suite": "fm-prime-harness",
+    "exit": 0,
+    "remaining": [],
+    "evidence": "fm-prime-harness.log"
+  },
+  {
+    "suite": "fm-procevent-when",
+    "exit": 0,
+    "remaining": [],
+    "evidence": "fm-procevent-when.log"
+  }
+]

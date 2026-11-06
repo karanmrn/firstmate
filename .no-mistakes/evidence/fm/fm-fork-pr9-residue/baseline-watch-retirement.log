@@ -1,0 +1,21 @@
+$ fm-procevent-when.sh arm baseline --condition false --action true
+armed: when-baseline
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+exit=0
+$ fm-procevent.sh list
+SOURCE                       ADAPTER      OWNER      PENDING
+when-baseline                when         none       0
+exit=0
+$ fm-procevent-when.sh retire when-baseline
+retired: when-when-baseline
+retired: when-when-baseline
+exit=0
+$ fm-procevent.sh list
+SOURCE                       ADAPTER      OWNER      PENDING
+when-baseline                when         none       0
+exit=0
+REPRODUCED: baseline reported success but the real when-baseline registration remains armed.
+Target cleanup: retired: when-baseline
+retired: when-baseline
+exit=0
