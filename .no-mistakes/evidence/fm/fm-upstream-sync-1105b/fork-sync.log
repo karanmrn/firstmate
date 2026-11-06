@@ -1,0 +1,23 @@
+Cloning into '.validation-sync/fork'...
+Warning: you are leaving 3 commits behind, not connected to
+any of your branches:
+
+  3a6ea0f8 Merge remote-tracking branch 'upstream/main' into fm/fm-upstream-sync-1105b
+  4869cf58 fix: wait for busy-state locks to reach the stale threshold (#8177)
+  2886bbe0 fix(bin): canonicalize Windows drive-letter herdr socket paths before identity comparison (#8185)
+
+If you want to keep them by creating a new branch, this may be a good time
+to do so with:
+
+ git branch <new-branch-name> 3a6ea0f8
+
+Switched to a new branch 'fork-main'
+Updating bb6c9278..3a6ea0f8
+Fast-forward
+ bin/backends/herdr.sh          |  19 +++++--
+ bin/fm-busy-event.sh           |  42 ++++++++++------
+ tests/fm-backend-herdr.test.sh |  61 +++++++++++++++++++++++
+ tests/fm-busy-state.test.sh    | 110 +++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 212 insertions(+), 20 deletions(-)
+Already up to date.
+3a6ea0f818378ac788298b2b7c8c367a46a09603

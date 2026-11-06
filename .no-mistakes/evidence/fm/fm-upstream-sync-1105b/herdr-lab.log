@@ -1,0 +1,14 @@
+fm-herdr-lab: tripwire already exists for 'fm-lab-sync-82729-27213'; refusing ambiguous ownership
+{"client":{"version":"0.9.5","channel":"stable","protocol":22,"endpoint_protocol_generation":1,"endpoint_capabilities":["surface_interest","presentation_effects_fence","health_check"],"remote_host_bridge":true,"remote_bridge_idle_timeout":true,"binary":"/opt/homebrew/bin/herdr","session":"fm-lab-sync-82729-27213"},"server":{"status":"not_running","running":false,"version":null,"protocol":null,"capabilities":null,"compatible":null,"endpoint_compatible":null,"socket":"~/.config/herdr/sessions/fm-lab-sync-82729-27213/herdr.sock","session":"fm-lab-sync-82729-27213","restart_needed":false,"server_binary_stale":false},"update":{"restart_needed":false,"server_binary_stale":false}}
+{"client":{"version":"0.9.5","channel":"stable","protocol":22,"endpoint_protocol_generation":1,"endpoint_capabilities":["surface_interest","presentation_effects_fence","health_check"],"remote_host_bridge":true,"remote_bridge_idle_timeout":true,"binary":"/opt/homebrew/bin/herdr","session":"fm-lab-sync-82729-27213"},"server":{"status":"running","running":true,"version":"0.9.5","protocol":22,"capabilities":{"live_handoff":true,"detached_server_daemon":false,"endpoint_protocol_generation":1,"surface_interest":true,"health_check":true,"ssh_agent_registration":true},"compatible":true,"endpoint_compatible":true,"socket":"~/.config/herdr/sessions/fm-lab-sync-82729-27213/herdr.sock","session":"fm-lab-sync-82729-27213","restart_needed":false,"server_binary_stale":false},"update":{"restart_needed":false,"server_binary_stale":false}}
+Live lab session: fm-lab-sync-82729-27213
+Reported socket: ~/.config/herdr/sessions/fm-lab-sync-82729-27213/herdr.sock
+Firstmate session identity: ~/.config/herdr/sessions/fm-lab-sync-82729-27213/herdr.sock
+Identity through symlinked parent: ~/.config/herdr/sessions/fm-lab-sync-82729-27213/herdr.sock
+Refused invalid or unconvertible socket identity: <>
+Refused invalid or unconvertible socket identity: <relative.sock>
+Refused invalid or unconvertible socket identity: <C:\missing\herdr.sock>
+Refused invalid or unconvertible socket identity: <C:/missing/herdr.sock>
+Live Unix socket equality and refusal checks passed.
+true
+Completed live socket driver: exit 0. Guarded teardown: exit 0, default-session tripwire unchanged. Post-teardown session-absence assertion: true.

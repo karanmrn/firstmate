@@ -1,0 +1,3 @@
+ok - test_canonical_socket_path_folds_a_windows_drive_letter_spelling
+ok - test_canonical_socket_path_refuses_a_failed_cygpath
+ok - test_canonical_socket_path_refuses_empty_cygpath_output

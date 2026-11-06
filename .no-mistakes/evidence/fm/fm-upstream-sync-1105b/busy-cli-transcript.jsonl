@@ -1,0 +1,9 @@
+{"scenario": "BASELINE first retirement refuses a fresh orphan", "exit": 1, "elapsed_seconds": 7.4, "stdout": "", "stderr": "error: busy-state lock timeout for task", "remaining": ["task.busy-gen", "task.busy-state", "task.busy-state.lock"]}
+{"scenario": "TARGET first retirement recovers fresh orphan with 12-second stale threshold", "exit": 0, "elapsed_seconds": 11.15, "stdout": "", "stderr": "", "remaining": []}
+{"scenario": "TARGET first retirement recovers fresh orphan", "exit": 0, "elapsed_seconds": 4.97, "stdout": "", "stderr": "", "remaining": []}
+{"scenario": "TARGET waits for active lock until holder releases", "exit": 0, "elapsed_seconds": 1.13, "stdout": "", "stderr": "", "remaining": [], "stale_setting": null}
+{"scenario": "TARGET waits for active lock until holder releases", "exit": 0, "elapsed_seconds": 1.18, "stdout": "", "stderr": "", "remaining": [], "stale_setting": "08"}
+{"scenario": "TARGET waits for active lock until holder releases", "exit": 0, "elapsed_seconds": 1.2, "stdout": "", "stderr": "", "remaining": [], "stale_setting": "bad"}
+{"scenario": "TARGET refuses future-dated lock within timeout without deleting state", "exit": 1, "elapsed_seconds": 3.42, "stdout": "", "stderr": "error: busy-state lock timeout for task", "remaining": ["task.busy-gen", "task.busy-state", "task.busy-state.lock"]}
+{"scenario": "TARGET retirement succeeds after timeout cause is removed", "exit": 0, "elapsed_seconds": 0.04, "stdout": "", "stderr": "", "remaining": []}
+All direct CLI scenarios completed with their expected persisted-state results.
