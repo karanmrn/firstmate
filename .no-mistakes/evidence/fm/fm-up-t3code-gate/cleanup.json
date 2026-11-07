@@ -1,0 +1,17 @@
+[
+  {
+    "port": 43773,
+    "pid": 6749,
+    "action": "SIGTERM sent to isolated T3 server"
+  },
+  {
+    "port": 43774,
+    "pid": 49368,
+    "action": "SIGTERM sent to isolated T3 server"
+  },
+  {
+    "port": 43775,
+    "pid": 49540,
+    "action": "SIGTERM sent to isolated T3 server"
+  }
+]

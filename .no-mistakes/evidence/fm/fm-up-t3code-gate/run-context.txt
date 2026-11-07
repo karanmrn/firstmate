@@ -1,0 +1,14 @@
+Tested head: 62030a560e87d7640b4e26118f1f1de1e17277a6
+Base: bf05a4fcd69b8bb27f261177eac4abb57f98aa1b
+Real product: Firstmate adapter CLI against isolated loopback T3 servers.
+T3 versions: 0.1.0, 0.1.7, 0.1.8-nightly.20261107.4301.
+Old releases: official pingdotgg/t3code GitHub release tarballs, unpacked inside the worktree.
+Telemetry disabled on all servers. Private base-dir per version.
+Baseline login: exit 4 with original four missing tool names. Current logins: exit 0.
+Live catalog/launch/guard drivers: exit 0 on all three versions.
+Live questions drivers: exit 0 on all three versions.
+Missing-capability driver: exit 0. Loopback proxy forwards to real nightly T3 and removes one capability from tools/list. No mutating tool call was forwarded.
+Targeted deterministic regression: bash tests/fm-t3-mcp.test.sh, exit 0. This uses a fake server and is not live evidence.
+Disposable drivers initially had two incorrect expected error-code names. They were corrected to the documented typed refusal codes and rerun successfully. No product changes were necessary.
+CLI-only change. No rendered UI changed, so no screenshots were captured.
+Cleanup: all three server sessions exited 130 after intentional termination. The proxy closed normally. No listener remains on lab ports 43773-43776. All temporary workspace files and downloaded releases were removed.

@@ -1,0 +1,1 @@
+{"ok":true,"tokenFile":"~/.no-mistakes/worktrees/b38b47bec548/01M6TW2N0WHAV0YP4KA3JWP9YW/.validation-t3/stable-token","origin":"http://127.0.0.1:43775","access":"full-access","scope":"orchestration:read orchestration:operate settings:write source-control:write","expiresAt":"2026-12-07T11:31:31.062Z","environmentId":"3b78e806-018c-4b5f-99b9-6b10ecb2372c","serverVersion":"0.1.7"}
