@@ -11,7 +11,7 @@ metadata:
   license: MIT
 ---
 
-<!-- Adapted from Hermes Agent optional-skills/autonomous-ai-agents/agent-merge-conflict-arbiter at commit 2bd378ed1b8, Copyright (c) 2025 Nous Research, MIT License (see LICENSE in this directory). Hermes kanban and tool steps are replaced with git, gh, and Firstmate brief and status terms; the procedure is unchanged. -->
+<!-- Adapted from Hermes Agent optional-skills/autonomous-ai-agents/agent-merge-conflict-arbiter at commit 2bd378ed1b8, Copyright (c) 2025 Nous Research, MIT License (see LICENSE in this directory). Hermes kanban and tool steps are replaced with git, gh, and Firstmate brief and status terms. -->
 
 # Agent merge-conflict arbiter
 
@@ -69,14 +69,21 @@ Every design-question pick must appear explicitly in the hand-back summary.
   Write down one sentence of intent per side before touching any file.
 - Done when: you can state both intents in your own words and have both diffs for every conflicted file.
 
-### 2. Classify every conflicted hunk
+### 2. Check conflict types and classify hunks
 
-- Open each conflicted file and locate each `<<<<<<<`/`=======`/`>>>>>>>` block.
+- Inspect `git status --short` and `git ls-files -u` for every conflicted path before editing or staging.
+- If any conflict requires a decision outside text markers, escalate before editing or staging any file.
+  This includes modify/delete, rename/delete, rename/rename, binary, and other markerless conflicts.
+  Record a `needs-decision:` status line with all affected paths, the conflict type, both intents, and the required decision.
+  Leave the files and index unchanged.
+  Deliver the escalation through step 5, then stop.
+- Otherwise, open each conflicted file and locate each `<<<<<<<`/`=======`/`>>>>>>>` block.
 - Assign each hunk exactly one class from the quick-reference table, judging by the stated intents, not by which change looks nicer.
 - If a single hunk contains multiple independent decisions, such as new logic that combines cleanly plus a styling or rounding choice both sides answered differently, decompose it into sub-decisions and classify each one.
 - A single file often mixes classes: one hunk may be a design collision while a neighboring hunk is disjoint.
   Classify per hunk, not per file.
-- Done when: every hunk has a written class and a one-line rationale.
+- Continue only when every unmerged entry consists entirely of text hunks.
+  Each hunk must have a written class and a one-line rationale.
 
 ### 3. Resolve under the impartiality contract
 
@@ -87,10 +94,11 @@ Every design-question pick must appear explicitly in the hand-back summary.
     Never split the difference into a hybrid neither side asked for.
   - superseded -> keep the surviving side and delete the dead premise.
 - Never favor the side that spawned you.
-  If intents genuinely tie, escalate rather than guess: append a `needs-decision:` status line naming the hunk, the design question, and both answers, then stop.
+  If intents genuinely tie, append a `needs-decision:` status line naming the hunk, the design question, and both answers.
+  Deliver the escalation through step 5, then stop.
 - Change nothing outside conflict markers: no formatting, renames, or opportunistic fixes.
-- `git add` each resolved file.
-- Done when: `git grep -n -e '^<<<<<<<' -e '^>>>>>>>'` finds no markers, `git diff --name-only --diff-filter=U` is empty, and every resolved file is staged.
+- Stage each resolved file with `git add` only after step 2 permits hunk resolution and all its hunks are resolved.
+- Done when: every original unmerged entry is resolved, `git grep -n -e '^<<<<<<<' -e '^>>>>>>>'` finds no markers, `git diff --name-only --diff-filter=U` is empty, and every resolved file is staged.
 
 ### 4. Verify
 
@@ -102,11 +110,13 @@ Every design-question pick must appear explicitly in the hand-back summary.
 
 ### 5. Hand back
 
-- Produce a completion summary naming EVERY hunk decision: `file:lines - class - which side(s) kept - rationale`.
+- For completed arbitration, produce a summary naming EVERY hunk decision: `file:lines - class - which side(s) kept - rationale`.
 - For every same-question-different-answer hunk, state the design question and the answer you picked so a human can veto it; never bury a design call.
+- For an escalation, report every unresolved hunk or file-level conflict, all affected paths, both intents, and the required decision.
+  State that the merge or rebase remains halted.
 - Deliver the summary where the brief's definition of done puts it: a scout writes it to its report, and a ship carries it in its delivery evidence and final report.
   Standalone, print the summary.
-- Done when: the summary is delivered and lists all hunks.
+- Done when: the report is delivered and accounts for every resolved hunk and unresolved conflict.
 
 ## Pitfalls
 
@@ -123,7 +133,12 @@ Every design-question pick must appear explicitly in the hand-back summary.
 
 ## Verification
 
+For completed arbitration:
+
 - `git status` shows a clean tree on the target branch with a merge commit or a completed rebase.
 - No conflict markers remain (`git grep -n -e '^<<<<<<<' -e '^>>>>>>>'` prints nothing).
 - Build and tests pass; both sides' intents are demonstrably present, or the dropped one is explicitly named in the summary.
 - The hand-back summary enumerates every hunk with class and rationale.
+
+For an escalation, the report accounts for every unresolved conflict and explicitly states that arbitration is incomplete.
+For a step 2 escalation, the files and index remain unchanged.
