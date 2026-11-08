@@ -1,0 +1,28 @@
+
+stdout:
+armed: state/task-x1.check.sh
+
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/80 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8080808080808080808080808080808080808080
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 80
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: base branch main requires the merge queue; retry with: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6X7S79JSHQVAAC1XXP1FW7C/bin/.fm-pr-merge-base-validation.sh task-x1 https://github.com/example/repo/pull/80 --attended-override -- --auto --squash
+
+gh.log:
+pr view https://github.com/example/repo/pull/80 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/80 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+pr merge 80 --repo example/repo --match-head-commit 8080808080808080808080808080808080808080 --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=80 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")

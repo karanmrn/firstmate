@@ -1,0 +1,26 @@
+{
+  "target": "bfa3f2a636400e2e960d2e4963b43cb61ca2ccb0",
+  "base": "da2b5b12a81e03d25f537f6f3342b80555240c84",
+  "target_test_exit": 0,
+  "base_regression_exit": 1,
+  "base_failure_expected": true,
+  "live_guard_exit": 0,
+  "commands": [
+    "TMPDIR=\"$PWD/.test-queue-validation/tmp\" QUEUE_EVIDENCE=<evidence> bash tests/.fm-queue-validation.sh",
+    "TMPDIR=\"$PWD/.test-queue-validation/tmp\" QUEUE_BASELINE=1 QUEUE_EVIDENCE=<evidence> bash tests/.fm-queue-validation.sh",
+    "bin/fm-pr-merge.sh queue-validation https://github.com/example/repo/pull/999999 -- <flag> (isolated FM_HOME and HOME, flags: --auto, --auto=true, --admin, --delete-branch, -yd)"
+  ],
+  "scope": "18 existing targeted test functions plus MERGE and REBASE method cases. Forge commands are stubbed. Public protected-flag refusals used the real CLI with no stubs or network.",
+  "oracle": "Author intent requires green-only queue admission without an override. Recorded decision requires forwarding a caller method unchanged with --auto. Existing command contracts require queued state to remain unlanded and away mode to refuse asynchronous merges.",
+  "wrong_behaviour_rejected": [
+    "original direct-merge request on a queue-required branch",
+    "rejection of caller-named mismatched method",
+    "queue submission with red or unreported checks",
+    "claiming queued or removed PRs landed",
+    "queue submission while away",
+    "loss of expected-head binding"
+  ],
+  "live_blocker": "A real queue requires an isolated GitHub repository with queue rules and pull requests. This test phase forbids remote push/PR phases, shared-service mutations, and operator data access. A local emulator or gh stub cannot prove actual GitHub admission. No credentials or production records were inspected. Provide an authorised disposable GitHub queue repository, test PRs and permission for test queue operations in a separate live-validation scope.",
+  "visual_evidence": "CLI-only change. Retained CLI JSON and transcripts are the user-visible surface.",
+  "cleanup": "All temporary test runners, base script and fixture homes removed after both child exits. No browser or server launched."
+}

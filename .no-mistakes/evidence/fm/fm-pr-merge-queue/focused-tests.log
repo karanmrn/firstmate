@@ -1,0 +1,20 @@
+ok - fm-pr-merge queues a green PR on a merge-queue base without the attended override
+ok - fm-pr-merge forwards the caller's method with --auto on a merge-queue base
+ok - fm-pr-merge never queues a red PR or one with an unreported required check
+ok - fm-pr-merge reports a PR the merge queue removed or never took as not landed
+ok - fm-pr-merge reports exact queue retry flags after a zero-exit false success
+ok - fm-pr-merge explains how to retry with the required GitHub merge queue method
+ok - fm-pr-merge aggregates agreeing merge-queue rules
+ok - fm-pr-merge reports ambiguity for conflicting merge-queue rules
+ok - fm-pr-merge names the queue requirement even when its method is unrecognised
+ok - fm-pr-merge distinguishes unreadable branch rules from a base with no merge queue
+ok - fm-pr-merge says nothing about a merge queue when the base branch has no queue rule
+ok - fm-pr-merge does not echo back queue flags the caller already used
+ok - fm-pr-merge claims no acceptance for a failed merge command carrying queue flags
+ok - away posture permits immediate merges but refuses every asynchronous path
+ok - a queued GitHub merge stays silent and leaves confirmation to the armed poll
+ok - fm-pr-merge records pr= and pr_head= for a verified GitHub merge
+ok - fm-pr-merge refuses before any merge write when the live head differs from --expected-head
+ok - fm-pr-merge refuses branch deletion unless --attended-override is passed
+ok - queue uses configured MERGE method
+ok - queue uses configured REBASE method

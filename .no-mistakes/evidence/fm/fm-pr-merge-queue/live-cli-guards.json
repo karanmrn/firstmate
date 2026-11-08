@@ -1,0 +1,67 @@
+[
+  {
+    "command": [
+      "bin/fm-pr-merge.sh",
+      "queue-validation",
+      "https://github.com/example/repo/pull/999999",
+      "--",
+      "--auto"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "error: extra merge arguments must not request auto-merge, a protection bypass, or branch deletion; pass --attended-override only for an explicit captain instruction\n",
+    "passed": true
+  },
+  {
+    "command": [
+      "bin/fm-pr-merge.sh",
+      "queue-validation",
+      "https://github.com/example/repo/pull/999999",
+      "--",
+      "--auto=true"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "error: extra merge arguments must not request auto-merge, a protection bypass, or branch deletion; pass --attended-override only for an explicit captain instruction\n",
+    "passed": true
+  },
+  {
+    "command": [
+      "bin/fm-pr-merge.sh",
+      "queue-validation",
+      "https://github.com/example/repo/pull/999999",
+      "--",
+      "--admin"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "error: extra merge arguments must not request auto-merge, a protection bypass, or branch deletion; pass --attended-override only for an explicit captain instruction\n",
+    "passed": true
+  },
+  {
+    "command": [
+      "bin/fm-pr-merge.sh",
+      "queue-validation",
+      "https://github.com/example/repo/pull/999999",
+      "--",
+      "--delete-branch"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "error: extra merge arguments must not request auto-merge, a protection bypass, or branch deletion; pass --attended-override only for an explicit captain instruction\n",
+    "passed": true
+  },
+  {
+    "command": [
+      "bin/fm-pr-merge.sh",
+      "queue-validation",
+      "https://github.com/example/repo/pull/999999",
+      "--",
+      "-yd"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "error: extra merge arguments must not request auto-merge, a protection bypass, or branch deletion; pass --attended-override only for an explicit captain instruction\n",
+    "passed": true
+  }
+]

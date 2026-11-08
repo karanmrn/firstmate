@@ -1,0 +1,612 @@
+These executions use forge stubs. They are not live GitHub evidence.
+
+CASE away-auto-refused
+stdout:
+stderr:
+error: --auto is attended-only; while the away-posture record exists only a synchronous merge may run under its authority lock
+gh.log:
+
+CASE away-gitlab-auto
+stdout:
+stderr:
+error: GitLab auto-merge is attended-only; while the away-posture record exists only an immediate merge may run under its authority lock
+gh.log:
+
+CASE away-gitlab-configured
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://gitlab.example/group/subgroup/project/-/merge_requests/7 is open and mergeable, with a successful pipeline at head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+error: GitLab auto-merge is attended-only; while the away-posture record exists only an immediate merge may run under its authority lock
+gh.log:
+
+CASE away-gitlab-sync
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://gitlab.example/group/subgroup/project/-/merge_requests/7 is open and mergeable, with a successful pipeline at head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+gh.log:
+
+CASE away-queue-refused
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/89 is open and mergeable, with every unwaived required check reported and every unwaived check green at head abababababababababababababababababababab
+error: GitHub merge refused while away because the base branch's merge-queue state does not prove an immediate merge; nothing was handed to the forge
+gh.log:
+pr view https://github.com/example/repo/pull/89 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/89 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE expected-head-fj-before
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  - the live head is "dddddddddddddddddddddddddddddddddddddddd", not the expected head cccccccccccccccccccccccccccccccccccccccc
+gh.log:
+
+CASE expected-head-gh-before
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: refusing to merge https://github.com/example/repo/pull/203
+  - the live head is "dddddddddddddddddddddddddddddddddddddddd", not the expected head bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+gh.log:
+pr view https://github.com/example/repo/pull/203 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/203 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+
+CASE expected-head-gl-before
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: refusing to merge https://gitlab.example/group/subgroup/project/-/merge_requests/7
+  - the live head is "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", not the expected head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+gh.log:
+
+CASE extra-args
+stdout:
+stderr:
+error: extra merge arguments must not request auto-merge, a protection bypass, or branch deletion; pass --attended-override only for an explicit captain instruction
+gh.log:
+
+CASE extra-args-attended
+stdout:
+armed: state/task-x1.check.sh
+verified: https://github.com/example/repo/pull/15 is merged (state=MERGED, merged=true, isInMergeQueue=false)
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/15 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 2222222222222222222222222222222222222222
+gh.log:
+pr view https://github.com/example/repo/pull/15 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/15 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+pr merge 15 --repo example/repo --match-head-commit 2222222222222222222222222222222222222222 --squash --delete-branch
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=15 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+
+CASE github-accepted-queue-flags
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/68 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8181818181818181818181818181818181818181
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 68
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: auto-merge was requested and armed for https://github.com/example/repo/pull/68, but nothing is merged or in the merge queue yet, so this run refuses instead of reporting an unproved merge
+error: this run refuses even though the request for https://github.com/example/repo/pull/68 was accepted with the exact flags base branch main requires (--auto --merge): the pull request has still not entered the merge queue, so no landed or queued outcome is proven; re-check the pull request's merge queue state before retrying
+gh.log:
+pr view https://github.com/example/repo/pull/68 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/68 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+pr merge 68 --repo example/repo --match-head-commit 8181818181818181818181818181818181818181 --auto --merge
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=68 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE github-agreeing-queue-rules
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/58 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 2424242424242424242424242424242424242424
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 58
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: base branch main requires the merge queue; retry with: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6X7S79JSHQVAAC1XXP1FW7C/bin/fm-pr-merge.sh task-x1 https://github.com/example/repo/pull/58 --attended-override -- --auto --rebase
+gh.log:
+pr view https://github.com/example/repo/pull/58 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/58 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+pr merge 58 --repo example/repo --match-head-commit 2424242424242424242424242424242424242424 --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=58 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE github-conflicting-queue-rules
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/59 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 2525252525252525252525252525252525252525
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 59
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: base branch main has conflicting merge queue methods (MERGE, SQUASH); exact retry flags are ambiguous
+gh.log:
+pr view https://github.com/example/repo/pull/59 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/59 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 59 --repo example/repo --match-head-commit 2525252525252525252525252525252525252525 --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=59 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE github-failed-merge-queue-flags
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/74 is open and mergeable, with every unwaived required check reported and every unwaived check green at head bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+error: pr merge failed
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: auto-merge was requested for https://github.com/example/repo/pull/74, but the merge command itself failed, so nothing was enabled, merged or queued
+error: base branch main requires the merge queue; retry with: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6X7S79JSHQVAAC1XXP1FW7C/bin/fm-pr-merge.sh task-x1 https://github.com/example/repo/pull/74 --attended-override -- --auto --merge
+gh.log:
+pr view https://github.com/example/repo/pull/74 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/74 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+pr merge 74 --repo example/repo --match-head-commit bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --auto --merge
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=74 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE github-no-queue-rule
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/72 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8585858585858585858585858585858585858585
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 72
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+gh.log:
+pr view https://github.com/example/repo/pull/72 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/72 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 72 --repo example/repo --match-head-commit 8585858585858585858585858585858585858585 --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=72 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE github-queue-caller-method
+stdout:
+armed: state/task-x1.check.sh
+verified: https://github.com/example/repo/pull/81 is queued (state=OPEN, merged=false, isInMergeQueue=true)
+queued, not landed: https://github.com/example/repo/pull/81 is in the merge queue and not merged; only the armed merge poll reporting it merged proves landing, and a pull request the queue removes stays unlanded
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/81 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8181818181818181818181818181818181818181
+gh.log:
+pr view https://github.com/example/repo/pull/81 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/81 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 81 --repo example/repo --match-head-commit 8181818181818181818181818181818181818181 --auto --merge
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=81 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+
+CASE github-queue-ordinary-enqueues
+stdout:
+armed: state/task-x1.check.sh
+verified: https://github.com/example/repo/pull/80 is queued (state=OPEN, merged=false, isInMergeQueue=true)
+queued, not landed: https://github.com/example/repo/pull/80 is in the merge queue and not merged; only the armed merge poll reporting it merged proves landing, and a pull request the queue removes stays unlanded
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/80 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8080808080808080808080808080808080808080
+gh.log:
+pr view https://github.com/example/repo/pull/80 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/80 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 80 --repo example/repo --match-head-commit 8080808080808080808080808080808080808080 --auto --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=80 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+
+CASE github-queue-red
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: refusing to merge https://github.com/example/repo/pull/82
+  - check 'ci' is not green
+error: these checks are not green: ci
+gh.log:
+pr view https://github.com/example/repo/pull/82 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/82 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+
+CASE github-queue-removed
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/83 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8383838383838383838383838383838383838383
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 83
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: this run asked the merge queue to take https://github.com/example/repo/pull/83, but it is neither merged nor in the merge queue, so it has not landed; the queue may already have removed it, for example after a required check failed, or GitHub may still hold it as auto-merge; re-check its checks and merge queue state before running this command again
+stdout-2:
+armed: state/task-x1.check.sh
+stderr-2:
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+error: refusing to merge https://github.com/example/repo/pull/83
+  - check 'summary' is not green
+error: these checks are not green: summary
+gh.log:
+pr view https://github.com/example/repo/pull/83 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/83 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+
+CASE github-queue-request-fails
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/83 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8383838383838383838383838383838383838383
+error: pr merge failed
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: the merge queue request for https://github.com/example/repo/pull/83 failed, so nothing was queued or merged; re-check the pull request's checks and merge queue state before running this command again
+gh.log:
+pr view https://github.com/example/repo/pull/83 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/83 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 83 --repo example/repo --match-head-commit 8383838383838383838383838383838383838383 --auto --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=83 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+
+CASE github-queue-required
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/54 is open and mergeable, with every unwaived required check reported and every unwaived check green at head bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+error: pr merge failed
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: base branch master requires the merge queue; retry with: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6X7S79JSHQVAAC1XXP1FW7C/bin/fm-pr-merge.sh task-x1 https://github.com/example/repo/pull/54 --attended-override -- --auto --merge
+gh.log:
+pr view https://github.com/example/repo/pull/54 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/54 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+pr merge 54 --repo example/repo --match-head-commit bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=54 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/master --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE github-queue-unreported
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: refusing to merge https://github.com/example/repo/pull/82
+  - required check 'summary' has not reported at head 8282828282828282828282828282828282828282
+error: these required checks have not reported: summary
+gh.log:
+pr view https://github.com/example/repo/pull/82 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/82 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+
+CASE github-unreadable-queue-rules
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/71 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8484848484848484848484848484848484848484
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 71
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: the branch rules for base branch main could not be read, so a merge queue requirement can be neither confirmed nor ruled out here
+gh.log:
+pr view https://github.com/example/repo/pull/71 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/71 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 71 --repo example/repo --match-head-commit 8484848484848484848484848484848484848484 --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=71 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE github-unrecognised-queue-method
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/70 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 8383838383838383838383838383838383838383
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 70
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: base branch main requires the merge queue, but its configured merge method (FASTFORWARD) is not one this script recognises, so exact retry flags cannot be named
+gh.log:
+pr view https://github.com/example/repo/pull/70 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/70 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 70 --repo example/repo --match-head-commit 8383838383838383838383838383838383838383 --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=70 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE github-zero-exit-queue-required
+stdout:
+armed: state/task-x1.check.sh
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/56 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 2121212121212121212121212121212121212121
+error: the merge command's own output follows, quoted; it is the forge CLI's report, not this script's verdict:
+error: > merged:
+error: >   number: 56
+error: >   status: ok
+error: GitHub merge outcome was not successful: state=OPEN, merged=false, isInMergeQueue=false
+error: base branch release/2026 requires the merge queue; retry with: ~/.no-mistakes/worktrees/48f6cc4ba3af/01M6X7S79JSHQVAAC1XXP1FW7C/bin/fm-pr-merge.sh task-x1 https://github.com/example/repo/pull/56 --attended-override -- --auto --rebase
+gh.log:
+pr view https://github.com/example/repo/pull/56 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/56 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+pr merge 56 --repo example/repo --match-head-commit 2121212121212121212121212121212121212121 --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=56 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+api --paginate repos/example/repo/rules/branches/release%2F2026 --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+
+CASE queue-method-MERGE
+stdout:
+armed: state/task-x1.check.sh
+verified: https://github.com/example/repo/pull/90 is queued (state=OPEN, merged=false, isInMergeQueue=true)
+queued, not landed: https://github.com/example/repo/pull/90 is in the merge queue and not merged; only the armed merge poll reporting it merged proves landing, and a pull request the queue removes stays unlanded
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/90 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 9090909090909090909090909090909090909090
+gh.log:
+pr view https://github.com/example/repo/pull/90 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/90 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 90 --repo example/repo --match-head-commit 9090909090909090909090909090909090909090 --auto --merge
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=90 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+
+CASE queue-method-REBASE
+stdout:
+armed: state/task-x1.check.sh
+verified: https://github.com/example/repo/pull/90 is queued (state=OPEN, merged=false, isInMergeQueue=true)
+queued, not landed: https://github.com/example/repo/pull/90 is in the merge queue and not merged; only the armed merge poll reporting it merged proves landing, and a pull request the queue removes stays unlanded
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/90 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 9090909090909090909090909090909090909090
+gh.log:
+pr view https://github.com/example/repo/pull/90 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/90 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 90 --repo example/repo --match-head-commit 9090909090909090909090909090909090909090 --auto --rebase
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=90 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+
+CASE queued-github-merge
+stdout:
+armed: state/task-x1.check.sh
+verified: https://github.com/example/repo/pull/66 is queued (state=OPEN, merged=false, isInMergeQueue=true)
+queued, not landed: https://github.com/example/repo/pull/66 is in the merge queue and not merged; only the armed merge poll reporting it merged proves landing, and a pull request the queue removes stays unlanded
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/66 is open and mergeable, with every unwaived required check reported and every unwaived check green at head 9999999999999999999999999999999999999999
+gh.log:
+pr view https://github.com/example/repo/pull/66 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/66 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 66 --repo example/repo --match-head-commit 9999999999999999999999999999999999999999 --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=66 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
+
+CASE records-before-merge
+stdout:
+armed: state/task-x1.check.sh
+verified: https://github.com/example/repo/pull/9 is merged (state=MERGED, merged=true, isInMergeQueue=false)
+stderr:
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+verified: https://github.com/example/repo/pull/9 is open and mergeable, with every unwaived required check reported and every unwaived check green at head deadbeefcafefeed0000000000000000deadbeef
+gh.log:
+pr view https://github.com/example/repo/pull/9 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/9 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup
+api repos/example/repo/branches/main
+api --paginate repos/example/repo/rules/branches/main
+api --paginate repos/example/repo/rules/branches/main --jq .[] | select(.type == "merge_queue") | "merge_method=" + (.parameters.merge_method // "")
+pr merge 9 --repo example/repo --match-head-commit deadbeefcafefeed0000000000000000deadbeef --squash
+api graphql -f query=query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){state merged isInMergeQueue baseRefName}}} -F owner=example -F repo=repo -F number=9 --jq .data.repository.pullRequest | "state=" + (.state // ""), "merged=" + (.merged | tostring), "queued=" + (.isInMergeQueue | tostring), "base=" + (.baseRefName // "")
