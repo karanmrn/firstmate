@@ -1,0 +1,49 @@
+## license-added
+$ bin/fm-test-run.sh --changed --base HEAD --json ~/.no-mistakes/evidence/01M6XWH9XE2V7J6X9F6SD9C8QY/license-added.json
+FM_TEST_SUMMARY total=0 failed=0 skipped_gate=0 duration_ms=56
+
+fm-test-run: no tests selected for changes vs HEAD (map is conservative; use --all for the complete suite)
+fm-test-run: nothing to run
+
+exit=0
+## baseline-license-added
+$ bin/fm-test-run.sh --changed --base HEAD
+
+fm-test-run: no changed-test mapping for source path: .agents/skills/disposable/LICENSE
+
+exit=2
+## license-modified
+$ bin/fm-test-run.sh --changed --base HEAD --json ~/.no-mistakes/evidence/01M6XWH9XE2V7J6X9F6SD9C8QY/license-modified.json
+FM_TEST_SUMMARY total=0 failed=0 skipped_gate=0 duration_ms=52
+
+fm-test-run: no tests selected for changes vs HEAD (map is conservative; use --all for the complete suite)
+fm-test-run: nothing to run
+
+exit=0
+## license-deleted
+$ bin/fm-test-run.sh --changed --base HEAD --json ~/.no-mistakes/evidence/01M6XWH9XE2V7J6X9F6SD9C8QY/license-deleted.json
+FM_TEST_SUMMARY total=0 failed=0 skipped_gate=0 duration_ms=54
+
+fm-test-run: no tests selected for changes vs HEAD (map is conservative; use --all for the complete suite)
+fm-test-run: nothing to run
+
+exit=0
+## skill-with-license
+$ bin/fm-test-run.sh --changed --base HEAD --list
+tests/fm-ask-user-authority.test.sh
+
+
+exit=0
+## nonlicense-refused
+$ bin/fm-test-run.sh --changed --base HEAD --list
+
+fm-test-run: no changed-test mapping for source path: .agents/skills/disposable/tool.sh
+
+exit=2
+## outside-skill-license-refused
+$ bin/fm-test-run.sh --changed --base HEAD --list
+
+fm-test-run: no changed-test mapping for source path: .agents/unrelated/LICENSE
+
+exit=2
+All runner scenario assertions passed.
