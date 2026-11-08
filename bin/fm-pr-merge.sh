@@ -19,8 +19,9 @@
 #     [-- <forge merge flags>]
 #   fm-pr-merge.sh -h | --help
 #
-# Merge method on GitHub defaults to --squash when the caller passes none of
-# --squash, --merge, --rebase, or --method after the optional -- separator.
+# Outside the automatic queue path below, the GitHub method defaults to
+# --squash when the caller passes none of --squash, --merge, --rebase, or --method
+# after the optional -- separator.
 # On Forgejo the merge style defaults to the repository's own
 # default_merge_style, read live, and a merge is refused when it cannot be read.
 # A GitHub merge is refused unless every pre-merge condition holds, each read
@@ -108,18 +109,20 @@
 # unseen updated head, unsettled checks, or UNKNOWN mergeability are awaited.
 # If that budget expires, the helper stops without merging and says to run
 # the merge again once checks pass.
-# Without --attended-override, an attended merge whose base branch has
-# exactly one effective merge_queue rule with a recognised method is queued
-# rather than merged directly: after the full green preflight above, and under
-# the merge locks, the forge request becomes --auto with the queue's method, so
-# a pull request that is red or missing a required check never reaches the
-# queue. A queued outcome exits 0 and says it has not landed, records no landed
+# Without --attended-override, an attended merge uses --auto when the base
+# branch's effective merge_queue rules name one recognised method.
+# If the caller names no method, the helper adds the queue's method.
+# A caller-named method passes through unchanged, even when the queue names
+# another method. GitHub controls the queue's merge strategy.
+# The request follows the live preflight above and runs under the merge locks.
+# A queued outcome exits 0 and says it has not landed, records no landed
 # outcome, and leaves the merge poll armed, so only a merged pull request counts
 # as landed. When the read-back finds the pull request neither merged nor in the
 # queue, for example because the queue already removed it, the run refuses and
 # says it has not landed. github_prepare_queue_request owns this request.
 # --attended-override keeps the direct request it always made.
-# If the pull request remains open and the base branch has an effective
+# Missing, unreadable, conflicting, or unrecognised queue rules keep the
+# direct request. If that request leaves the pull request open with an effective
 # merge_queue rule, an attended refusal names the queue's configured merge
 # method and exact --attended-override -- --auto --<method> retry flags. While
 # the away-posture record exists, asynchronous merge requests are refused and
@@ -127,8 +130,8 @@
 # An attended caller that already passed the configured method with --auto is
 # told instead that the accepted request has not entered the queue and its queue
 # state has to be re-checked.
-# No method is selected for the caller in any case. A rules response that names
-# no queue rule, one that could not be read, rules that disagree, and a method
+# A rules response that names no queue rule, one that could not be read,
+# rules that disagree, and a method
 # this script does not recognise are four distinct outcomes and are reported
 # apart, because each one leaves the operator somewhere different.
 # A caller-requested --auto that leaves the pull request neither merged nor
@@ -1782,14 +1785,9 @@ github_queue_method_flag() {
   esac
 }
 
-# The ordinary path's merge-queue request. It runs after the full green
-# preflight and inside the merge locks, only without --attended-override and
-# only while attended, because refuse_github_queue_while_away has already
-# refused a queue-backed base while away. When the base branch's rules name
-# exactly one recognised merge-queue method, the forge request becomes --auto
-# with that method, which on a green pull request asks GitHub to enqueue it.
-# No queue rule, unreadable rules, conflicting rules, and an unrecognised method
-# keep the direct request, so the outcome read below still decides.
+# Queue submission shares the merge locks and live preflight.
+# refuse_github_queue_while_away must run first to refuse asynchronous requests
+# under away authority. The header owns method selection and direct fallbacks.
 # Args: the caller's extra forge arguments.
 github_prepare_queue_request() {
   local queue_method
