@@ -265,6 +265,16 @@ case "${1:-} ${2:-}" in
         exit 1
       fi
     fi
+    # A base branch that requires the merge queue enqueues the pull request
+    # only for an --auto request, the way GitHub does; a direct request leaves
+    # the static outcome in place.
+    if [ -f "$view_dir/github-outcome-on-auto" ]; then
+      for arg in "$@"; do
+        [ "$arg" = --auto ] || continue
+        cp "$view_dir/github-outcome-on-auto" "$FM_TEST_GH_OUTCOME"
+        break
+      done
+    fi
     if [ -n "${FM_TEST_GH_MERGE_OUTPUT:-}" ]; then
       printf '%s\n' "$FM_TEST_GH_MERGE_OUTPUT"
     else
@@ -1597,6 +1607,10 @@ test_github_without_gh_failed_read_keeps_bookkeeping() {
   pass "fm-pr-merge refuses a GitHub merge when gh is missing rather than merging blind"
 }
 
+# The attended path keeps its direct request on a merge-queue base: an
+# --attended-override run adds no queue flags of its own, so these refusals
+# still name the exact retry flags. The ordinary path's own queue request is
+# covered by the test_github_queue_* tests below.
 test_github_zero_exit_queue_required_refuses_with_exact_retry() {
   local case_dir rc
   case_dir=$(make_case github-zero-exit-queue-required)
@@ -1608,7 +1622,7 @@ test_github_zero_exit_queue_required_refuses_with_exact_retry() {
   : > "$case_dir/gh.log"
 
   set +e
-  run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/56 \
+  run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/56 --attended-override \
     > "$case_dir/stdout" 2> "$case_dir/stderr"
   rc=$?
   set -e
@@ -1700,7 +1714,7 @@ test_github_queue_required_refusal_names_retry_flags() {
   : > "$case_dir/gh.log"
 
   set +e
-  run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/54 \
+  run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/54 --attended-override \
     > "$case_dir/stdout" 2> "$case_dir/stderr"
   rc=$?
   set -e
@@ -1729,7 +1743,7 @@ test_github_agreeing_queue_rules_keep_retry_guidance() {
   : > "$case_dir/gh.log"
 
   set +e
-  run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/58 \
+  run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/58 --attended-override \
     > "$case_dir/stdout" 2> "$case_dir/stderr"
   rc=$?
   set -e
@@ -1772,6 +1786,200 @@ test_github_conflicting_queue_rules_report_ambiguity() {
   assert_no_grep 'SQUASH, SQUASH' "$case_dir/stderr" \
     "github-conflicting-queue-rules: a repeated queue method was named twice"
   pass "fm-pr-merge reports ambiguity for conflicting merge-queue rules"
+}
+
+# A base branch that requires the merge queue. The direct request leaves the
+# pull request open and outside the queue; an --auto request enqueues it.
+# Args: case_dir head_sha queue_method
+make_queue_required_github_case() {
+  local case_dir=$1 head=$2 method=$3
+  add_gh_mocks "$case_dir" "$head"
+  write_github_outcome "$case_dir" OPEN false false main
+  printf 'merge_method=%s\n' "$method" > "$case_dir/github-rules"
+  printf '%s\n' 'state=OPEN' 'merged=false' 'queued=true' 'base=main' \
+    > "$case_dir/github-outcome-on-auto"
+  : > "$case_dir/gh-axi.log"
+  : > "$case_dir/gh.log"
+}
+
+test_github_queue_required_ordinary_merge_enqueues() {
+  local case_dir rc url head
+  url=https://github.com/example/repo/pull/80
+  head=8080808080808080808080808080808080808080
+  case_dir=$(make_home_case github-queue-ordinary-enqueues)
+  make_queue_required_github_case "$case_dir" "$head" SQUASH
+
+  set +e
+  FM_TEST_GH_MERGE_STATE=open FM_TEST_HOME="$case_dir/home" \
+    run_pr_merge "$case_dir" task-x1 "$url" \
+    > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+
+  expect_code 0 "$rc" "github-queue-ordinary-enqueues: a green PR on a queue branch must be queued without --attended-override"
+  assert_logged_gh_merge "$case_dir" 80 example/repo --auto --squash
+  [ "$(grep -c '^pr merge ' "$case_dir/gh.log")" -eq 1 ] \
+    || fail "github-queue-ordinary-enqueues: the wrapper attempted more than one merge"
+  assert_grep "verified: $url is queued (state=OPEN, merged=false, isInMergeQueue=true)" \
+    "$case_dir/stdout" "github-queue-ordinary-enqueues: the queued outcome was not reported"
+  assert_grep "queued, not landed: $url is in the merge queue and not merged" "$case_dir/stdout" \
+    "github-queue-ordinary-enqueues: the queued outcome did not say it has not landed"
+  assert_no_grep 'is merged' "$case_dir/stdout" \
+    "github-queue-ordinary-enqueues: a queued PR was reported as merged"
+  assert_no_grep 'attended-override' "$case_dir/stderr" \
+    "github-queue-ordinary-enqueues: the ordinary path still asked for the attended override"
+  assert_absent "$case_dir/state/.wake-queue" \
+    "github-queue-ordinary-enqueues: a queued PR was reported as landed"
+  assert_absent "$case_dir/state/task-x1.pr-poll-merge-notified" \
+    "github-queue-ordinary-enqueues: a queued PR was marked as a reported merge"
+  assert_present "$case_dir/state/task-x1.check.sh" \
+    "github-queue-ordinary-enqueues: the merge poll that proves landing was not left armed"
+  assert_grep "pr=$url" "$case_dir/state/task-x1.meta" \
+    "github-queue-ordinary-enqueues: the queued PR lost its PR reference"
+  pass "fm-pr-merge queues a green PR on a merge-queue base without the attended override"
+}
+
+test_github_queue_required_caller_method_must_match_the_queue() {
+  local case_dir rc url
+  url=https://github.com/example/repo/pull/81
+
+  case_dir=$(make_case github-queue-matching-method)
+  mkdir -p "$case_dir/wt"
+  make_queue_required_github_case "$case_dir" 8181818181818181818181818181818181818181 REBASE
+  set +e
+  run_pr_merge "$case_dir" task-x1 "$url" -- --rebase \
+    > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+  expect_code 0 "$rc" "github-queue-matching-method: the queue's own method must still be queued"
+  assert_logged_gh_merge "$case_dir" 81 example/repo --auto --rebase
+
+  case_dir=$(make_case github-queue-mismatched-method)
+  mkdir -p "$case_dir/wt"
+  make_queue_required_github_case "$case_dir" 8181818181818181818181818181818181818181 REBASE
+  set +e
+  run_pr_merge "$case_dir" task-x1 "$url" -- --merge \
+    > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+  expect_code 1 "$rc" "github-queue-mismatched-method: a method the queue does not use must refuse"
+  assert_grep 'base branch main merges through the merge queue with --rebase, but this request named --merge' \
+    "$case_dir/stderr" "github-queue-mismatched-method: the refusal did not name both methods"
+  assert_no_grep 'pr merge' "$case_dir/gh.log" \
+    "github-queue-mismatched-method: the forge received a request with a method the queue does not use"
+  pass "fm-pr-merge queues only with the method the merge queue is configured for"
+}
+
+test_github_queue_required_red_or_unreported_pr_is_never_enqueued() {
+  local case_dir rc url head
+  url=https://github.com/example/repo/pull/82
+  head=8282828282828282828282828282828282828282
+
+  case_dir=$(make_case github-queue-red)
+  mkdir -p "$case_dir/wt"
+  make_queue_required_github_case "$case_dir" "$head" SQUASH
+  write_github_red_json "$case_dir" "$head" ci
+  set +e
+  run_pr_merge "$case_dir" task-x1 "$url" \
+    > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+  expect_code 1 "$rc" "github-queue-red: a red PR must refuse"
+  assert_grep "check 'ci' is not green" "$case_dir/stderr" \
+    "github-queue-red: the refusal did not name the red check"
+  assert_no_grep 'pr merge' "$case_dir/gh.log" \
+    "github-queue-red: a red PR was handed to the merge queue"
+  assert_no_grep 'verified: ' "$case_dir/stdout" \
+    "github-queue-red: a red PR was reported as verified"
+
+  case_dir=$(make_case github-queue-unreported)
+  mkdir -p "$case_dir/wt"
+  make_queue_required_github_case "$case_dir" "$head" SQUASH
+  write_github_required "$case_dir" ruleset:ci ruleset:summary
+  set +e
+  run_pr_merge "$case_dir" task-x1 "$url" \
+    > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+  expect_code 1 "$rc" "github-queue-unreported: an unreported required check must refuse"
+  assert_grep "required check 'summary' has not reported at head $head" "$case_dir/stderr" \
+    "github-queue-unreported: the refusal did not name the unreported required check"
+  assert_no_grep 'pr merge' "$case_dir/gh.log" \
+    "github-queue-unreported: a PR with an unreported required check was handed to the merge queue"
+  pass "fm-pr-merge never queues a red PR or one with an unreported required check"
+}
+
+test_github_queue_removed_pr_reports_not_landed() {
+  local case_dir rc url head
+  url=https://github.com/example/repo/pull/83
+  head=8383838383838383838383838383838383838383
+
+  # The forge accepted the queue request, but the read-back finds the pull
+  # request open and outside the queue: the queue already removed it.
+  case_dir=$(make_home_case github-queue-removed)
+  make_queue_required_github_case "$case_dir" "$head" SQUASH
+  rm -f "$case_dir/github-outcome-on-auto"
+  set +e
+  FM_TEST_GH_MERGE_STATE=open FM_TEST_HOME="$case_dir/home" \
+    run_pr_merge "$case_dir" task-x1 "$url" \
+    > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+  expect_code 1 "$rc" "github-queue-removed: a PR outside the queue must not succeed"
+  assert_logged_gh_merge "$case_dir" 83 example/repo --auto --squash
+  assert_grep 'state=OPEN, merged=false, isInMergeQueue=false' "$case_dir/stderr" \
+    "github-queue-removed: the refusal did not name the observed state"
+  assert_grep "this run asked the merge queue to take $url, but it is neither merged nor in the merge queue, so it has not landed" \
+    "$case_dir/stderr" "github-queue-removed: the refusal did not say the PR has not landed"
+  assert_no_grep 'retry with:' "$case_dir/stderr" \
+    "github-queue-removed: the refusal echoed back a retry of the request that just ran"
+  assert_no_grep 'verified: ' "$case_dir/stdout" \
+    "github-queue-removed: a PR outside the queue was reported as verified"
+  assert_absent "$case_dir/state/.wake-queue" \
+    "github-queue-removed: a PR outside the queue was reported as landed"
+  assert_present "$case_dir/state/task-x1.check.sh" \
+    "github-queue-removed: the merge poll was not left armed"
+
+  # A later run after the queue removed the PR for a failed required check
+  # refuses at the green check and hands nothing to the forge.
+  : > "$case_dir/gh.log"
+  write_github_red_json "$case_dir" "$head" summary
+  set +e
+  FM_TEST_GH_MERGE_STATE=open FM_TEST_HOME="$case_dir/home" \
+    run_pr_merge "$case_dir" task-x1 "$url" \
+    > "$case_dir/stdout-2" 2> "$case_dir/stderr-2"
+  rc=$?
+  set -e
+  expect_code 1 "$rc" "github-queue-removed: a re-run after a failed check must refuse"
+  assert_grep "check 'summary' is not green" "$case_dir/stderr-2" \
+    "github-queue-removed: the re-run did not name the failed check"
+  assert_no_grep 'pr merge' "$case_dir/gh.log" \
+    "github-queue-removed: the re-run queued a PR whose required check failed"
+  assert_absent "$case_dir/state/.wake-queue" \
+    "github-queue-removed: the re-run reported a landed merge"
+
+  # A failed queue request queues nothing and does not echo itself back.
+  case_dir=$(make_case github-queue-request-fails)
+  mkdir -p "$case_dir/wt"
+  make_queue_required_github_case "$case_dir" "$head" SQUASH
+  rm -f "$case_dir/github-outcome-on-auto"
+  printf '1\n' > "$case_dir/github-merge-rc"
+  printf 'error: pr merge failed\n' > "$case_dir/github-merge-output"
+  set +e
+  run_pr_merge "$case_dir" task-x1 "$url" \
+    > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+  expect_code 1 "$rc" "github-queue-request-fails: a failed queue request must fail"
+  assert_grep 'error: pr merge failed' "$case_dir/stderr" \
+    "github-queue-request-fails: the original forge error was masked"
+  assert_grep "the merge queue request for $url failed, so nothing was queued or merged" \
+    "$case_dir/stderr" "github-queue-request-fails: the refusal did not say nothing was queued"
+  assert_no_grep 'retry with:' "$case_dir/stderr" \
+    "github-queue-request-fails: the refusal echoed back the request that just failed"
+  assert_no_grep 'armed' "$case_dir/stderr" \
+    "github-queue-request-fails: a failed request was reported as armed"
+  pass "fm-pr-merge reports a PR the merge queue removed or never took as not landed"
 }
 
 test_extra_merge_args_forwarded() {
@@ -3548,6 +3756,10 @@ test_github_zero_exit_queue_required_refuses_with_exact_retry
 test_github_closed_unqueued_outcome_omits_retry_flags
 test_github_agreeing_queue_rules_keep_retry_guidance
 test_github_conflicting_queue_rules_report_ambiguity
+test_github_queue_required_ordinary_merge_enqueues
+test_github_queue_required_caller_method_must_match_the_queue
+test_github_queue_required_red_or_unreported_pr_is_never_enqueued
+test_github_queue_removed_pr_reports_not_landed
 test_verified_merge_records_pr_and_head
 test_pr_metadata_is_recorded_before_the_forge_call
 test_merge_failure_propagates_after_recording

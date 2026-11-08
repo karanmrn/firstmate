@@ -108,6 +108,18 @@
 # unseen updated head, unsettled checks, or UNKNOWN mergeability are awaited.
 # If that budget expires, the helper stops without merging and says to run
 # the merge again once checks pass.
+# Without --attended-override, an attended merge whose base branch has
+# exactly one effective merge_queue rule with a recognised method is queued
+# rather than merged directly: after the full green preflight above, and under
+# the merge locks, the forge request becomes --auto with the queue's method, so
+# a pull request that is red or missing a required check never reaches the
+# queue. A caller-named method the queue does not use refuses before any forge
+# write. A queued outcome exits 0 and says it has not landed, records no landed
+# outcome, and leaves the merge poll armed, so only a merged pull request counts
+# as landed. When the read-back finds the pull request neither merged nor in the
+# queue, for example because the queue already removed it, the run refuses and
+# says it has not landed. github_prepare_queue_request owns this request.
+# --attended-override keeps the direct request it always made.
 # If the pull request remains open and the base branch has an effective
 # merge_queue rule, an attended refusal names the queue's configured merge
 # method and exact --attended-override -- --auto --<method> retry flags. While
@@ -210,8 +222,8 @@
 # unless that bound PR has already merged - proven by its recorded merge
 # notification - in which case the task's next PR is accepted so several PRs
 # from one task can each merge in turn; while the bound PR is still unmerged a
-# different URL is refused. Auto-merge (--auto), a protection bypass
-# (--admin), and branch
+# different URL is refused. A caller-passed auto-merge (--auto), a protection
+# bypass (--admin), and branch
 # deletion (--delete-branch, -d and short-flag clusters, and GitLab's
 # --remove-source-branch) are refused by default; --attended-override, parsed
 # before the optional -- separator, re-enables those forge flags for an
@@ -1722,6 +1734,7 @@ require_recorded_pr_identity() {
 
 FM_PR_GITHUB_MERGE_ACCEPTED=false
 FM_PR_GITHUB_CALLER_METHOD=
+FM_PR_GITHUB_QUEUE_ENQUEUE=false
 
 # The single gate every statement about what the forge accepted, armed, or
 # reported has to pass. A merge command that failed accepted nothing, so no
@@ -1761,20 +1774,64 @@ github_caller_method_is() {
   esac
 }
 
+github_queue_method_flag() {
+  case "$1" in
+    MERGE) printf 'merge' ;;
+    SQUASH) printf 'squash' ;;
+    REBASE) printf 'rebase' ;;
+    *) return 1 ;;
+  esac
+}
+
+# The ordinary path's merge-queue request. It runs after the full green
+# preflight and inside the merge locks, only without --attended-override and
+# only while attended, because refuse_github_queue_while_away has already
+# refused a queue-backed base while away. When the base branch's rules name
+# exactly one recognised merge-queue method, the forge request becomes --auto
+# with that method, which on a green pull request asks GitHub to enqueue it.
+# A caller-named method the queue does not use refuses before any forge write.
+# No queue rule, unreadable rules, conflicting rules, and an unrecognised method
+# keep the direct request, so the outcome read below still decides.
+# Args: the caller's extra forge arguments.
+github_prepare_queue_request() {
+  local queue_method
+  [ "$ATTENDED_OVERRIDE" = false ] || return 0
+  [ "$FM_PR_AWAY_POSTURE" = false ] || return 0
+  github_read_queue_method
+  [ "$FM_PR_GITHUB_QUEUE_STATUS" = single ] || return 0
+  queue_method=$(github_queue_method_flag "$FM_PR_GITHUB_QUEUE_METHOD") || return 0
+  if [ -n "$FM_PR_GITHUB_CALLER_METHOD" ] && ! github_caller_method_is "$queue_method"; then
+    printf 'error: base branch %s merges through the merge queue with --%s, but this request named --%s; nothing was handed to the forge\n' \
+      "$FM_PR_GITHUB_BASE" "$queue_method" "$FM_PR_GITHUB_CALLER_METHOD" >&2
+    return 1
+  fi
+  merge_args=(--auto)
+  caller_has_merge_method "$@" || merge_args+=("--$queue_method")
+  FM_PR_GITHUB_CALLER_METHOD=$queue_method
+  FM_PR_GITHUB_AUTO_REQUESTED=true
+  FM_PR_GITHUB_QUEUE_ENQUEUE=true
+}
+
 github_report_queue_rules() {
   local queue_method methods_display
   if [ "$FM_PR_AWAY_POSTURE" = true ]; then
     printf 'error: the direct merge did not land while the away-posture record exists; merge-queue retry flags are unavailable because a queued merge would outlive its authority\n' >&2
     return 0
   fi
+  if [ "$FM_PR_GITHUB_QUEUE_ENQUEUE" = true ]; then
+    if github_merge_command_succeeded; then
+      printf 'error: this run asked the merge queue to take %s, but it is neither merged nor in the merge queue, so it has not landed; the queue may already have removed it, for example after a required check failed, or GitHub may still hold it as auto-merge; re-check its checks and merge queue state before running this command again\n' \
+        "$URL" >&2
+    else
+      printf 'error: the merge queue request for %s failed, so nothing was queued or merged; re-check the pull request'"'"'s checks and merge queue state before running this command again\n' \
+        "$URL" >&2
+    fi
+    return 0
+  fi
   github_read_queue_method
   case "$FM_PR_GITHUB_QUEUE_STATUS" in
     single)
-      case "$FM_PR_GITHUB_QUEUE_METHOD" in
-        MERGE) queue_method=merge ;;
-        SQUASH) queue_method=squash ;;
-        REBASE) queue_method=rebase ;;
-      esac
+      queue_method=$(github_queue_method_flag "$FM_PR_GITHUB_QUEUE_METHOD")
       if github_merge_command_succeeded \
         && [ "$FM_PR_GITHUB_AUTO_REQUESTED" = true ] \
         && github_caller_method_is "$queue_method"; then
@@ -1809,7 +1866,9 @@ github_report_unmerged_outcome() {
     || [ "$FM_PR_GITHUB_QUEUED" = true ]; then
     return 0
   fi
-  if [ "$FM_PR_GITHUB_AUTO_REQUESTED" = true ]; then
+  # The ordinary path's own queue request is explained once, by
+  # github_report_queue_rules, rather than as a caller-requested auto-merge.
+  if [ "$FM_PR_GITHUB_AUTO_REQUESTED" = true ] && [ "$FM_PR_GITHUB_QUEUE_ENQUEUE" != true ]; then
     if github_merge_command_succeeded; then
       printf 'error: auto-merge was requested and armed for %s, but nothing is merged or in the merge queue yet, so this run refuses instead of reporting an unproved merge\n' \
         "$URL" >&2
@@ -1933,6 +1992,7 @@ case "$PROVIDER" in
       fi
       github_update_behind_branch || exit 1
     fi
+    github_prepare_queue_request "$@" || exit 1
     merge_status=0
     merge_output=$(gh pr merge "$PR_NUMBER" --repo "$PR_OWNER/$PR_REPO" \
       --match-head-commit "$FM_PR_MERGE_HEAD" \
@@ -1968,6 +2028,8 @@ case "$PROVIDER" in
     elif [ "$FM_PR_GITHUB_QUEUED" = true ]; then
       printf 'verified: %s is queued (state=%s, merged=%s, isInMergeQueue=%s)\n' \
         "$URL" "$FM_PR_GITHUB_STATE" "$FM_PR_GITHUB_MERGED" "$FM_PR_GITHUB_QUEUED"
+      printf 'queued, not landed: %s is in the merge queue and not merged; only the armed merge poll reporting it merged proves landing, and a pull request the queue removes stays unlanded\n' \
+        "$URL"
       exit 0
     else
       github_report_forge_output "$merge_output"
