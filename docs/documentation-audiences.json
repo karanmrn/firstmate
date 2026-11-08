@@ -130,6 +130,10 @@
       "audience": "agent-runtime"
     },
     {
+      "path": ".agents/skills/agent-merge-conflict-arbiter/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
       "path": ".agents/skills/ahoy/SKILL.md",
       "audience": "agent-runtime"
     },
@@ -675,6 +679,10 @@
     },
     {
       "path": ".agents/skills/away-quiet-supervision/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/one-three-one-rule/SKILL.md",
       "audience": "agent-runtime"
     },
     {
