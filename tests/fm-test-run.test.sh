@@ -743,6 +743,9 @@ test_empty_selection_emits_summary() {
   repo="$tmp/repo"
   init_changed_fixture_repo "$repo"
   printf 'documentation only\n' >"$repo/README.md"
+  # A vendored skill's license text carries no behavior, so it selects no suite.
+  mkdir -p "$repo/.agents/skills/vendored-skill"
+  printf 'MIT License\n' >"$repo/.agents/skills/vendored-skill/LICENSE"
   out=$(cd "$repo" && bin/fm-test-run.sh --changed --base HEAD --json "$tmp/artifacts/timing.json" 2>"$tmp/err") \
     || fail "empty valid changed selection must pass"
   printf '%s\n' "$out" | grep -Eq \
