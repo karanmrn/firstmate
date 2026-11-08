@@ -1,0 +1,67 @@
+ok - invalid preferred_provider: null
+ok - invalid preferred_provider: false
+ok - invalid preferred_provider: 42
+ok - invalid preferred_provider: []
+ok - invalid preferred_provider: {}
+ok - invalid preferred_provider: ""
+ok - invalid preferred_provider: "Codex"
+ok - invalid preferred_provider: "codex\\n"
+ok - invalid preferred_provider: " codex"
+ok - preferred provider: astra-82-claude-26
+ok - preferred provider: work-account
+ok - preferred provider: exhausted
+ok - preferred provider: unknown
+ok - preferred provider: unknown-one-known-one
+ok - preferred provider: claude-only
+ok - preferred provider: config-override
+ok - preferred provider: prose-why
+ok - preferred provider: absent
+ok - preferred provider: approval
+ok - preferred provider: tie
+ok - preferred provider: floor
+ok - absent key is off: one stderr line, exit 0, no network call
+ok - TYPESAFE_API_KEY= in .env activates the tool; environment and config overrides work
+ok - clear: one rule Choice request, key on the fd header only, spendPriority argmax over every candidate
+ok - OpenRouter clear uses the same output contract and keeps its key out of argv and child environments
+ok - OpenRouter ambiguous, malformed, HTTP, and missing-model paths are handled
+ok - mapping: a declared macos-keychain service and optional account become the lookup, and the key rides the fd header
+ok - precedence: environment, then .env, then the declared source, which is read only when needed
+ok - provider isolation: each provider reads only its own declared service, and a declaration never selects a provider
+ok - effective-home isolation: only the effective config directory's declaration is consulted
+ok - failure distinctions: off, a configuration error, and an unavailable source each read differently and send nothing
+ok - secret containment: the declared key is on no argv, in no output, environment, or file, and only on the fd header
+ok - capability probe: supported or unsupported, with no declaration read and no credential tool run
+ok - with no provider set, other providers' settings leave the original off line unchanged
+ok - systemone posts the unchanged request to its base URL with an optional fd-3 key
+ok - systemone configuration errors, never-send base URL, partial response, and transport failure are handled
+ok - openai maps the Choice request to the Decisions API and its answer back, key on fd 3 only
+ok - the never-send check runs on the final openai request body
+ok - openai malformed, partial, refused, ambiguous, HTTP, and transport paths return to normal intake
+ok - never-send list withholds the request on a match or a bad list, and never prints the value
+ok - rules snapshots and shell quoting preserve the profile protocol
+ok - quota_scope binds an agy candidate to its declared tier row
+ok - no-rule fallback, Agy, Gemini, and documented configurations resolve
+ok - ambiguous: confidence below the fixed floor hands the decision back
+ok - per-rule confidence floors fall to the most probable runner-up that clears its own floor
+ok - only the brief's task sections and scout tag reach the model, with a whole-brief fallback
+ok - escalate: a rule declared approval: captain never yields a profile
+ok - rule floor: known shortfall falls through while unavailable evidence escalates
+ok - declared provider and profile floor evidence are applied in code
+ok - nonnumeric spendPriority evidence is never ranked
+ok - partial and missing quota evidence remain eligible but unranked
+ok - provider-wide and exact quota rows combine into one limiting candidate
+ok - default: no rule matched resolves among the default profiles
+ok - tie: equal spendPriority never breaks by array order
+ok - no rankable candidate: the tool escalates instead of guessing
+ok - native Codex binds to codex-home before default, independently of Pi accounts and row order
+ok - Pi native adapters bind to codex-home with existing fallbacks and schema 5 compatibility
+ok - schema 6: each candidate binds to its account row; schema 5 is unchanged
+ok - quota evidence comes from one quota-axi --json read, and its failure is an error outcome
+ok - API, transport, and response failures are error outcomes with exit 0
+ok - configuration errors exit 2 before any network call
+ok - shared-quota opt-out: no quota snapshot, deterministic declared-order pick, opt-out stated on every candidate
+ok - shared-quota bypasses an unmet rule-level floor: the rule's own profile wins with no quota call
+ok - shared-quota bypasses an unmet profile-level floor: the first declared profile wins with no quota call
+ok - shared-quota keeps preferred_provider narrowing: the preferred family wins in declared order with no quota call
+ok - shared_quota false keeps the unchanged quota-ranked behavior
+# all fm-dispatch-resolve tests passed

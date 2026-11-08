@@ -1,0 +1,1 @@
+not ok - .env OpenRouter key uses fd 3 (expected 'Authorization: Bearer test-openrouter-key-never-in-child-env-or-argv', got 'Authorization: Bearer FAKE-HOST-OPENROUTER_API_KEY-CANARY-1108')

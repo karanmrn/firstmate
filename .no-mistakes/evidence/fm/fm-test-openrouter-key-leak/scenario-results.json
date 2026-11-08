@@ -1,0 +1,52 @@
+[
+  {
+    "name": "baseline-openrouter",
+    "command": "bash tests/.fm-dispatch-resolve-baseline-live.sh",
+    "inherited": {
+      "OPENROUTER_API_KEY": "FAKE-HOST-OPENROUTER_API_KEY-CANARY-1108"
+    },
+    "exit_code": 1,
+    "seconds": 6.3,
+    "canaries_in_output": [
+      "OPENROUTER_API_KEY"
+    ],
+    "expected_observation": true
+  },
+  {
+    "name": "target-clean",
+    "command": "bash tests/fm-dispatch-resolve.test.sh",
+    "inherited": {},
+    "exit_code": 0,
+    "seconds": 58.83,
+    "canaries_in_output": [],
+    "expected_observation": true
+  },
+  {
+    "name": "target-openrouter",
+    "command": "bash tests/fm-dispatch-resolve.test.sh",
+    "inherited": {
+      "OPENROUTER_API_KEY": "FAKE-HOST-OPENROUTER_API_KEY-CANARY-1108"
+    },
+    "exit_code": 0,
+    "seconds": 53.35,
+    "canaries_in_output": [],
+    "expected_observation": true
+  },
+  {
+    "name": "target-hostile-all",
+    "command": "bash tests/fm-dispatch-resolve.test.sh",
+    "inherited": {
+      "OPENROUTER_API_KEY": "FAKE-HOST-OPENROUTER_API_KEY-CANARY-1108",
+      "TYPESAFE_API_KEY": "FAKE-HOST-TYPESAFE_API_KEY-CANARY-1108",
+      "OPENAI_API_KEY": "FAKE-HOST-OPENAI_API_KEY-CANARY-1108",
+      "FM_DISPATCH_API_KEY": "FAKE-HOST-FM_DISPATCH_API_KEY-CANARY-1108",
+      "FM_DISPATCH_PROVIDER": "host-provider-must-not-win",
+      "FM_DISPATCH_MODEL": "host-model-must-not-win",
+      "FM_DISPATCH_BASE_URL": "https://host.invalid/must-not-contact"
+    },
+    "exit_code": 0,
+    "seconds": 55.34,
+    "canaries_in_output": [],
+    "expected_observation": true
+  }
+]
