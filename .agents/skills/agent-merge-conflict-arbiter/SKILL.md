@@ -100,17 +100,23 @@ Every design-question pick must appear explicitly in the hand-back summary.
 - Stage each resolved file with `git add` only after step 2 permits hunk resolution and all its hunks are resolved.
 - Done when: every original unmerged entry is resolved, `git grep -n -e '^<<<<<<<' -e '^>>>>>>>'` finds no markers, `git diff --name-only --diff-filter=U` is empty, and every resolved file is staged.
 
-### 4. Verify
+### 4. Complete and verify
 
-- Run the project's build and tests; at minimum import or execute the touched modules.
-  Both intents must be observable in the merged behavior, for example side A's new semantics and side B's disjoint addition both present.
-- Complete the merge with `git commit`, or the rebase with `git rebase --continue`.
-  The default merge message plus a body listing hunk decisions is fine.
-- Done when: verification passes and the merge commit exists or the rebase has completed.
+1. Complete the merge with `git commit`, or continue the rebase with `git rebase --continue`.
+   The default merge message plus a body listing hunk decisions is fine.
+2. If continuation stops on another conflict, repeat steps 1 through 3 for the new conflicts.
+   Then return to this step.
+3. Confirm with `git status` that the merge or rebase completed before verification.
+4. Run the project's build and tests against the completed tree.
+   At minimum, import or execute the touched modules.
+   Both intents must be observable in the merged behavior, for example side A's new semantics and side B's disjoint addition both present.
+5. Record the verified commit with `git rev-parse HEAD` and the check results.
+   Done when: verification passes on that completed tree.
 
 ### 5. Hand back
 
 - For completed arbitration, produce a summary naming EVERY hunk decision: `file:lines - class - which side(s) kept - rationale`.
+- For completed arbitration, also include the verified commit and check results from step 4.
 - For every same-question-different-answer hunk, state the design question and the answer you picked so a human can veto it; never bury a design call.
 - For an escalation, report every unresolved hunk or file-level conflict, all affected paths, both intents, and the required decision.
   State that the merge or rebase remains halted.
@@ -137,7 +143,7 @@ For completed arbitration:
 
 - `git status` shows a clean tree on the target branch with a merge commit or a completed rebase.
 - No conflict markers remain (`git grep -n -e '^<<<<<<<' -e '^>>>>>>>'` prints nothing).
-- Build and tests pass; both sides' intents are demonstrably present, or the dropped one is explicitly named in the summary.
+- Step 4's checks pass on the completed tree, with both intents present or the dropped intent explicitly named in the summary.
 - The hand-back summary enumerates every hunk with class and rationale.
 
 For an escalation, the report accounts for every unresolved conflict and explicitly states that arbitration is incomplete.
