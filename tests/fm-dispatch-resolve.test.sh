@@ -13,6 +13,12 @@ set -u
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# Keep the host's provider credentials and selectors out of every case: the
+# tool reads these from the environment ahead of $FM_HOME/.env, so an exported
+# host value would override the case's own and could print a real key.
+unset FM_DISPATCH_PROVIDER FM_DISPATCH_MODEL FM_DISPATCH_BASE_URL \
+  FM_DISPATCH_API_KEY TYPESAFE_API_KEY OPENROUTER_API_KEY OPENAI_API_KEY
+
 TOOL="$ROOT/bin/fm-dispatch-resolve.sh"
 TMP_ROOT=$(fm_test_tmproot fm-dispatch-resolve)
 HOME_DIR="$TMP_ROOT/home"
