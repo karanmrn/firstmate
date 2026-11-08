@@ -113,8 +113,7 @@
 # rather than merged directly: after the full green preflight above, and under
 # the merge locks, the forge request becomes --auto with the queue's method, so
 # a pull request that is red or missing a required check never reaches the
-# queue. A caller-named method the queue does not use refuses before any forge
-# write. A queued outcome exits 0 and says it has not landed, records no landed
+# queue. A queued outcome exits 0 and says it has not landed, records no landed
 # outcome, and leaves the merge poll armed, so only a merged pull request counts
 # as landed. When the read-back finds the pull request neither merged nor in the
 # queue, for example because the queue already removed it, the run refuses and
@@ -1789,7 +1788,6 @@ github_queue_method_flag() {
 # refused a queue-backed base while away. When the base branch's rules name
 # exactly one recognised merge-queue method, the forge request becomes --auto
 # with that method, which on a green pull request asks GitHub to enqueue it.
-# A caller-named method the queue does not use refuses before any forge write.
 # No queue rule, unreadable rules, conflicting rules, and an unrecognised method
 # keep the direct request, so the outcome read below still decides.
 # Args: the caller's extra forge arguments.
@@ -1800,11 +1798,6 @@ github_prepare_queue_request() {
   github_read_queue_method
   [ "$FM_PR_GITHUB_QUEUE_STATUS" = single ] || return 0
   queue_method=$(github_queue_method_flag "$FM_PR_GITHUB_QUEUE_METHOD") || return 0
-  if [ -n "$FM_PR_GITHUB_CALLER_METHOD" ] && ! github_caller_method_is "$queue_method"; then
-    printf 'error: base branch %s merges through the merge queue with --%s, but this request named --%s; nothing was handed to the forge\n' \
-      "$FM_PR_GITHUB_BASE" "$queue_method" "$FM_PR_GITHUB_CALLER_METHOD" >&2
-    return 1
-  fi
   merge_args=(--auto)
   caller_has_merge_method "$@" || merge_args+=("--$queue_method")
   FM_PR_GITHUB_CALLER_METHOD=$queue_method

@@ -1839,22 +1839,11 @@ test_github_queue_required_ordinary_merge_enqueues() {
   pass "fm-pr-merge queues a green PR on a merge-queue base without the attended override"
 }
 
-test_github_queue_required_caller_method_must_match_the_queue() {
+test_github_queue_required_forwards_caller_method() {
   local case_dir rc url
   url=https://github.com/example/repo/pull/81
 
-  case_dir=$(make_case github-queue-matching-method)
-  mkdir -p "$case_dir/wt"
-  make_queue_required_github_case "$case_dir" 8181818181818181818181818181818181818181 REBASE
-  set +e
-  run_pr_merge "$case_dir" task-x1 "$url" -- --rebase \
-    > "$case_dir/stdout" 2> "$case_dir/stderr"
-  rc=$?
-  set -e
-  expect_code 0 "$rc" "github-queue-matching-method: the queue's own method must still be queued"
-  assert_logged_gh_merge "$case_dir" 81 example/repo --auto --rebase
-
-  case_dir=$(make_case github-queue-mismatched-method)
+  case_dir=$(make_case github-queue-caller-method)
   mkdir -p "$case_dir/wt"
   make_queue_required_github_case "$case_dir" 8181818181818181818181818181818181818181 REBASE
   set +e
@@ -1862,12 +1851,9 @@ test_github_queue_required_caller_method_must_match_the_queue() {
     > "$case_dir/stdout" 2> "$case_dir/stderr"
   rc=$?
   set -e
-  expect_code 1 "$rc" "github-queue-mismatched-method: a method the queue does not use must refuse"
-  assert_grep 'base branch main merges through the merge queue with --rebase, but this request named --merge' \
-    "$case_dir/stderr" "github-queue-mismatched-method: the refusal did not name both methods"
-  assert_no_grep 'pr merge' "$case_dir/gh.log" \
-    "github-queue-mismatched-method: the forge received a request with a method the queue does not use"
-  pass "fm-pr-merge queues only with the method the merge queue is configured for"
+  expect_code 0 "$rc" "github-queue-caller-method: a caller-named method must reach the forge"
+  assert_logged_gh_merge "$case_dir" 81 example/repo --auto --merge
+  pass "fm-pr-merge forwards the caller's method with --auto on a merge-queue base"
 }
 
 test_github_queue_required_red_or_unreported_pr_is_never_enqueued() {
@@ -3757,7 +3743,7 @@ test_github_closed_unqueued_outcome_omits_retry_flags
 test_github_agreeing_queue_rules_keep_retry_guidance
 test_github_conflicting_queue_rules_report_ambiguity
 test_github_queue_required_ordinary_merge_enqueues
-test_github_queue_required_caller_method_must_match_the_queue
+test_github_queue_required_forwards_caller_method
 test_github_queue_required_red_or_unreported_pr_is_never_enqueued
 test_github_queue_removed_pr_reports_not_landed
 test_verified_merge_records_pr_and_head
