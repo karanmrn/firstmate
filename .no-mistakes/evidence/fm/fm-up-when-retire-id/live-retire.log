@@ -1,0 +1,95 @@
+~/.no-mistakes/worktrees/35d973b0e580/01M6ZNT7QCZM98APGHAEZQB27C/.when-live.4FrWsH/home
+TARGET HEAD: 14c18372d0ec51930e43f980cef105231a2bb24a
+
+SCENARIO: listed ID and overlapping live sibling
+armed: when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+armed: when-when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+reconciled: published=0 started=2 stopped=0 uncertain=0 failed=0
+SOURCE                       ADAPTER      OWNER      PENDING
+when-listed                  when         live       0
+when-when-listed             when         live       0
+Retire exact listed ID, attempt 1:
+retired: when-listed
+retired: when-listed
+Persisted registration, spec, trust for when-listed: absent
+Persisted registration, spec, trust for when-when-listed: present
+SOURCE                       ADAPTER      OWNER      PENDING
+when-when-listed             when         live       0
+Retire exact listed ID, attempt 2:
+retired: when-listed
+retired: when-listed
+Persisted registration, spec, trust for when-listed: absent
+Persisted registration, spec, trust for when-when-listed: present
+SOURCE                       ADAPTER      OWNER      PENDING
+when-when-listed             when         live       0
+Retired action did not run. Preserved sibling action ran once.
+
+SCENARIO: terminal outcome acknowledgement and exact-ID cleanup
+when: when-when-listed
+status: fired
+detail: the condition held and the action exited 0
+condition_polls: 11
+action_exit: 0
+output:
+action completed
+handled: when-when-listed 1
+retired: when-when-listed
+retired: when-when-listed
+retired: when-when-listed
+retired: when-when-listed
+Persisted registration, spec, trust for when-when-listed: absent
+already-handled: when-when-listed 1
+Captured result and handled acknowledgement remain byte-identical.
+armed: when-when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+retired: when-when-listed
+retired: when-when-listed
+The same prefixed name can be armed again after cleanup.
+
+SCENARIO: bare names, maximum listed ID, and absent retries
+armed: when-bare
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+retired: when-bare
+retired: when-bare
+retired: when-bare
+retired: when-bare
+Persisted registration, spec, trust for when-bare: absent
+retired: when-missing
+retired: when-missing
+armed: when-00000000000000000000000000000000000000000000000000000000001
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+retired: when-00000000000000000000000000000000000000000000000000000000001
+retired: when-00000000000000000000000000000000000000000000000000000000001
+retired: when-00000000000000000000000000000000000000000000000000000000001
+retired: when-00000000000000000000000000000000000000000000000000000000001
+Persisted registration, spec, trust for when-00000000000000000000000000000000000000000000000000000000001: absent
+
+SCENARIO: unsafe and overlong IDs cannot retire a valid sibling
+armed: when-guard
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+Retire invalid ID: when-
+error: invalid source id: when-
+Persisted registration, spec, trust for when-guard: present
+Retire invalid ID: when-../guard
+error: invalid source id: when-../guard
+Persisted registration, spec, trust for when-guard: present
+Retire invalid ID: when-/guard
+error: invalid source id: when-/guard
+Persisted registration, spec, trust for when-guard: present
+Retire invalid ID: when-000000000000000000000000000000000000000000000000000000000010
+error: invalid source id: when-000000000000000000000000000000000000000000000000000000000010
+Persisted registration, spec, trust for when-guard: present
+retired: when-guard
+retired: when-guard
+no sources registered
+All live retirement scenarios passed.
+swept: attempted=0
+Disposable home and runners removed.

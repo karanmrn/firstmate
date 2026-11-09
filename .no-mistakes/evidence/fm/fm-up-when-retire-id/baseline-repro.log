@@ -1,0 +1,19 @@
+~/.no-mistakes/worktrees/35d973b0e580/01M6ZNT7QCZM98APGHAEZQB27C/.when-baseline.buIlzk/home
+BEFORE FIX: executable adapter from base bc9370e8868421ce6791d33455301b4287a4cef3
+armed: when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+armed: when-when-listed
+starts on the watcher's next cycle; or run: bin/fm-procevent.sh reconcile
+reminder: deterministic, safe, reversible actions only; judgment and destructive actions stay on the wake-and-decide path
+SOURCE                       ADAPTER      OWNER      PENDING
+when-listed                  when         none       0
+when-when-listed             when         none       0
+Retiring ID copied from list: when-listed
+retired: when-when-listed
+retired: when-when-listed
+SOURCE                       ADAPTER      OWNER      PENDING
+when-listed                  when         none       0
+REPRODUCED: requested when-listed remains registered, but sibling when-when-listed was removed.
+retired: when-listed
+swept: attempted=1
