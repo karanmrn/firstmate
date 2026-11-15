@@ -3754,13 +3754,19 @@ effort_flag_for_harness() {
     esac
     ;;
   codex)
-    # The installed codex config schema uses model_reasoning_effort. The
-    # installed model catalog supports max for gpt-5.6-luna; keep that level
-    # scoped to the model whose catalog entry advertises it.
+    # Pass max only when the installed model catalog advertises it.
     case "$effort" in
     low | medium | high | xhigh) printf -- '-c %s ' "$(shell_quote "model_reasoning_effort=\"$effort\"")" ;;
     max)
-      [ "$model" = gpt-5.6-luna ] || return 0
+      local catalog=${CODEX_HOME:-$HOME/.codex}/models_cache.json
+      if ! jq -e '(.models | type) == "array"' "$catalog" >/dev/null 2>&1; then
+        printf 'Warning: cannot read Codex model catalog %s; omitting max effort for %s.\n' "$catalog" "${model:-the default model}" >&2
+        return 0
+      fi
+      if ! jq -e --arg model "$model" 'any(.models[]; .slug == $model and any(.supported_reasoning_levels[]?; .effort == "max"))' "$catalog" >/dev/null 2>&1; then
+        printf 'Warning: Codex model catalog does not advertise max effort for %s; omitting it.\n' "${model:-the default model}" >&2
+        return 0
+      fi
       printf -- '-c %s ' "$(shell_quote 'model_reasoning_effort="max"')"
       ;;
     esac
