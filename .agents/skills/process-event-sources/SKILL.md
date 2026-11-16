@@ -114,6 +114,7 @@ The crew-hosted recovery ordering and arm-and-acknowledge rule are owned by the 
   A board close carrying a real answer, and every other result, still wakes its owner unchanged.
   Never read the absence of a wake as proof a review is still open; ask the source, not the queue.
 : A Lavish wake whose source id matches `bin/fm-procevent-lavish.sh source-id "$(bin/fm-bearings-board.sh path)"` is a bearings board result; load the `bearings` skill's board-wake handling regardless of which answer kinds the result contains.
+: A Lavish wake whose source id `bin/fm-lavish-url.sh owns <source-id>` accepts is a captured-page review; load the `lavish-url` skill's feedback-wake handling.
 : A `when` wake carries the watch's one terminal captured outcome and may be re-announced until handled: `bin/fm-procevent-when.sh classify <result-file>` returns `fired` (relay the success and its output); `action-failed` (relay the captured error and decide recovery); `condition-error`, `never-true`, or `rejected` (the watch stopped safely without acting - report why and decide whether to re-arm); or `ambiguous` (the action was claimed but its outcome was never captured - verify its effect manually before anything else).
   Every `when` outcome is terminal and the action is never retried automatically.
   After handling and the generic acknowledgement above, retire the watch's private records through its adapter before any re-arm.

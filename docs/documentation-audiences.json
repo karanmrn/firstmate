@@ -682,6 +682,10 @@
       "audience": "agent-runtime"
     },
     {
+      "path": ".agents/skills/lavish-url/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
       "path": ".agents/skills/one-three-one-rule/SKILL.md",
       "audience": "agent-runtime"
     },
